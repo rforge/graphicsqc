@@ -1,6 +1,9 @@
-graphicsQC: An R package providing quality control tools for graphics. The package provides functions to generate graphics files, compare them with "model" files, and report the results.
+graphicsQC: An R package providing quality control tools for graphics. 
+The package provides functions to generate graphics files, compare 
+them with "model" files, and report the results.
 
-Three main functions are used, as well as a main control function to organise input for suitable use by the main functions.
+Three main functions are used, as well as a main control function to 
+organise input for suitable use by the main functions.
 The three main functions are;
 plotExpr,
 compare,
@@ -8,8 +11,13 @@ writeReport,
 and the control function: graphicsQC.
 
 Basically:
-plotExpr will take an R expression (or expressions) and produce plots in specific file formats of the intended plot.
-compare will take two(?) image files of the same format and identify any differences in the files.
-writeReport will produce a HTML output of any differences found from the compare function.
+plotExpr will take an R expression (or expressions) and produce plots 
+in specific file formats of the intended plot(s).
+compare will take two(?) (sets of) image files of the same format and identify 
+any differences in the files.
+writeReport will produce a HTML output of any differences found from 
+the compare function.
 
-graphicsQC can perform all three functions. It will take any R expression, list of R expressions, blocks of code, or even a package, and con then perform any (or all) of the three functions on them.
+graphicsQC can perform all three functions. It will take any R expression, 
+list of R expressions, blocks of code, or even a package, and can then 
+perform any (or all) of the three functions on them.

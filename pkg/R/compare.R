@@ -13,4 +13,9 @@
 # are different.
 #
 # --------------------------------------------------------------------
-"compare" <- function(){}
+"compare" <- function(path,
+                      clean = c("full", "files", "none"), # char length 1
+                                    # none = don't delete anything
+                                    # full = delete everything
+                                    # files = delete files (but NOT index)
+                                    # AFTER EACH expr
