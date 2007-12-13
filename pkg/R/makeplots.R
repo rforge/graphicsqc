@@ -28,23 +28,26 @@
                        
     # First split expression up by ";" in case multiple expressions are stacked
     # with each other
-    if(is.list(expr))
+    if (is.list(expr))
         expr <- unlist(expr)
-    expr <- unlist(strsplit(expr,split=";"))
+    expr <- unlist(strsplit(expr, split=";"))
         
     ##Test filetype is valid, prefix, path
     
     # Testing filetype is valid
-    filetype<-tolower(filetype)
-    if (testValidFiletypes())
+    filetype <- tolower(filetype)
+    if (testValidFiletypes()) {
         #change "ps" to "postscript"
+    }
     
     # Testing file prefix is valid
-    #prefix must be length 1 OR length expr
-    if (length(prefix) == 1) || length(prefix) == length(expr))
-        prefix<-as.character(prefix) else
+    # prefix must be length 1 OR length expr
+    if (length(prefix) == 1) || length(prefix) == length(expr)) {
+        prefix <- as.character(prefix)
+    } else {
         stop("prefix must be length 1 or same as expr")
-    
+    }
+
     ##Change this so it runs multiple paths?
     if (length(path) > 1) {
         warning("object ", sQuote("path"), " has more than one ",
@@ -52,9 +55,6 @@
                 call. = FALSE)
         path <- path[1]
     }
-    
-    
-    
     
     numFiles <- length(expr)
     nameFormat <- paste(prefix,"-%0",nchar(numFiles),"d",sep="") 
@@ -89,7 +89,7 @@
 "testValidFiletypes" <- function(filetypes) {
     validFiletypes <- c("pdf", "png", "ps", "bmp")
     if (.Platform$OS.type != "windows")
-        validFiletypes<-validFiletypes[-4]
+        validFiletypes <- validFiletypes[-4]
 
     if(any(duplicated(filetypes))) {
         warning("duplicated filetypes!.. ...at? ..removed/ignored?")
