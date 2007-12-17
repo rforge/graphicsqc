@@ -18,8 +18,8 @@
 #
 #  _______-------======= TODO: FIND ##'s =======-------_______
 #
-#files<-plotExpr(c("plot(1:10)","plot(4:40)","x<-3","plot(2:23)"),c("pdf","ps"),
-# "test","./testdir")
+#files<-plotExpr(c("plot(1:10)","plot(4:40)","x<-3","plot(2:23)"),
+#                c("pdf","ps"),"test","testdir")
 # --------------------------------------------------------------------
 "plotExpr" <- function(expr, # character vector
                              # R expression(s)
@@ -32,91 +32,66 @@
                        path = NULL # char length 1
                                    # directory to create files in
                        ) {
-                       
-    # First split expression up by ";" in case multiple expressions are stacked
-    # with each other
+
     if (is.list(expr))
         expr <- unlist(expr)
     
     # Testing filetype is valid
     filetype <- getValidFiletypes(filetype)
     fileExtension <- paste(".", filetype, sep = "")
-    # "ps" is changed to "postscript" so it can be used
-    # for a function call at do.call
-    filetype <- gsub("^ps$", "postscript", filetype)
 
     # Testing file prefix is valid
     # Prefix must be length 1
-    if (length(prefix) == 1 || length(prefix) == length(expr)) {
+    if (length(prefix) == 1) {
         prefix <- as.character(prefix)
     } else {
-        stop("prefix must be length 1 or same as expr", call. = FALSE)
+        stop(sQuote("prefix"), " must be a character vector of length 1")
     }
     
     # Testing valid path
-    if (length(path) > 1) {
-        warning("object ", sQuote("path"), " has more than one ",
-                "element: only the first used in ", sQuote("path"), 
-                call. = FALSE)
-        path <- path[1]
-    }
     wd <- getwd()
     on.exit(setwd(wd))
-    if (is.null(path)) {
+    if (length(path) == 0) {
         warning("no path given: the path has been set to your current working",
-                " directory", call. = FALSE)
+                " directory")
         path <- wd
+    } else if (length(path) == 1) {
+        path <- setDir(path)
     } else {
-        path <- makeDir(path)
+        warning("object ", sQuote("path"), " has more than one ",
+                "element: only the first used in ", sQuote("path"))
+        path <- path[1]
     }
+    
+    # Check we are not going to overwrite any files
+    filenamePattern <- paste("^", prefix, "-", "[0-9]+[.](",
+                   paste(filetype, collapse = "|"),
+                   ")$", sep = "")
+    currentFilenames <- list.files(path, filenamePattern)
+    if (length(currentFilenames) > 0) {
+        stop("files of intended filename already exist in ", sQuote("path"),
+             call. = FALSE)
+    }
+    
+    filenameFormat <- paste(prefix, "-%d", sep = "")
     setwd(path)
-    
-    ## remove (all) possible filenames we are going to make?
-
-    # PAUL:  NO!  just fail if any possible overwrites exist.
-    # check for overwrite as path/prefix*.filetype
-    
-    #numFiles (of each format, not the total)
-
-    # PAUL:  just use %d
-
-    numFiles <- length(expr)
-    filenameFormat <- paste(prefix, "-%0", nchar(numFiles), "d", sep = "")
-
-    # PAUL: loop over formats NOT exprs
-    
-    for (i in 1:length(filetype)) {
-        do.call(filetype[i], list(paste(filenameFormat, fileExtension[i],
-                                  sep = ""), onefile = FALSE))
-        lapply(expr, evalPlotCode)
-    }
-
-    # result <- lapply(filetype, evalPlotCode, expr)
-    
+    result <- lapply(filetype, evalPlotCode, expr, filenameFormat)    
     graphics.off()
-    
     
     ## now to find out what files we made!
 
-    # We only created files if none already existed
+    # (We only created files if none already existed)
+    filenames <- list.files(getwd(), filenamePattern)
     
-    ## . vs \.
-    pattern <- paste("^", prefix, "-", "[0-9]+[.](",
-                   paste(fileExtension, collapse = "|"),
-                   ")", sep = "")
-    # PAUL:  JUST a list.files() call
-    filenames <- grep(pattern, list.files(path), value = TRUE)
-    
-    
-    ## we don't actually make these filenames.. they're just everything(minus
-    ## multiplots) possible we _can_ make from given expr
     #filenames <- sprintf(filenameFormat, 1:numFiles)
     #filenames <- paste(rep(filenames, length(fileExtension)),
     #                   rep(fileExtension, each = length(filenames)), sep = "")
 
     # PAUL:  WRITE THE filenames AND the errors and warnings to a file
+    # Stephen: ie write to prefix-0.pdf.txt + prefix-0.ps.txt? 
+    # prefix-warnings..?
     
-    invisible(filenames)
+    invisible(list("filenames" = filenames,"results" = result))
 }
 
 # --------------------------------------------------------------------
@@ -129,16 +104,28 @@
 # PAUL:  just record the error message in the log
 #        also record warnings
 #        AS AN R OBJECT
-"evalPlotCode" <- function(expr) {
-    tryCatch(eval(parse(text = expr)), 
+"evalPlotCode" <- function(filetype, expr, filenameFormat) { 
+    if (filetype == "ps") {
+        fileExtension <- ".ps"
+        filetype <- "postscript"
+    } else {
+        fileExtension <- paste(".", filetype, sep = "")
+    }
+    if (any(filetype == c("pdf", "postscript"))) {
+        do.call(filetype, list(paste(filenameFormat, fileExtension,
+                                     sep = ""), onefile = FALSE))
+    } else {
+        do.call(filetype, list(paste(filenameFormat, fileExtension,
+                                     sep = "")))
+    }
+    result <- withCallingHandlers(eval(parse(text = expr)), 
              error = function(e) { 
-                         paste("Error in", expr, ":",
-                               geterrmessage())
+                         paste("Error in expr:", e)  #geterrmessage())
                      }, 
              warning = function(w) {
-                           paste("Warning in", expr, 
-                                 ":", conditionMessage(w))
+                           paste("Warning in expr:", w)
                        })
+    invisible(result)
 }
 
 # --------------------------------------------------------------------
@@ -166,7 +153,7 @@
     invalidTypes <- !filetypes %in% validFiletypes
     if (any(invalidTypes)) {
        if (any(filetypes[invalidTypes] %in% "bmp")) {
-           warning("Sorry, BMP format only supported in Windows",
+           warning("sorry, BMP format only supported in Windows",
                    call. = FALSE)
        }
        warning("invalid filetype(s) given: ", 
@@ -177,31 +164,26 @@
     if (length(filetypes[!invalidTypes]) > 0) {
         return(filetypes[!invalidTypes])
     } else {
-        stop("No valid filetypes given", call. = FALSE)
+        stop("no valid filetypes given", call. = FALSE)
     }
 }
 
 # --------------------------------------------------------------------
 #
-# makeDir()
+# setDir()
 #
 # --------------------------------------------------------------------
-makeDir <- function(path, showWarnings = FALSE) {
-    result <- dir.create(path, showWarnings)
-        
-    if (!result) {
-
-        # PAUL: THIS SHOULD JUST FAIL !!!
-        isdir <- file.info(path)$isdir
-
-        if ((is.na(isdir)) || (!isdir)) {
-            warning("failed to create the output directory ", 
-                    sQuote(path), call. = FALSE)
-            path <- getwd()
-            warning("the output directory has been set to your current ", 
-                    "working directory ", sQuote(path), call. = FALSE)
+setDir <- function(path, showWarnings = FALSE) {
+    ## Does dir exist? if yes, use it. else, make it. if fail, stop.
+    isDir <- file.info(path)$isdir
+    if (!isDir || is.na(isDir)) {
+        isCreated <- dir.create(path, showWarnings)
+        if (!isCreated) {
+            stop("failed to create the output directory ", 
+                    dQuote(path), " plotExpr failed" , call. = FALSE)
         }
     }
     return(path)
 }
+
 
