@@ -91,7 +91,9 @@
     # Stephen: ie write to prefix-0.pdf.txt + prefix-0.ps.txt? 
     # prefix-warnings..?
     
-    invisible(list("filenames" = filenames,"results" = result))
+    results <- list("filenames" = filenames,"results" = result)
+    # save(results, file = ... )
+    invisible(results)
 }
 
 # --------------------------------------------------------------------
