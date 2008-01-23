@@ -32,7 +32,7 @@
                        path = NULL # char length 1
                                    # directory to create files in
                        ) {
-
+### on.exit(unlink( all files we (could've) made )) ?????
     if (is.list(expr))
         expr <- unlist(expr)
     
@@ -64,9 +64,14 @@
     }
     
     # Check we are not going to overwrite any files
-    filenamePattern <- paste("^", prefix, "-", "[0-9]+[.](",
+    filenamePattern <- paste("^(", prefix, "-", "[0-9]+[.](",
                    paste(filetype, collapse = "|"),
-                   ")$", sep = "")
+                   ")|", prefix, "-log[.]xml)$", sep = "")
+                   # ie "^(prefix-[0-9]+[.](pdf|ps)|prefix-log[.]xml)$"
+                   # Will match (prefix = "prefix"; filetype = c("pdf", "ps"):
+                   # prefix-123.pdf, prefix-log.xml, prefix-1.ps
+                   # Will NOT match:
+                   # prefix-log.pdf, prefix-123.xml, prefix-.ps
     currentFilenames <- list.files(path, filenamePattern)
     if (length(currentFilenames) > 0) {
         stop("files of intended filename already exist in ", sQuote("path"),
@@ -78,21 +83,24 @@
     result <- lapply(filetype, evalPlotCode, expr, filenameFormat)    
     graphics.off()
     
-    ## now to find out what files we made!
-
+    # ---------- Get info of results ----------
     # (We only created files if none already existed)
-    filenames <- list.files(getwd(), filenamePattern)
-    
-    #filenames <- sprintf(filenameFormat, 1:numFiles)
-    #filenames <- paste(rep(filenames, length(fileExtension)),
-    #                   rep(fileExtension, each = length(filenames)), sep = "")
+    filenames <- list.files(getwd(), filenamePattern)    
+    warnings <- grep("^Warning", result)
+    errors <- grep("^Error", result)
+    info <- list("OS" = .Platform$OS.type, "Rver" = 
+                 as.character(getRversion()), "date" = date(),
+                 "call" = paste(deparse(sys.call()), collapse = ""),
+                ## at some point deparse(width.cutoff) might need to be raised
+                 "filetype" = filetype, "directory" = getwd())
+                 #using getwd() here forces expansion
+                 #of directory (ie, expands "./")
+    results <- list("filenames" = filenames, "warnings" = warnings,
+                    "errors" = errors, "info" = info)
 
-    # PAUL:  WRITE THE filenames AND the errors and warnings to a file
-    # Stephen: ie write to prefix-0.pdf.txt + prefix-0.ps.txt? 
-    # prefix-warnings..?
-    
-    results <- list("filenames" = filenames,"results" = result)
-    # save(results, file = ... )
+    writeXmlLogFile(results, prefix)
+    class(results) <- "qcPlotResult"
+    # ---------- return results ----------
     invisible(results)
 }
 
@@ -101,11 +109,6 @@
 # evalPlotCode()
 #
 # --------------------------------------------------------------------
-
-
-# PAUL:  just record the error message in the log
-#        also record warnings
-#        AS AN R OBJECT
 "evalPlotCode" <- function(filetype, expr, filenameFormat) { 
     if (filetype == "ps") {
         fileExtension <- ".ps"
@@ -122,7 +125,7 @@
     }
     result <- withCallingHandlers(eval(parse(text = expr)), 
              error = function(e) { 
-                         paste("Error in expr:", e)  #geterrmessage())
+                         paste("Error in expr:", e) 
                      }, 
              warning = function(w) {
                            paste("Warning in expr:", w)
@@ -175,8 +178,8 @@
 # setDir()
 #
 # --------------------------------------------------------------------
-setDir <- function(path, showWarnings = FALSE) {
-    ## Does dir exist? if yes, use it. else, make it. if fail, stop.
+"setDir" <- function(path, showWarnings = FALSE) {
+    # Does dir exist? if yes, use it. else, make it. if fail, stop.
     isDir <- file.info(path)$isdir
     if (!isDir || is.na(isDir)) {
         isCreated <- dir.create(path, showWarnings)
@@ -188,4 +191,102 @@ setDir <- function(path, showWarnings = FALSE) {
     return(path)
 }
 
+# --------------------------------------------------------------------
+#
+# writeXmlLogFile()
+#
+# --------------------------------------------------------------------
+"writeXmlLogFile" <- function(results, prefix) {
+    library(XML) ## might not run
+    
+    ## Should first check if a log file exists.. then can insert new filetype
+    ## order(reverse(filenames)) ??
+    xmlResults <- xmlOutputDOM(tag="qcPlotResult")
+    xmlResults$addTag("info", close = FALSE)
+     xmlResults$addTag("OS", results[["info"]][["OS"]])
+     xmlResults$addTag("Rver", results[["info"]][["Rver"]])
+     xmlResults$addTag("date", results[["info"]][["date"]])
+     xmlResults$addTag("call", close = FALSE)
+      xmlResults$addCData(results[["info"]][["call"]])
+     xmlResults$closeTag() # call
+     for (i in 1:length(results[["info"]][["filetype"]])) {
+         xmlResults$addTag("filetype", results[["info"]][["filetype"]][i])
+     }
+     xmlResults$addTag("directory", results[["info"]][["directory"]])
+    xmlResults$closeTag() # info
+    xmlResults$addTag("warnings", close = FALSE)
+     if (length(results[["warnings"]]) > 0) {
+         for (i in 1:length(results[["warnings"]])) {
+             xmlResults$addTag("warning", results[["warnings"]][i])
+         }
+     }
+    xmlResults$closeTag() # warnings
+    xmlResults$addTag("errors", close = FALSE)
+     if (length(results[["errors"]]) > 0) {
+         for (i in 1:length(results[["errors"]])) { ##apply?
+             xmlResults$addTag("error", results[["errors"]][i])
+         }
+     }
+    xmlResults$closeTag() # errors
+    xmlResults$addTag("filenames", close = FALSE)
+     if (length(results[["filenames"]]) > 0) {
+         for (i in 1:length(results[["filenames"]])) {
+             xmlResults$addTag("filename", results[["filenames"]][i])
+         }
+     }
+    xmlResults$closeTag() # filenames
+    saveXML(xmlResults, paste(prefix, "-log.xml", sep = ""))
+}
 
+# --------------------------------------------------------------------
+#
+# plotFile()
+#
+#
+# --------------------------------------------------------------------
+plotFile <- function(filename, # character vector
+                             # R expression(s)
+                       filetype = NULL, # character vector
+                                        # (valid) file formats
+                       prefix = NULL, # char length 1
+                                      # file prefix
+                       path = NULL # char length 1
+                                   # directory to create files in
+                       ) {
+    expr <- lapply(filename, readLines)
+    return(plotExpr(expr, filetype, prefix, path))
+}
+
+# --------------------------------------------------------------------
+#
+# plotFunction()
+# ## setRNG?
+# --------------------------------------------------------------------
+plotFunction <- function(fun, # character vector
+                             # R expression(s)
+                       filetype = NULL, # character vector
+                                        # (valid) file formats
+                       prefix = NULL, # char length 1
+                                      # file prefix
+                       path = NULL # char length 1
+                                   # directory to create files in
+                       ) {
+    ## if not paste, then something like... 
+    # funs<-lapply(fun, function(x) { 
+       #                 substitute(do.call(example,list(x))
+       # (gets unusual behaviour without paste..?)
+    funs <- paste("example(", fun, ", echo = FALSE, setRNG = TRUE)", sep = "")
+    return(plotExpr(funs, filetype, prefix, path))
+}
+
+# --------------------------------------------------------------------
+#
+# plotPackage()
+#
+# --------------------------------------------------------------------
+plotPackage <- function(package) {
+    ## take 'best effort' approach? try get tests/demo if can and use them..
+    if(!do.call(require, list(package))) {
+        warning("failed to load package ", dQuote(package))
+    } # now package is loaded
+}
