@@ -278,7 +278,7 @@ plotFunction <- function(fun, # character vector
                              # R expression(s)
                        filetype = NULL, # character vector
                                         # (valid) file formats
-                       prefix = NULL, # char length 1
+                       prefix = fun, # char length 1
                                       # file prefix
                        path = NULL # char length 1
                                    # directory to create files in

@@ -1,0 +1,60 @@
+
+http://www.ci.tuwien.ac.at/Conferences/DSC-2003/Proceedings/MurrellHornik.pdf
+
+- ImageMagick
+  + compare
+
+http://r-forge.r-project.org/
+
+- register
+- Paul will "add" to graphicsqc
+- upload ssh keys
+- svn checkout svn+ssh://sgar@svn.r-forge.r-project.org/svnroot/graphicsqc
+
+
+http://cran.r-project.org/doc/manuals/R-exts.html
+
+
+
+
+# 24/01/08
+
+- improve evalPlotCode() so that errors and warnings are captured.
+- plotFun() should make multiple calls to plotExpr() with 
+  different prefix for each fun (prefix defaults to fun name).  
+  Ditto plotFile().
+- dev.off() in plotExpr() ?  Why not ???
+- empty files;  in plotExpr(); create (temporary) blanks 
+  (unless they already exist), 
+  if only one file is generated, check its size against appropriate 
+  blank and remove if match.
+
+# 25/01/08
+
+- focus on plotFun() THEN compare()  (for both plotExpr and plotFun)
+
+- DESIGN:
+
+plotExpr() produces qcResult plus log file
+
+plotFun() produces qcFunResult plus funLog file
+- qcFunResult is a list of qcResults
+- funLog file just names appropriate log files, plus maybe info
+
+compare() only compares two things of the same class
+
+compare() produces qcCompare plus compareLog file OR
+                   qcFunCompare plus compareFunLog file 
+
+compare() autodetects funLog files first then log files
+  if no funLog files exist
+
+compare() produces qcCompareList plus compareListLog file
+  if it autodetects multiple log/funLog files
+
+someday, the report code has to handle qcCompare/compareLog OR
+                                       qcFunCompare/compareFunLog OR
+                                       qcCompareList/compareListLog
+  (OR several of these via autodetect !)
+ 
+
