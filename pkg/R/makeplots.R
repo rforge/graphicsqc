@@ -123,14 +123,26 @@
         do.call(filetype, list(paste(filenameFormat, fileExtension,
                                      sep = "")))
     }
-    result <- withCallingHandlers(eval(parse(text = expr)), 
-             error = function(e) { 
-                         paste("Error in expr:", e) 
-                     }, 
-             warning = function(w) {
-                           paste("Warning in expr:", w)
-                       })
-    invisible(result)
+    ## withCallingHandlers is currently used because tryCatch will exit on
+    ## warnings as well as errors, whereas withCallingHandlers can carry on
+    ## after a warning
+#    result <- withCallingHandlers(eval(parse(text = expr)), 
+#             error = function(e) { 
+#                         paste("Error in expr:", e) 
+#                     }, 
+#             warning = function(w) {
+#                           paste("Warning in expr:", w)
+#                       })
+
+    ## First clear last.warning and option(error) ..
+    withCallingHandlers(eval(parse(text = expr)),
+                      warning = function(w){ invokeRestart("muffleWarning")})
+    warnings <- warnings()   #a.k.a "last.warning" but pretty
+    error <- geterrmessage() #can only be one error as we stop expr when
+                             #we hit an error
+    ## See "suppressedWarnings()"
+
+    invisible(list("warnings" = warnings, "errors" = error)
 }
 
 # --------------------------------------------------------------------
