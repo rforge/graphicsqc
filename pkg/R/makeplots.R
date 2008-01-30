@@ -29,10 +29,11 @@
                                         # (valid) file formats
                        prefix = NULL, # char length 1
                                       # file prefix
-                       path = NULL # char length 1
+                       path = NULL, # char length 1
                                    # directory to create files in
+                       clear = FALSE # boolean, clear any files we might make
                        ) {
-### on.exit(unlink( all files we (could've) made )) ?????
+## what about these warnings not in evalPlotCode?
     if (is.list(expr))
         expr <- unlist(expr)
     
@@ -73,21 +74,34 @@
                    # Will NOT match:
                    # prefix-log.pdf, prefix-123.xml, prefix-.ps
     currentFilenames <- list.files(path, filenamePattern)
-    if (length(currentFilenames) > 0) {
-        stop("files of intended filename already exist in ", sQuote("path"),
-             call. = FALSE)
+    # 'Clear' files we might make if we are told to
+    if (length(clear) > 1) {
+        warning(sQuote("clear"), " has more than one element: only the ",
+                "first used")
+        clear <- clear[1]
+    }
+    if (is.logical(clear) && !is.na(clear)) {
+        if (clear && length(currentFilenames) > 0) {
+            if (any(!file.remove(paste(path, currentFilenames,
+                              sep = .Platform$file.sep)))) {
+                stop("tried to clear but failed to delete files")
+            }
+        } else if (!clear && length(currentFilenames) > 0) {
+            stop("files of intended filename already exist in ",
+                 sQuote("path"), call. = FALSE)
+        }
+    } else {
+        stop(sQuote("clear"), " must be either TRUE or FALSE")
     }
     
     filenameFormat <- paste(prefix, "-%d", sep = "")
     setwd(path)
-    result <- lapply(filetype, evalPlotCode, expr, filenameFormat)    
+    evalResult <- lapply(filetype, evalPlotCode, expr, filenameFormat)  
     graphics.off()
     
     # ---------- Get info of results ----------
     # (We only created files if none already existed)
-    filenames <- list.files(getwd(), filenamePattern)    
-    warnings <- grep("^Warning", result)
-    errors <- grep("^Error", result)
+    filenames <- list.files(getwd(), filenamePattern)
     info <- list("OS" = .Platform$OS.type, "Rver" = 
                  as.character(getRversion()), "date" = date(),
                  "call" = paste(deparse(sys.call()), collapse = ""),
@@ -95,8 +109,10 @@
                  "filetype" = filetype, "directory" = getwd())
                  #using getwd() here forces expansion
                  #of directory (ie, expands "./")
-    results <- list("filenames" = filenames, "warnings" = warnings,
-                    "errors" = errors, "info" = info)
+    ## Write all errors (ie for every filetype), or just one set?
+    results <- list("filenames" = filenames, "warnings" =
+                    evalResult[[1]][["warnings"]], "errors" =
+                    evalResult[[1]][["errors"]], "info" = info)
 
     writeXmlLogFile(results, prefix)
     class(results) <- "qcPlotResult"
@@ -109,6 +125,9 @@
 # evalPlotCode()
 #
 # --------------------------------------------------------------------
+## Test: expr<-c("x<-3", "plot(x:8)", "warning(\"firstWarning\")",
+#          "warning(\"secondWarning\")", "stop(\"end error\")",
+#          "warning(\"NOTCALLED\")")
 "evalPlotCode" <- function(filetype, expr, filenameFormat) { 
     if (filetype == "ps") {
         fileExtension <- ".ps"
@@ -123,26 +142,26 @@
         do.call(filetype, list(paste(filenameFormat, fileExtension,
                                      sep = "")))
     }
-    ## withCallingHandlers is currently used because tryCatch will exit on
-    ## warnings as well as errors, whereas withCallingHandlers can carry on
-    ## after a warning
-#    result <- withCallingHandlers(eval(parse(text = expr)), 
-#             error = function(e) { 
-#                         paste("Error in expr:", e) 
-#                     }, 
-#             warning = function(w) {
-#                           paste("Warning in expr:", w)
-#                       })
+    assign("evalWarns", NULL, envir = globalenv())
+    on.exit(rm(evalWarns, envir = globalenv()))
+    # Reset last error message to ""
+    tryCatch(stop(), error = function(e) {})
+    tryCatch(withCallingHandlers(eval(parse(text = expr)),
+                    warning = function(w) { assign("evalWarns", 
+                    c(evalWarns, paste("Warning in evalPlotCode :",
+                                       conditionMessage(w))), 
+                    envir=globalenv());
+                    invokeRestart("muffleWarning") }), error = function(e) {})
+    error <- geterrmessage() # There can only be one error as we stop
+                             # evaluating when we hit an error
+    if (error == "") {
+        error <- NULL
+    } else {
+        error <- paste("Error in evalPlotCode :", error)
+    }
 
-    ## First clear last.warning and option(error) ..
-    withCallingHandlers(eval(parse(text = expr)),
-                      warning = function(w){ invokeRestart("muffleWarning")})
-    warnings <- warnings()   #a.k.a "last.warning" but pretty
-    error <- geterrmessage() #can only be one error as we stop expr when
-                             #we hit an error
-    ## See "suppressedWarnings()"
-
-    invisible(list("warnings" = warnings, "errors" = error)
+    dev.off()
+    return(list("warnings" = evalWarns, "errors" = error))
 }
 
 # --------------------------------------------------------------------
@@ -288,7 +307,12 @@ plotFunction <- function(fun, # character vector
        #                 substitute(do.call(example,list(x))
        # (gets unusual behaviour without paste..?)
     funs <- paste("example(", fun, ", echo = FALSE, setRNG = TRUE)", sep = "")
-    return(plotExpr(funs, filetype, prefix, path))
+    ## try one and look at the call.
+    # ie a<-plotFunction(c("plot","lm"), "ps", path="./testdir")
+    # then a[1:4] is one, and a[5:8] is the next
+    # nested for loop rather than mapply?
+    mapply(plotExpr, expr = funs, prefix = prefix,
+           MoreArgs = list(filetype = filetype, path = path))
 }
 
 # --------------------------------------------------------------------
@@ -302,3 +326,8 @@ plotPackage <- function(package) {
         warning("failed to load package ", dQuote(package))
     } # now package is loaded
 }
+
+##hasBlanks()
+##makeBlanks()
+
+

@@ -326,11 +326,8 @@
 
 ## better error handling on bad files?
     readLogHandler = function() {
-        qcResult <- list(filenames = character(0), warnings = integer(0),
-                         errors = integer(0)) # warnings and errors are
-                                              # integer(0) as it is the 0 
-                                              # output matches from grep 
-                                              # in plotExpr (makeplots.R)
+        qcResult <- list(filenames = character(0), warnings = NULL,
+                         errors = NULL)
         qcInfo <- list()
         list("filename" = function(x) {
              ## anything more efficient than c(value, x) ?
