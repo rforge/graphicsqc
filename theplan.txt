@@ -57,4 +57,13 @@ someday, the report code has to handle qcCompare/compareLog OR
                                        qcCompareList/compareListLog
   (OR several of these via autodetect !)
  
+# 31/01/08
+
+- use a closure for the global in evalPlotCode()
+
+- also use a closure in, e.g., plotFun(), to pass in to 
+  plotExpr() to use as warning handler so that warnings
+  only occur once.
+
+- replace mapply() with loop (in plotFunction [et al?])
 

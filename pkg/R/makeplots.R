@@ -299,9 +299,9 @@ plotFunction <- function(fun, # character vector
                                         # (valid) file formats
                        prefix = fun, # char length 1
                                       # file prefix
-                       path = NULL # char length 1
-                                   # directory to create files in
-                       ) {
+                       path = NULL, # char length 1
+                                    # directory to create files in
+                       clear = FALSE) {
     ## if not paste, then something like... 
     # funs<-lapply(fun, function(x) { 
        #                 substitute(do.call(example,list(x))
@@ -312,7 +312,7 @@ plotFunction <- function(fun, # character vector
     # then a[1:4] is one, and a[5:8] is the next
     # nested for loop rather than mapply?
     mapply(plotExpr, expr = funs, prefix = prefix,
-           MoreArgs = list(filetype = filetype, path = path))
+           MoreArgs = list(filetype = filetype, path = path, clear = clear))
 }
 
 # --------------------------------------------------------------------
