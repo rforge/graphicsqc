@@ -67,3 +67,17 @@ someday, the report code has to handle qcCompare/compareLog OR
 
 - replace mapply() with loop (in plotFunction [et al?])
 
+
+# 07/02/08
+
+- use file.info() for getting file sizes.
+
+- see source code of embedFonts() for example of how to make
+  cross-platform system() calls.
+
+- more design:
+
+  compare() finds out what sort of things it is comparing, then
+  calls a compareExpr() or compareFun(), etc.  compareFun(), etc
+  call compareExpr() multiple times, wrap up the results (in a
+  "compareFun" object?) and return.
