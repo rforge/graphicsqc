@@ -294,7 +294,7 @@
 #
 # --------------------------------------------------------------------
 "getSupportedIMFormats" <- function() {
-    supportedFormats<-character(0)
+    supportedFormats <- character(0)
     formats <- system("identify -list Format", intern = TRUE,
                       ignore.stderr = TRUE) ##this command has trouble..
     bmpLine <- grep("Microsoft Windows bitmap image$", formats, value = TRUE)

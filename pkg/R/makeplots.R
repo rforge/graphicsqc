@@ -96,15 +96,24 @@
     
     filenameFormat <- paste(prefix, "-%d", sep = "")
     setwd(path)
-    evalResult <- lapply(filetype, evalPlotCode, expr, filenameFormat)  
-    graphics.off()
-    
+    evalResult <- lapply(filetype, evalPlotCode, expr, filenameFormat)      
     # ---------- Get info of results ----------
     # (We only created files if none already existed)
     filenames <- list.files(getwd(), filenamePattern)
+    blankImageDetails <- getBlankImageDetails()
+    if (is.null(blankImageDetails)) {
+        makeBlankImages()
+        blankImageDetails <- getBlankImageDetails()
+        if (is.null(blankImageDetails)) {
+            warning("blank image details could not be obtained, so blank ",
+                    "files will not be removed")
+        }
+    }
+    removeBlankImages(getwd(), filetype, blankImageDetails)
+    
     info <- list("OS" = .Platform$OS.type, "Rver" = 
                  as.character(getRversion()), "date" = date(),
-                 "call" = paste(deparse(sys.call()), collapse = ""),
+                 "call" = paste(deparse(sys.call(1)), collapse = ""),
                 ## at some point deparse(width.cutoff) might need to be raised
                  "filetype" = filetype, "directory" = getwd())
                  #using getwd() here forces expansion
@@ -142,15 +151,13 @@
         do.call(filetype, list(paste(filenameFormat, fileExtension,
                                      sep = "")))
     }
-    assign("evalWarns", NULL, envir = globalenv())
-    on.exit(rm(evalWarns, envir = globalenv()))
+    warns <- NULL
     # Reset last error message to ""
     tryCatch(stop(), error = function(e) {})
     tryCatch(withCallingHandlers(eval(parse(text = expr)),
-                    warning = function(w) { assign("evalWarns", 
-                    c(evalWarns, paste("Warning in evalPlotCode :",
-                                       conditionMessage(w))), 
-                    envir=globalenv());
+                    warning = function(w) { warns <<- c(warns, 
+                                            paste("Warning in evalPlotCode :",
+                                                  conditionMessage(w)));
                     invokeRestart("muffleWarning") }), error = function(e) {})
     error <- geterrmessage() # There can only be one error as we stop
                              # evaluating when we hit an error
@@ -161,7 +168,7 @@
     }
 
     dev.off()
-    return(list("warnings" = evalWarns, "errors" = error))
+    return(list("warnings" = warns, "errors" = error))
 }
 
 # --------------------------------------------------------------------
@@ -232,6 +239,8 @@
     
     ## Should first check if a log file exists.. then can insert new filetype
     ## order(reverse(filenames)) ??
+    
+    ## Should be a listToXml function.. this can still be more efficient
     xmlResults <- xmlOutputDOM(tag="qcPlotResult")
     xmlResults$addTag("info", close = FALSE)
      xmlResults$addTag("OS", results[["info"]][["OS"]])
@@ -240,31 +249,18 @@
      xmlResults$addTag("call", close = FALSE)
       xmlResults$addCData(results[["info"]][["call"]])
      xmlResults$closeTag() # call
-     for (i in 1:length(results[["info"]][["filetype"]])) {
-         xmlResults$addTag("filetype", results[["info"]][["filetype"]][i])
-     }
+     lapply(results[["info"]][["filetype"]], xmlResults$addTag,
+                                                              tag="filetype")
      xmlResults$addTag("directory", results[["info"]][["directory"]])
     xmlResults$closeTag() # info
     xmlResults$addTag("warnings", close = FALSE)
-     if (length(results[["warnings"]]) > 0) {
-         for (i in 1:length(results[["warnings"]])) {
-             xmlResults$addTag("warning", results[["warnings"]][i])
-         }
-     }
+     lapply(results[["warnings"]], xmlResults$addTag, tag="warning")
     xmlResults$closeTag() # warnings
     xmlResults$addTag("errors", close = FALSE)
-     if (length(results[["errors"]]) > 0) {
-         for (i in 1:length(results[["errors"]])) { ##apply?
-             xmlResults$addTag("error", results[["errors"]][i])
-         }
-     }
+     lapply(results[["errors"]], xmlResults$addTag, tag="error")
     xmlResults$closeTag() # errors
     xmlResults$addTag("filenames", close = FALSE)
-     if (length(results[["filenames"]]) > 0) {
-         for (i in 1:length(results[["filenames"]])) {
-             xmlResults$addTag("filename", results[["filenames"]][i])
-         }
-     }
+     lapply(results[["filenames"]], xmlResults$addTag, tag="filename")
     xmlResults$closeTag() # filenames
     saveXML(xmlResults, paste(prefix, "-log.xml", sep = ""))
 }
@@ -273,19 +269,20 @@
 #
 # plotFile()
 #
-#
 # --------------------------------------------------------------------
 plotFile <- function(filename, # character vector
                              # R expression(s)
                        filetype = NULL, # character vector
                                         # (valid) file formats
-                       prefix = NULL, # char length 1
+                       prefix = filename, # char length 1
                                       # file prefix
-                       path = NULL # char length 1
+                       path = NULL, # char length 1
                                    # directory to create files in
+                       clear = FALSE
                        ) {
     expr <- lapply(filename, readLines)
-    return(plotExpr(expr, filetype, prefix, path))
+    mapply(plotExpr, expr = expr, prefix = prefix,
+          MoreArgs = list(filetype = filetype, path = path, clear = clear))
 }
 
 # --------------------------------------------------------------------
@@ -307,12 +304,8 @@ plotFunction <- function(fun, # character vector
        #                 substitute(do.call(example,list(x))
        # (gets unusual behaviour without paste..?)
     funs <- paste("example(", fun, ", echo = FALSE, setRNG = TRUE)", sep = "")
-    ## try one and look at the call.
-    # ie a<-plotFunction(c("plot","lm"), "ps", path="./testdir")
-    # then a[1:4] is one, and a[5:8] is the next
-    # nested for loop rather than mapply?
     mapply(plotExpr, expr = funs, prefix = prefix,
-           MoreArgs = list(filetype = filetype, path = path, clear = clear))
+          MoreArgs = list(filetype = filetype, path = path, clear = clear))
 }
 
 # --------------------------------------------------------------------
@@ -327,7 +320,53 @@ plotPackage <- function(package) {
     } # now package is loaded
 }
 
-##hasBlanks()
-##makeBlanks()
+# --------------------------------------------------------------------
+#
+# makeBlankImages()
+#
+# --------------------------------------------------------------------
+makeBlankImages <- function() {
+    tempDir <- tempdir()
+    # Only pdf and ps blank images are made as the filesize for bmp and png
+    # blanks are 0
+    pdf(paste(tempDir, .Platform$file.sep, "blankPDF.pdf", sep = ""),
+        onefile = FALSE)
+    dev.off()
+    postscript(paste(tempDir, .Platform$file.sep, "blankPS.ps", sep = ""),
+               onefile = FALSE)
+    dev.off()
+    invisible()
+}
 
+# --------------------------------------------------------------------
+#
+# getBlankImageDetails()
+#
+# --------------------------------------------------------------------
+getBlankImageDetails <- function() {
+    ## *nix only?
+    tempDir <- tempdir()
+    tempFiles <- system(paste("ls -l", tempDir), intern = TRUE)
+    pdfLine <- grep("blankPDF.pdf", tempFiles)
+    psLine <- grep("blankPS.ps", tempFiles)
+    if (length(c(pdfLine, psLine)) == 0) {
+        return(NULL)
+    }
+    splitPdfLine <- unlist(strsplit(tempFiles[pdfLine], " "))
+    splitPsLine <- unlist(strsplit(tempFiles[psLine], " "))
+    pdfSize <- splitPdfLine[length(splitPdfLine)-3]
+    psSize <- splitPsLine[length(splitPsLine)-3]
+    sizes <- c(pdfSize, psSize)
+    names(sizes) <- c("pdf", "ps")
+    sizes
+}
+
+# --------------------------------------------------------------------
+#
+# removeBlankImages()
+#
+# --------------------------------------------------------------------
+removeBlankImages <- function(path, filetype, blankImageDetails) {
+    (getwd(), filetype, blankImageDetails)
+}
 
