@@ -26,36 +26,39 @@
                       ) {
                       ##plots of diffs?should the diff plot be in the test dir?
                       ##CURRENTLY PATH IS JUST getwd()
-
+    if (is.character(test) && is.character(control) && test == control) {
+        ## if they're in the same dir it's just asking for trouble
+        #when trying to get QCResult..
+        stop(sQuote("test"), " and ", sQuote("control"), " paths cannot be ",
+             "the same")
+    }
     if (length(erase) != 1) {
     	stop(sQuote("erase"), " must be one of ", dQuote("none"), ", ", 
     	     dQuote("files"), ", ", dQuote("identical"), ", or ",
     	     dQuote("all"))
     }
-    
+
     test <- getQCResult(test)
-    control <- getQCResult(control)
-    
-    if (class(test) == "list" || class(control) == "list") {
-        if (class(test) == "list" && class(control) == "list") {
+    control <- getQCResult(control) 
+    if (inherits(test, "list") || inherits(control, "list")) {
+        if (inherits(test, "list") && inherits(control, "list")) {
             RESULT <- mapply(compare, test, list, erase) ## return?
         } else {
             stop("can't have a list of em vs. one") ##
         }
     }
-    
-    filePairs <- getPairs(test, control)
-    # DITTO for control
-    
-    # names(filepairs) are the filetypes to compare
-    results <- lapply(names(filePairs[["control"]]), compareType, 
-                 filePairs[["control"]], control[["info"]][["directory"]], 
-                 filePairs[["test"]], test[["info"]][["directory"]], erase)    
+    ## first package, then:
+    if (inherits(test, "qcPlotFunResult") && inherits(control,
+                                                         "qcPlotFunResult")) {
+        results <- mapply(compareExpr, test, control, MoreArgs = 
+                                                          list(erase=erase))
+    } else if (inherits(test, "qcPlotExprResult") && inherits(control,
+                                                        "qcPlotExprResult")) {
+        results <- compareExpr(test, control, erase)
+    } else {
+        ## test and control are not the same classes!
+    }
     results
-    
-    # Compare one plotExpr at a time (using natural order of qcresult
-    # OR order specified explicitly by log files OR the natural
-    # order of the log files from the autodetect).
 }
 
 # -------------------------------------------------------------------- 
@@ -70,26 +73,54 @@
             stop("file ", dQuote(result), " not found", call. = FALSE)
         } else if (!fileInfo$isdir) {
             # It's a file
-            return(readXmlLogFile(result))
+            return(readLog(result))
         } else {
             # It's a PATH (not a file) !
             # so autodetect log files
-            logFilenames <- list.files(result, ".-log[.]xml")
-            if (length(logFilenames) == 1) {
-                return(readXmlLogFile(logFilenames))
-            } else {
-            	# It's many log files so return the list of them
-                return(logFilenames)
+            
+            ##first autodetect for packages
+            if (length(files <- list.files(result, "-packageLog.xml")) > 0) {
+                if (length(files) == 1) {
+                    return(readLog(files))
+                } ## else it's many packageLog files..
+            } else if (length(files <- list.files(result, "-funLog.xml")) >
+                                                                         0) {
+                if (length(files) == 1) {
+                    return(readLog(files))
+                } ## else it's many funlog files..
+            } else if (length(files <- list.files(result, "-log.xml")) > 0) {
+                if (length(logFilenames) == 1) {
+                    return(readPlotExprLog(logFilenames))
+                } ##  Else it's many plotExprLog files so return the 
+                  #list of them
+                  #return(logFilenames)
             }
-        }
-        ## else it's an image?
-        
-    } else if (class(result) == "qcPlotResult") {
+        }        
+    } else if (inherits(result, c("qcPlotExprResult", "qcPlotFunResult",
+                                                    "qcPlotPackageResult"))) {
         return(result);
     } else {
-        stop(sQuote(result), "is not a qcPlotResult", call. = FALSE)
+        stop(sQuote(result), "is not a qc result", call. = FALSE)
     }
 
+}
+
+# --------------------------------------------------------------------
+#
+# compareExpr()
+#
+# --------------------------------------------------------------------
+"compareExpr" <- function(test, control, erase) {
+    filePairs <- getPairs(test, control)
+    # names(filepairs) are the filetypes to compare
+    results <- lapply(names(filePairs[["test"]]), compareType, 
+                 filePairs[["control"]], control[["info"]][["directory"]], 
+                 filePairs[["test"]], test[["info"]][["directory"]], erase)    
+    results[["unpaired"]] <- filePairs[["unpaired"]]
+    results    
+    # Compare one plotExpr at a time (using natural order of qcresult
+    # OR order specified explicitly by log files OR the natural
+    # order of the log files from the autodetect).
 }
 
 # --------------------------------------------------------------------
@@ -101,32 +132,42 @@
     testFiletypes <- test[["info"]][["filetype"]]
     controlFiletypes <- test[["info"]][["filetype"]]
     filetypes <- unique(c(testFiletypes, controlFiletypes))
-    testPairs <- list()
-    controlPairs <- list()
-    unpaired <- list()
+    testPairs <- vector("list", 0)
+    controlPairs <- vector("list", 0)
+    unpaired <- c()
     for (filetype in filetypes) {
         testPairs[filetype] <- list(grep(filetype, test[["filenames"]],
                                          value = TRUE))
         controlPairs[filetype] <- list(grep(filetype, control[["filenames"]],
                                             value = TRUE))
-        testPairsLength <- length(testPairs[filetype])
-        controlPairsLength <- length(controlPairs[filetype])
+        testPairsLength <- length(testPairs[[filetype]])
+        controlPairsLength <- length(controlPairs[[filetype]])
         if (testPairsLength != controlPairsLength) {
             warning("length of files to compare are different;",
                     " unpaired files ignored")
             # If the amount of files for a given filetype have different
             # length, put the leftovers in 'unpaired' and cut the group
             # with more files down to size
-            ## NB: when this is the case, it is likely that one extra plot in
-            ## the middle of the other plots would cause the rest to fail.
+            # NB: when this is the case, it is likely that one extra plot in
+            # the middle of the other plots would cause the rest to fail.
             if (testPairsLength > controlPairsLength) {
-                unpaired <- c(unpaired, testPairs[(controlPairsLength +
-                              1):testPairsLength])
-                testPairs[filetype] <- testPairs[1:controlPairsLength]
+                unpaired <- c(unpaired, testPairs[[filetype]][(
+                              controlPairsLength + 1):testPairsLength])
+                if (controlPairsLength == 0) {
+                    testPairs[filetype] <- NULL
+                } else {
+                    testPairs[filetype] <- testPairs[[filetype]][
+                                                        1:controlPairsLength]
+                }
             } else {
-                unpaired <- c(unpaired, controlPairs[(testPairsLength +
-                              1):controlPairsLength])
-                controlPairs[filetype] <- controlPairs[1:testPairsLength]
+                unpaired <- c(unpaired, controlPairs[[filetype]][(
+                              testPairsLength + 1):controlPairsLength])
+                if (testPairsLength == 0) {
+                    controlPairs[filetype] <- NULL
+                } else {
+                    controlPairs[filetype] <- controlPairs[[filetype]][
+                                                           1:testPairsLength]
+                }
             }
         }
     }
@@ -185,7 +226,7 @@
 # --------------------------------------------------------------------
 "comparePS" <- function(file1, file2, useIM, diffPlotPath) {
     diffResult <- GNUdiff(file1, file2)
-    if (!is.null(diffPlot) && diffResult == "different") {
+    if (useIM && diffResult == "different") { ##!is.null(diffPlot)
         makeIMDiffPlot(file1, file2, paste(diffPlotPath,
                  .Platform$file.sep, getDiffPlotName(file1, file2), sep = ""))
     }
@@ -199,7 +240,7 @@
 # --------------------------------------------------------------------
 "comparePNG" <- function(file1, file2, useIM, diffPlotPath) {
     diffResult <- GNUdiff(file1, file2)
-    if (!is.null(diffPlot) && diffResult == "different") {
+    if (useIM && diffResult == "different") {
         makeIMDiffPlot(file1, file2, paste(diffPlotPath,
                  .Platform$file.sep, getDiffPlotName(file1, file2), sep = ""))
     }
@@ -213,7 +254,7 @@
 # --------------------------------------------------------------------
 "compareBMP" <- function(file1, file2, useIM, diffPlotPath) {
     diffResult <- GNUdiff(file1, file2)
-    if (!is.null(diffPlot) && diffResult == "different") {
+    if (useIM && diffResult == "different") {
         makeIMDiffPlot(file1, file2, paste(diffPlotPath,
                  .Platform$file.sep, getDiffPlotName(file1, file2), sep = ""))
     }
@@ -318,12 +359,10 @@
 
 # --------------------------------------------------------------------
 #
-# readXmlLogFile()
+# readPlotExprLog()
 #
 # --------------------------------------------------------------------
-"readXmlLogFile" <- function(filename) {
-    library(XML) ##
-
+"readPlotExprLog" <- function(filename) {
 ## better error handling on bad files?
     readLogHandler = function() {
         qcResult <- list(filenames = character(0), warnings = NULL,
@@ -374,14 +413,67 @@
     h = readLogHandler()    
     xmlTreeParse(filename, handlers = h) #useInternalNodes = TRUE) (call fails) 
     logQCResult <- h$getResult()
-    class(logQCResult) <- "qcPlotResult"
+    class(logQCResult) <- "qcPlotExprResult"
     return(logQCResult)
 }
-                
+
+# -------------------------------------------------------------------- 
+#
+# getLogType()
+#
+# --------------------------------------------------------------------
+"getLogType" <- function(result) {
+    validLogTypes <- c("qcPlotExprResult", "qcPlotFunResult",
+                       "qcPlotPackageResult")
+    if (length(grep("log[.]xml$", result)) > 0) {
+        type <- xmlName(xmlRoot(xmlTreeParse("testdir/test2-log.xml")))
+        if (type %in% validLogTypes) {
+            return(type)
+        }
+    } 
+    stop("file given for test/control must be a qc log file")
+}
+
+# -------------------------------------------------------------------- 
+#
+# readLog()
+#
+# --------------------------------------------------------------------
+"readLog" <- function(logFile) {
+    library(XML) ## might fail
+    logType <- getLogType(logFile)
+    if (logType == "qcPlotExprResult") {
+        return(readPlotExprLog(logFile))
+    } else if (logType == "qcPlotFunResult") {
+        return(readPlotFunLog(logFile))
+    } ## else plotPackageResult
+}
+
+# -------------------------------------------------------------------- 
+#
+# readPlotFunLog()
+#
+# --------------------------------------------------------------------
+"readPlotFunLog" <- function(logFile) {
+    exprResults <- unlist(lapply(xmlChildren(xmlRoot(xmlTreeParse(logFile)
+                                                               )), xmlValue))
+    names(exprResults) <- NULL
+    funResults<-lapply(exprResults, readPlotExprLog)
+    class(funResults) <- "qcPlotFunResult"
+    funResults
+}
+
+   
 ## TEST:
 #files <- plotExpr(c("plot(1:10)","plot(4:40)","x<-3","plot(2:23)"),
 #                  c("pdf","ps"),"test","testdir")
-#files1 <- readXmlLogFile("testdir/test-log.xml")
+#files1 <- readPlotExprLog("testdir/test-log.xml")
 #identical(files, files1)
 
+#filesToCompare <- plotExpr(c("plot(1:10)","plot(3:40)","x<-3","plot(2:23)"),
+# c("pdf", "ps"), "test2", "testdir")
 
+#e<-plotFunction(c("plot", "lm"), c("pdf", "ps"), path="testdir",
+#            clear=T)
+#f<-readPlotFunLog("testdir/plot-lm-funLog.xml")
+#identical(e, f)

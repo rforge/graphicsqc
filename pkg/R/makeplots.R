@@ -50,6 +50,7 @@
     }
     
     # Testing valid path
+    
     wd <- getwd()
     on.exit(setwd(wd))
     if (length(path) == 0) {
@@ -99,17 +100,25 @@
     evalResult <- lapply(filetype, evalPlotCode, expr, filenameFormat)      
     # ---------- Get info of results ----------
     # (We only created files if none already existed)
-    filenames <- list.files(getwd(), filenamePattern)
-    blankImageDetails <- getBlankImageDetails()
-    if (is.null(blankImageDetails)) {
+    filenames <- list.files(getwd(), filenamePattern, full.names = TRUE)
+    blankImageSizes <- getBlankImageSizes()
+    if (is.null(blankImageSizes)) {
         makeBlankImages()
-        blankImageDetails <- getBlankImageDetails()
-        if (is.null(blankImageDetails)) {
+        blankImageSizes <- getBlankImageSizes()
+        if (is.null(blankImageSizes)) {
             warning("blank image details could not be obtained, so blank ",
                     "files will not be removed")
         }
     }
-    removeBlankImages(getwd(), filetype, blankImageDetails)
+    # Remove blanks
+    wereRemoved <- unlist(lapply(filenames, removeIfBlank, blankImageSizes))
+    if (any(!wereRemoved)) {
+           warning("some blank images could not be removed")
+    }
+    filenames <- list.files(getwd(), filenamePattern)
+    if (length(filenames) == 0) {
+        filenames <- NULL
+    }
     
     info <- list("OS" = .Platform$OS.type, "Rver" = 
                  as.character(getRversion()), "date" = date(),
@@ -123,8 +132,8 @@
                     evalResult[[1]][["warnings"]], "errors" =
                     evalResult[[1]][["errors"]], "info" = info)
 
-    writeXmlLogFile(results, prefix)
-    class(results) <- "qcPlotResult"
+    writeXmlPlotExprLog(results, prefix)
+    class(results) <- "qcPlotExprResult"
     # ---------- return results ----------
     invisible(results)
 }
@@ -231,17 +240,13 @@
 
 # --------------------------------------------------------------------
 #
-# writeXmlLogFile()
+# writeXmlPlotExprLog()
 #
 # --------------------------------------------------------------------
-"writeXmlLogFile" <- function(results, prefix) {
-    library(XML) ## might not run
-    
-    ## Should first check if a log file exists.. then can insert new filetype
-    ## order(reverse(filenames)) ??
-    
+"writeXmlPlotExprLog" <- function(results, prefix) {
+    library(XML) ## might not run    
     ## Should be a listToXml function.. this can still be more efficient
-    xmlResults <- xmlOutputDOM(tag="qcPlotResult")
+    xmlResults <- xmlOutputDOM(tag="qcPlotExprResult")
     xmlResults$addTag("info", close = FALSE)
      xmlResults$addTag("OS", results[["info"]][["OS"]])
      xmlResults$addTag("Rver", results[["info"]][["Rver"]])
@@ -263,6 +268,20 @@
      lapply(results[["filenames"]], xmlResults$addTag, tag="filename")
     xmlResults$closeTag() # filenames
     saveXML(xmlResults, paste(prefix, "-log.xml", sep = ""))
+}
+
+# --------------------------------------------------------------------
+#
+# writeXmlPlotFunLog()
+#
+# --------------------------------------------------------------------
+"writeXmlPlotFunLog" <- function(exprPrefix, path, filePrefix) {
+    library(XML) ## might not run    
+
+    xmlResults <- xmlOutputDOM(tag="qcPlotFunResult")
+     lapply(paste(path, exprPrefix, "-log.xml", sep = ""), xmlResults$addTag,
+                                                       tag="qcPlotExprResult")
+    saveXML(xmlResults, paste(path, filePrefix, "-funLog.xml", sep = ""))
 }
 
 # --------------------------------------------------------------------
@@ -289,6 +308,8 @@ plotFile <- function(filename, # character vector
 #
 # plotFunction()
 # ## setRNG?
+# test:  b<-plotFunction(c("plot", "lm"), c("pdf", "ps"), path="testdir",
+#            clear=T)
 # --------------------------------------------------------------------
 plotFunction <- function(fun, # character vector
                              # R expression(s)
@@ -304,8 +325,17 @@ plotFunction <- function(fun, # character vector
        #                 substitute(do.call(example,list(x))
        # (gets unusual behaviour without paste..?)
     funs <- paste("example(", fun, ", echo = FALSE, setRNG = TRUE)", sep = "")
-    mapply(plotExpr, expr = funs, prefix = prefix,
+    funMapplyResult <- mapply(plotExpr, expr = funs, prefix = prefix,
           MoreArgs = list(filetype = filetype, path = path, clear = clear))
+    funResults <- vector("list", dim(funMapplyResult)[2])
+    for (i in 1:length(funResults)) {
+        funResults[[i]] <- funMapplyResult[,i]
+        class(funResults[[i]]) <- c("qcPlotExprResult")
+    }
+    writeXmlPlotFunLog(prefix, paste(getAbsolutePath(path),
+                    .Platform$file.sep, sep = ""), paste(fun, collapse = "-"))
+    class(funResults) <- c("qcPlotFunResult")
+    invisible(funResults)
 }
 
 # --------------------------------------------------------------------
@@ -340,33 +370,42 @@ makeBlankImages <- function() {
 
 # --------------------------------------------------------------------
 #
-# getBlankImageDetails()
+# getBlankImageSizes()
 #
 # --------------------------------------------------------------------
-getBlankImageDetails <- function() {
-    ## *nix only?
-    tempDir <- tempdir()
-    tempFiles <- system(paste("ls -l", tempDir), intern = TRUE)
-    pdfLine <- grep("blankPDF.pdf", tempFiles)
-    psLine <- grep("blankPS.ps", tempFiles)
-    if (length(c(pdfLine, psLine)) == 0) {
-        return(NULL)
-    }
-    splitPdfLine <- unlist(strsplit(tempFiles[pdfLine], " "))
-    splitPsLine <- unlist(strsplit(tempFiles[psLine], " "))
-    pdfSize <- splitPdfLine[length(splitPdfLine)-3]
-    psSize <- splitPsLine[length(splitPsLine)-3]
-    sizes <- c(pdfSize, psSize)
+getBlankImageSizes <- function() {
+    sizes <- file.info(paste(tempdir(), .Platform$file.sep,
+              c("blankPDF.pdf", "blankPS.ps"), sep=""))[,1]
     names(sizes) <- c("pdf", "ps")
     sizes
 }
 
 # --------------------------------------------------------------------
 #
-# removeBlankImages()
+# removeIfBlank()
 #
 # --------------------------------------------------------------------
-removeBlankImages <- function(path, filetype, blankImageDetails) {
-    (getwd(), filetype, blankImageDetails)
+removeIfBlank <- function(filename, blankImageSizes) {
+    filesize <- file.info(filename)[,1]
+    if (filesize == 0 || length(grep(".*[.]pdf$", filename)) > 0 &&
+        filesize == blankImageSizes["pdf"] ||
+        length(grep(".*[.]ps$", filename)) > 0 && filesize ==
+                                               blankImageSizes["ps"]) {
+        if(!file.remove(filename)) {
+            return(FALSE)
+        }
+    }
+    return(TRUE)
 }
 
+# --------------------------------------------------------------------
+#
+# getAbsolutePath()
+#
+# --------------------------------------------------------------------
+getAbsolutePath <- function(path) {
+    wd <- getwd()
+    on.exit(setwd(wd))
+    setwd(path)
+    getwd()
+}
