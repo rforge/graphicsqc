@@ -425,8 +425,8 @@
 "getLogType" <- function(result) {
     validLogTypes <- c("qcPlotExprResult", "qcPlotFunResult",
                        "qcPlotPackageResult")
-    if (length(grep("log[.]xml$", result)) > 0) {
-        type <- xmlName(xmlRoot(xmlTreeParse("testdir/test2-log.xml")))
+    if (length(grep("[Ll]og[.]xml$", result)) > 0) {
+        type <- xmlName(xmlRoot(xmlTreeParse(result)))
         if (type %in% validLogTypes) {
             return(type)
         }

@@ -102,10 +102,10 @@
     # (We only created files if none already existed)
     filenames <- list.files(getwd(), filenamePattern, full.names = TRUE)
     blankImageSizes <- getBlankImageSizes()
-    if (is.null(blankImageSizes)) {
+    if (any(is.na(blankImageSizes))) {
         makeBlankImages()
         blankImageSizes <- getBlankImageSizes()
-        if (is.null(blankImageSizes)) {
+        if (any(is.na(blankImageSizes))) {
             warning("blank image details could not be obtained, so blank ",
                     "files will not be removed")
         }

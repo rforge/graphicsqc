@@ -81,3 +81,21 @@ someday, the report code has to handle qcCompare/compareLog OR
   calls a compareExpr() or compareFun(), etc.  compareFun(), etc
   call compareExpr() multiple times, wrap up the results (in a
   "compareFun" object?) and return.
+
+# 21/02/08
+
+- use file.path()
+
+- check path (for NULL) in plotFunction()
+
+- add some calls to notYetImplemented()
+
+- compare() (already) has to cope with possibly a list of qcPlotExprResults
+  because that might result from, e.g., test="path".
+
+  It should also allow list of qcPlot*Results via, e.g., 
+  test=c("barplot-log.xml", "grid-pkg-log.xml"), or even,
+  test=list(testResult1, testResult2)
+
+- readLog() needs the path to be passed in too.
+
