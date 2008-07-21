@@ -99,3 +99,20 @@ someday, the report code has to handle qcCompare/compareLog OR
 
 - readLog() needs the path to be passed in too.
 
+# 21/07/08
+
+- start a test battery to check what's working
+  + plotExpr(), plotFun(), ...
+  + compare(plotExpr(), ...) 
+    - from "result" and from XML
+  + see Writing R Extensions
+  + create a pkg/tests/ dir
+
+- complete plotFile() 
+  + needs to write XML 
+
+- expand compare() to cope with wider variety of results.
+
+- readLog() needs the path to be passed in too.
+
+
