@@ -18,8 +18,6 @@
 #
 #  _______-------======= TODO: FIND ##'s =======-------_______
 #
-#files<-plotExpr(c("plot(1:10)","plot(4:40)","x<-3","plot(2:23)"),
-#                c("pdf","ps"),"test","testdir")
 # --------------------------------------------------------------------
 "plotExpr" <- function(expr, # character vector
                              # R expression(s)
@@ -47,30 +45,18 @@
         prefix <- as.character(prefix)
     } else {
         stop(sQuote("prefix"), " must be a character vector of length 1")
-    }
-    
-    # Testing valid path
-    
+    }    
     wd <- getwd()
     on.exit(setwd(wd))
-    if (length(path) == 0) {
-        warning("no path given: the path has been set to your current working",
-                " directory")
-        path <- wd
-    } else if (length(path) == 1) {
-        path <- setDir(path)
-    } else {
-        warning("object ", sQuote("path"), " has more than one ",
-                "element: only the first used in ", sQuote("path"))
-        path <- path[1]
-    }
+    # Get valid path
+    path <- getValidPath(path)
     
     # Check we are not going to overwrite any files
     filenamePattern <- paste("^(", prefix, "-", "[0-9]+[.](",
                    paste(filetype, collapse = "|"),
                    ")|", prefix, "-log[.]xml)$", sep = "")
                    # ie "^(prefix-[0-9]+[.](pdf|ps)|prefix-log[.]xml)$"
-                   # Will match (prefix = "prefix"; filetype = c("pdf", "ps"):
+                   # Will match (prefix = "prefix"; filetype = c("pdf", "ps")):
                    # prefix-123.pdf, prefix-log.xml, prefix-1.ps
                    # Will NOT match:
                    # prefix-log.pdf, prefix-123.xml, prefix-.ps
@@ -103,7 +89,7 @@
     filenames <- list.files(getwd(), filenamePattern, full.names = TRUE)
     blankImageSizes <- getBlankImageSizes()
     if (any(is.na(blankImageSizes))) {
-        makeBlankImages()
+        generateBlankImages()
         blankImageSizes <- getBlankImageSizes()
         if (any(is.na(blankImageSizes))) {
             warning("blank image details could not be obtained, so blank ",
@@ -126,8 +112,8 @@
                 ## at some point deparse(width.cutoff) might need to be raised
                  "filetype" = filetype, "directory" = getwd())
                  #using getwd() here forces expansion
-                 #of directory (ie, expands "./")
-    ## Write all errors (ie for every filetype), or just one set?
+                 #of directory (ie, expands "./" or "~/")
+    ## Write all errors (i.e. for every filetype), or just one set?
     results <- list("filenames" = filenames, "warnings" =
                     evalResult[[1]][["warnings"]], "errors" =
                     evalResult[[1]][["errors"]], "info" = info)
@@ -140,12 +126,35 @@
 
 # --------------------------------------------------------------------
 #
+# getValidPath()
+#
+# --------------------------------------------------------------------
+getValidPath <- function(path) {
+    if (length(path) == 0) {
+        warning("no path given: the path has been set to your current working",
+                " directory", call. = FALSE)
+        path <- getwd()
+    } else if (length(path) == 1) {
+        isDir <- file.info(path)$isdir
+        isCreated <- TRUE
+        if (is.na(isDir)) {
+            isCreated <- dir.create(path, showWarnings = FALSE)
+        } else if (!isDir || !isCreated) {
+            stop("could not create directory ", dQuote(path), call. = FALSE)
+        }
+    } else {
+        warning("object ", sQuote("path"), " has more than one element: only",
+                " the first used in ", sQuote("path"), call. = FALSE)
+        path <- getValidPath(path[1])
+    }
+    path
+}
+
+# --------------------------------------------------------------------
+#
 # evalPlotCode()
 #
 # --------------------------------------------------------------------
-## Test: expr<-c("x<-3", "plot(x:8)", "warning(\"firstWarning\")",
-#          "warning(\"secondWarning\")", "stop(\"end error\")",
-#          "warning(\"NOTCALLED\")")
 "evalPlotCode" <- function(filetype, expr, filenameFormat) { 
     if (filetype == "ps") {
         fileExtension <- ".ps"
@@ -222,24 +231,6 @@
 
 # --------------------------------------------------------------------
 #
-# setDir()
-#
-# --------------------------------------------------------------------
-"setDir" <- function(path, showWarnings = FALSE) {
-    # Does dir exist? if yes, use it. else, make it. if fail, stop.
-    isDir <- file.info(path)$isdir
-    if (!isDir || is.na(isDir)) {
-        isCreated <- dir.create(path, showWarnings)
-        if (!isCreated) {
-            stop("failed to create the output directory ", 
-                    dQuote(path), " plotExpr failed" , call. = FALSE)
-        }
-    }
-    return(path)
-}
-
-# --------------------------------------------------------------------
-#
 # writeXmlPlotExprLog()
 #
 # --------------------------------------------------------------------
@@ -302,14 +293,13 @@ plotFile <- function(filename, # character vector
     expr <- lapply(filename, readLines)
     mapply(plotExpr, expr = expr, prefix = prefix,
           MoreArgs = list(filetype = filetype, path = path, clear = clear))
+    ##Still need to write XML?
 }
 
 # --------------------------------------------------------------------
 #
 # plotFunction()
 # ## setRNG?
-# test:  b<-plotFunction(c("plot", "lm"), c("pdf", "ps"), path="testdir",
-#            clear=T)
 # --------------------------------------------------------------------
 plotFunction <- function(fun, # character vector
                              # R expression(s)
@@ -324,6 +314,7 @@ plotFunction <- function(fun, # character vector
     # funs<-lapply(fun, function(x) { 
        #                 substitute(do.call(example,list(x))
        # (gets unusual behaviour without paste..?)
+    path <- getValidPath(path)
     funs <- paste("example(", fun, ", echo = FALSE, setRNG = TRUE)", sep = "")
     funMapplyResult <- mapply(plotExpr, expr = funs, prefix = prefix,
           MoreArgs = list(filetype = filetype, path = path, clear = clear))
@@ -348,14 +339,15 @@ plotPackage <- function(package) {
     if(!do.call(require, list(package))) {
         warning("failed to load package ", dQuote(package))
     } # now package is loaded
+    notYetImplemented()
 }
 
 # --------------------------------------------------------------------
 #
-# makeBlankImages()
+# generateBlankImages()
 #
 # --------------------------------------------------------------------
-makeBlankImages <- function() {
+generateBlankImages <- function() {
     tempDir <- tempdir()
     # Only pdf and ps blank images are made as the filesize for bmp and png
     # blanks are 0
@@ -408,4 +400,13 @@ getAbsolutePath <- function(path) {
     on.exit(setwd(wd))
     setwd(path)
     getwd()
+}
+
+# --------------------------------------------------------------------
+#
+# notYetImplemented()
+#
+# --------------------------------------------------------------------
+notYetImplemented <- function() {
+    stop("sorry, that function is not yet implemented")
 }

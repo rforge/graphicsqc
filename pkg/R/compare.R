@@ -28,7 +28,7 @@
                       ##CURRENTLY PATH IS JUST getwd()
     if (is.character(test) && is.character(control) && test == control) {
         ## if they're in the same dir it's just asking for trouble
-        #when trying to get QCResult..
+        # when trying to get QCResult..
         stop(sQuote("test"), " and ", sQuote("control"), " paths cannot be ",
              "the same")
     }
@@ -43,6 +43,7 @@
     if (inherits(test, "list") || inherits(control, "list")) {
         if (inherits(test, "list") && inherits(control, "list")) {
             RESULT <- mapply(compare, test, list, erase) ## return?
+            notYetImplemented()
         } else {
             stop("can't have a list of em vs. one") ##
         }
@@ -57,6 +58,7 @@
         results <- compareExpr(test, control, erase)
     } else {
         ## test and control are not the same classes!
+        notYetImplemented()
     }
     results
 }
@@ -77,18 +79,20 @@
         } else {
             # It's a PATH (not a file) !
             # so autodetect log files
-            
+
             ##first autodetect for packages
-            if (length(files <- list.files(result, "-packageLog.xml")) > 0) {
+            if (length(files <- file.path(result,
+                                list.files(result, "-packageLog.xml"))) > 0) {
                 if (length(files) == 1) {
                     return(readLog(files))
                 } ## else it's many packageLog files..
-            } else if (length(files <- list.files(result, "-funLog.xml")) >
-                                                                         0) {
+            } else if (length(files <- file.path(result, 
+                                    list.files(result, "-funLog.xml"))) > 0) {
                 if (length(files) == 1) {
                     return(readLog(files))
-                } ## else it's many funlog files..
-            } else if (length(files <- list.files(result, "-log.xml")) > 0) {
+                } ## else it's many funLog files..
+            } else if (length(files <- file.path(result,
+                                       list.files(result, "-log.xml"))) > 0) {
                 if (length(logFilenames) == 1) {
                     return(readPlotExprLog(logFilenames))
                 } ##  Else it's many plotExprLog files so return the 
@@ -100,7 +104,7 @@
                                                     "qcPlotPackageResult"))) {
         return(result);
     } else {
-        stop(sQuote(result), "is not a qc result", call. = FALSE)
+        stop(sQuote(result), "is not a graphicsQC result", call. = FALSE)
     }
 
 }
@@ -144,7 +148,7 @@
         controlPairsLength <- length(controlPairs[[filetype]])
         if (testPairsLength != controlPairsLength) {
             warning("length of files to compare are different;",
-                    " unpaired files ignored")
+                    " unpaired files ignored", call. = FALSE)
             # If the amount of files for a given filetype have different
             # length, put the leftovers in 'unpaired' and cut the group
             # with more files down to size
@@ -154,18 +158,18 @@
                 unpaired <- c(unpaired, testPairs[[filetype]][(
                               controlPairsLength + 1):testPairsLength])
                 if (controlPairsLength == 0) {
-                    testPairs[filetype] <- NULL
+                    testPairs[[filetype]] <- NULL
                 } else {
-                    testPairs[filetype] <- testPairs[[filetype]][
+                    testPairs[[filetype]] <- testPairs[[filetype]][
                                                         1:controlPairsLength]
                 }
             } else {
                 unpaired <- c(unpaired, controlPairs[[filetype]][(
                               testPairsLength + 1):controlPairsLength])
                 if (testPairsLength == 0) {
-                    controlPairs[filetype] <- NULL
+                    controlPairs[[filetype]] <- NULL
                 } else {
-                    controlPairs[filetype] <- controlPairs[[filetype]][
+                    controlPairs[[filetype]] <- controlPairs[[filetype]][
                                                            1:testPairsLength]
                 }
             }
@@ -458,22 +462,8 @@
     exprResults <- unlist(lapply(xmlChildren(xmlRoot(xmlTreeParse(logFile)
                                                                )), xmlValue))
     names(exprResults) <- NULL
-    funResults<-lapply(exprResults, readPlotExprLog)
+    funResults <- lapply(exprResults, readPlotExprLog)
     class(funResults) <- "qcPlotFunResult"
     funResults
 }
 
-   
-## TEST:
-#files <- plotExpr(c("plot(1:10)","plot(4:40)","x<-3","plot(2:23)"),
-#                  c("pdf","ps"),"test","testdir")
-#files1 <- readPlotExprLog("testdir/test-log.xml")
-#identical(files, files1)
-
-#filesToCompare <- plotExpr(c("plot(1:10)","plot(3:40)","x<-3","plot(2:23)"),
-# c("pdf", "ps"), "test2", "testdir")
-
-#e<-plotFunction(c("plot", "lm"), c("pdf", "ps"), path="testdir",
-#            clear=T)
-#f<-readPlotFunLog("testdir/plot-lm-funLog.xml")
-#identical(e, f)
