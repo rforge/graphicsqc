@@ -1,4 +1,5 @@
 # ------------------- Testing makeplots.R -------------------------
+library(graphicsqc)
 # General Tests:
 # plotExpr takes arguments; expr, filetype, prefix, path, clear
 test1 <- plotExpr(c("plot(1:10)", "plot(4:40)", "x<-3", "plot(2:23)"),
@@ -8,8 +9,8 @@ test1 <- plotExpr(c("plot(1:10)", "plot(4:40)", "x<-3", "plot(2:23)"),
 list.files("testdir1")
 
 # Repeating the same again should give an error as clear is False
-plotExpr(c("plot(1:10)", "plot(4:40)", "x<-3", "plot(2:23)"),
-                c("pdf","ps"), "test", "testdir1", FALSE)
+try(plotExpr(c("plot(1:10)", "plot(4:40)", "x<-3", "plot(2:23)"),
+                c("pdf","ps"), "test", "testdir1", FALSE))
 # Error: files of intended filename already exist in ‘path’
 
 # plotFunction takes same arguments but prefix defaults to fun

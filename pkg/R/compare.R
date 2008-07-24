@@ -81,28 +81,28 @@
             # so autodetect log files
 
             ##first autodetect for packages
-            if (length(files <- file.path(result,
-                                list.files(result, "-packageLog.xml"))) > 0) {
+            if (length(files <- list.files(result, "-packageLog.xml",
+                                           full.names = TRUE)) > 0) {
                 if (length(files) == 1) {
                     return(readLog(files))
                 } ## else it's many packageLog files..
-            } else if (length(files <- file.path(result, 
-                                    list.files(result, "-funLog.xml"))) > 0) {
+            } else if (length(files <- list.files(result, "-funLog.xml",
+                                                  full.names = TRUE)) > 0) {
                 if (length(files) == 1) {
                     return(readLog(files))
                 } ## else it's many funLog files..
-            } else if (length(files <- file.path(result,
-                                       list.files(result, "-log.xml"))) > 0) {
-                if (length(logFilenames) == 1) {
-                    return(readPlotExprLog(logFilenames))
+            } else if (length(files <- list.files(result, "-log.xml",
+                                                  full.names = TRUE)) > 0) {
+                if (length(files) == 1) {
+                    return(readPlotExprLog(files))
                 } ##  Else it's many plotExprLog files so return the 
                   #list of them
-                  #return(logFilenames)
+                  #return(files)
             }
         }        
     } else if (inherits(result, c("qcPlotExprResult", "qcPlotFunResult",
                                                     "qcPlotPackageResult"))) {
-        return(result);
+        return(result)
     } else {
         stop(sQuote(result), "is not a graphicsQC result", call. = FALSE)
     }
