@@ -112,7 +112,25 @@ someday, the report code has to handle qcCompare/compareLog OR
   + needs to write XML 
 
 - expand compare() to cope with wider variety of results.
+  + write XML log files
 
 - readLog() needs the path to be passed in too.
 
 
+# 24/07/08
+
+- XML log for plotFunction does NOT need FULL path to individual 
+
+- reminder: log files (esp. from plotExpr()) do NOT record the 
+  actual code they ran because that code may be HUGE.
+
+- GNUdiff() should save the output from diff (i.e., the actual
+  (text) differences between files (for text-based formats).
+
+- use mapply(..., SIMPLIFY=FALSE) in compare so ALWAYS get a list result.
+
+- check Writing R Extensions AND R-forge docs for how to 
+  R CMD check an R-forge package.
+  + try adding DESCRIPTION file
+
+  

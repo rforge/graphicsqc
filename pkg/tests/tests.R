@@ -8,6 +8,8 @@ test1 <- plotExpr(c("plot(1:10)", "plot(4:40)", "x<-3", "plot(2:23)"),
 # pdf and ps files and test-log.xml, ie
 list.files("testdir1")
 
+# plotExpr() allows expressions as well as text
+
 # Repeating the same again should give an error as clear is False
 try(plotExpr(c("plot(1:10)", "plot(4:40)", "x<-3", "plot(2:23)"),
                 c("pdf","ps"), "test", "testdir1", FALSE))
@@ -20,9 +22,9 @@ test2 <- plotFunction(c("plot", "lm"), c("pdf", "ps"), path="testdir2",
 # lm-log.xml, and plot-lm-funLog.xml
 list.files("testdir2")
 
-## --Insert tests for plotPackage when done
-
 ## --Insert tests for plotFile when done
+
+## --Insert tests for plotPackage when done
 
 # Testing evalPlotCode with badExpression
 badExpression <- c("x<-3", "plot(x:8)", "warning(\"firstWarning\")",
@@ -45,7 +47,7 @@ identical(test2, test2Check) # Should be True
 # --- Testing compare for plotExpr ---
 # Same as test1 but missing the last plot
 test1B <- plotExpr(c("plot(1:10)", "plot(4:40)"), c("pdf", "ps"), 
-                         "test2", "testdir1B", FALSE)
+                   "test2", "testdir1B", FALSE)
 compare(test1, test1B, "none") # No XML output yet. Should all be identical
                                # but with unpaired files
 
