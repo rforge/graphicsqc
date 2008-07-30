@@ -134,3 +134,33 @@ someday, the report code has to handle qcCompare/compareLog OR
   + try adding DESCRIPTION file
 
   
+# 31/07/08
+
+- use recent grid.ls() change (to fix the case where there are 
+  NULLs in the display list) as test case for graphicsqc ?
+
+- read "Documenting programs" in "Writing R Extensions"
+  and (probably) start a NEWS file and a ChangeLog file
+  to track/document changes.
+
+- the files "Rfile.txt" and "Rfile2.txt" should go in 
+  tests/ sub-dir OR inst/files/ or somesuch.
+  If the latter, use system.fie() to find them.
+  Then rename them with .R suffix.
+
+- evalPlotCode() should check for 'expr' being a language
+  object and, if it is, just do eval(expr)
+
+- plotFunction() could check for 'fun' being NOT character
+  and, if so, fun <- deparse(substitute(fun))
+  (just to handle the case where the USER types 'plotFunction(plot)'
+   instead of plotFunction("plot"))
+
+- plotFun() and plotFile() should probably ALWAYS return a
+  'plotFunResult' or 'plotFileResult', even when that may
+  only contain a single 'plotExprResult' BECAUSE that should
+  make the code that has to work with results (e.g., compare()
+  and any report generating code) MUCH simpler.
+
+
+

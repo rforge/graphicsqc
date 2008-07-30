@@ -10,7 +10,7 @@ list.files("testdir1")
 
 # plotExpr() allows expressions as well as text
   # ^^ i.e. like this ?
-expressions <- expression("plot(1:10)", "plot(4:40)", "x<-3", "plot(2:23)")
+expressions <- expression({ plot(1:10); plot(4:40); x<-3; plot(2:23) })
 test1b <- plotExpr(expressions, "png", "exprTest", "exprDir", FALSE)
 
 # Repeating the same again should give an error as clear is False
@@ -28,7 +28,7 @@ list.files("testdir2")
 ## --Insert tests for plotFile when done
 plotFiletest <- plotFile(c("Rfile.txt", "Rfile2.txt"), "png", path =
                          c("filedir1", "filedir2"))
-     # Note: If only 1 path is given, it will re-use it. Is this desired?
+     # Note: If only 1 path is given, it will re-use it. Is this desired?  YES!
      # Also note the list of length 2 as the result
 list.files("filedir1")
 list.files("filedir2")
@@ -89,5 +89,8 @@ list.files("testFun")
 # plotExpr("plot(myLm)", "png", "testlm", "testlm", FALSE)
 # Will require the user to keep doing "Hit <Return> to see next plot:"
 # if not in batch mode
+# FULL fix requires change to source cope of plot.lm
+# WORKAROUND is just use BATCH mode !
+
 
 
