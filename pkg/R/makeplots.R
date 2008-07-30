@@ -290,10 +290,13 @@ plotFile <- function(filename, # character vector
                                    # directory to create files in
                        clear = FALSE
                        ) {
+    ## Test if files exist first
     expr <- lapply(filename, readLines)
-    mapply(plotExpr, expr = expr, prefix = prefix,
-          MoreArgs = list(filetype = filetype, path = path, clear = clear))
-    ##Still need to write XML?
+    result <- mapply(plotExpr, expr = expr, prefix = prefix, path = path,
+          MoreArgs = list(filetype = filetype, clear = clear),
+          SIMPLIFY = FALSE)
+    # Note: XML file gets written in the call to plotExpr
+    result
 }
 
 # --------------------------------------------------------------------

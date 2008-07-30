@@ -12,6 +12,8 @@
 # once the comparison has been made, and then to retain files if they
 # are different.
 #
+# Note: Plots of diffs and .diff files are placed in the test directory
+#
 # --------------------------------------------------------------------
 "compare" <- function(test,
                       control,
@@ -24,8 +26,8 @@
                                     # AFTER EACH expr
                                     ## diff plots?
                       ) {
-                      ##plots of diffs?should the diff plot be in the test dir?
-                      ##CURRENTLY PATH IS JUST getwd()
+    # Start warning handler
+    assign("graphicsQCWarnings", character(0), envir = globalenv())
     if (is.character(test) && is.character(control) && test == control) {
         ## if they're in the same dir it's just asking for trouble
         # when trying to get QCResult..
@@ -52,7 +54,7 @@
     if (inherits(test, "qcPlotFunResult") && inherits(control,
                                                          "qcPlotFunResult")) {
         results <- mapply(compareExpr, test, control, MoreArgs = 
-                                                          list(erase=erase))
+                                          list(erase=erase), SIMPLIFY = FALSE)
     } else if (inherits(test, "qcPlotExprResult") && inherits(control,
                                                         "qcPlotExprResult")) {
         results <- compareExpr(test, control, erase)
@@ -60,6 +62,8 @@
         ## test and control are not the same classes!
         notYetImplemented()
     }
+    # Clear warning handler
+    rm(graphicsQCWarnings, envir = globalenv())
     results
 }
 
@@ -147,8 +151,8 @@
         testPairsLength <- length(testPairs[[filetype]])
         controlPairsLength <- length(controlPairs[[filetype]])
         if (testPairsLength != controlPairsLength) {
-            warning("length of files to compare are different;",
-                    " unpaired files ignored", call. = FALSE)
+            warningHandler("length of files to compare are different;",
+                    " unpaired files ignored")
             # If the amount of files for a given filetype have different
             # length, put the leftovers in 'unpaired' and cut the group
             # with more files down to size
@@ -193,8 +197,9 @@
     # pastes 'path' and 'filename' for control and test groups respectively;
     # passes IM capability if it's supported and a diff plot is required
     mapply(paste("compare", toupper(filetype), sep = ""), 
-           paste(controlPath, "/", control[[filetype]], sep = ""),
-           paste(testPath, "/", test[[filetype]], sep = ""), hasIM() &&
+           paste(controlPath, .Platform$file.sep,
+           control[[filetype]], sep = ""), paste(testPath, .Platform$file.sep,
+           test[[filetype]], sep = ""), hasIM() &&
            filetype %in% getSupportedIMFormats() && 
            any(erase == c("none", "identical")), testPath) ##rather than test
            # path, just setwd in case original path was "testdir" rather than
@@ -212,15 +217,23 @@
 "comparePDF" <- function(file1, file2, useIM, diffPlotPath) {
     ## Just compare and ignore the first 6 lines (creationdate/moddate)?
     ## or take previous approach and re-write file without header and xref
-    diffResult <- GNUdiff(file1, file2, "", TRUE)
-    if (length(diffResult) > 6) {
+    diffName <- getDiffName(file1, file2)
+    diffResult <- GNUdiff(file1, file2, paste(diffPlotPath,
+            .Platform$file.sep, diffName, ".diff", sep = ""))
+    ##diffResult (the actual file) might not even exist.. didn't stop()
+    if (diffResult != "identical" && length(readLines(diffResult, n = 7)) 
+                                                                        > 6) {
+        # There is a true difference, not just the dates/times
         if (useIM) {
             makeIMDiffPlot(file1, file2, paste(diffPlotPath, 
-                 .Platform$file.sep, getDiffPlotName(file1, file2), sep = ""))
+                              .Platform$file.sep, diffName, ".png", sep = ""))
         }
-        return("different")
+        return(diffResult)
+    } else {
+        # Files are the same or just the dates/times were different
+        file.remove(diffResult)
+        return("identical")
     }
-    return("identical")
 }
 
 # --------------------------------------------------------------------
@@ -229,10 +242,12 @@
 #
 # --------------------------------------------------------------------
 "comparePS" <- function(file1, file2, useIM, diffPlotPath) {
-    diffResult <- GNUdiff(file1, file2)
-    if (useIM && diffResult == "different") { ##!is.null(diffPlot)
+    diffName <- getDiffName(file1, file2)
+    diffResult <- GNUdiff(file1, file2, paste(diffPlotPath,
+            .Platform$file.sep, diffName, ".diff", sep = ""))
+    if (useIM && diffResult != "identical") {
         makeIMDiffPlot(file1, file2, paste(diffPlotPath,
-                 .Platform$file.sep, getDiffPlotName(file1, file2), sep = ""))
+                              .Platform$file.sep, diffName, ".png", sep = ""))
     }
     return(diffResult)
 }
@@ -243,10 +258,12 @@
 #
 # --------------------------------------------------------------------
 "comparePNG" <- function(file1, file2, useIM, diffPlotPath) {
-    diffResult <- GNUdiff(file1, file2)
-    if (useIM && diffResult == "different") {
+    diffName <- getDiffName(file1, file2)
+    diffResult <- GNUdiff(file1, file2, paste(diffPlotPath,
+            .Platform$file.sep, diffName, ".diff", sep = ""))
+    if (useIM && diffResult != "identical") {
         makeIMDiffPlot(file1, file2, paste(diffPlotPath,
-                 .Platform$file.sep, getDiffPlotName(file1, file2), sep = ""))
+                 .Platform$file.sep, diffName, ".png", sep = ""))
     }
     return(diffResult)
 }
@@ -257,26 +274,27 @@
 #
 # --------------------------------------------------------------------
 "compareBMP" <- function(file1, file2, useIM, diffPlotPath) {
-    diffResult <- GNUdiff(file1, file2)
-    if (useIM && diffResult == "different") {
+    diffName <- getDiffName(file1, file2)
+    diffResult <- GNUdiff(file1, file2, paste(diffPlotPath,
+            .Platform$file.sep, diffName, ".diff", sep = ""))
+    if (useIM && diffResult != "identical") {
         makeIMDiffPlot(file1, file2, paste(diffPlotPath,
-                 .Platform$file.sep, getDiffPlotName(file1, file2), sep = ""))
+                 .Platform$file.sep, diffName, ".png", sep = ""))
     }
     return(diffResult)
 }
 
 # --------------------------------------------------------------------
 #
-# getDiffPlotName()
+# getDiffName()
 #
 # --------------------------------------------------------------------
-"getDiffPlotName" <- function(file1, file2) {
+"getDiffName" <- function(file1, file2) {
     set1 <- unlist(strsplit(file1, .Platform$file.sep))
     set1 <- set1[length(set1)]
     set2 <- unlist(strsplit(file2, .Platform$file.sep))
     set2 <- set2[length(set2)]
-    paste(gsub("[.]", "-", set1), "+",  gsub("[.]", "-", set2), ".png",
-          sep = "")
+    paste(gsub("[.]", "-", set1), "+",  gsub("[.]", "-", set2), sep = "")
 }
 
 # --------------------------------------------------------------------
@@ -284,24 +302,27 @@
 # GNUdiff()
 #
 # --------------------------------------------------------------------
-"GNUdiff" <- function(file1, file2, diffArgs = "-q", intern = FALSE) {
+"GNUdiff" <- function(file1, file2, outDiffFile = "") {
+#                               diffArgs = "-q", intern = FALSE) {
     ## *nix only? system() + exit status
-    diffResult <- system(paste("diff", diffArgs, file1, file2), intern)
-    if (intern) {
-        return(diffResult)
-    }
+    ## This requires a bit more work for windows support
+    diffResult <- system(paste("diff", file1, file2, ">", outDiffFile),
+                         ignore.stderr = TRUE)
     if (diffResult == 0) {
+        # Delete empty diff file
+        file.remove(outDiffFile)
         return("identical")
     } else if (diffResult == 256) {
-        return("different")
+        return(outDiffFile)
     } else {
+        # If one of the files doesn't exist, the .diff file will be empty
         if (!file.exists(file1)) {
             warning("file ", file1, " not found; marked as different")
         }
         if (!file.exists(file2)) {
             warning("file ", file2, " not found; marked as different")
         }
-        return("different") ##return("error")?
+        return(outDiffFile) ##return("error")?
     }
     
 }
@@ -321,7 +342,8 @@
 #
 # --------------------------------------------------------------------
 "hasDiff" <- function() {
-    grep("GNU diffutils", system("diff -v", intern = TRUE)[1]) > 0
+    length(grep("GNU diffutils", try(system("diff -v",
+                                            intern = TRUE)[1]))) > 0
 }
 
 # --------------------------------------------------------------------
@@ -330,7 +352,8 @@
 #
 # --------------------------------------------------------------------
 "hasIM" <- function() {
-    grep("ImageMagick", system("compare -version", intern = TRUE)[1]) > 0
+    length(grep("ImageMagick", try(system("compare -version",
+                                          intern = TRUE)[1]))) > 0
 }
 
 # --------------------------------------------------------------------
@@ -374,7 +397,7 @@
         qcInfo <- list()
         list("filename" = function(x) {
              ## anything more efficient than c(value, x) ?
-             ## xmlSApply more costly? ?xmlTreeParse
+             ## xmlSApply more costly? see ?xmlTreeParse
              ## assign() slightly neater.. but less efficient?
              qcResult[["filenames"]] <<- c(qcResult[["filenames"]],
                                            xmlValue(x[[1]]))
@@ -465,5 +488,20 @@
     funResults <- lapply(exprResults, readPlotExprLog)
     class(funResults) <- "qcPlotFunResult"
     funResults
+}
+
+# -------------------------------------------------------------------- 
+#
+# warningHandler()
+#
+# --------------------------------------------------------------------
+"warningHandler" <- function(...) {
+    stringWarning <- paste(..., sep = "")
+    # Only show warnings we haven't seen before
+    if (!stringWarning %in% graphicsQCWarnings) {
+        assign("graphicsQCWarnings", c(graphicsQCWarnings, stringWarning),
+                                                          envir = globalenv())
+        warning(stringWarning, call. = FALSE)
+    }
 }
 

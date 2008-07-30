@@ -13,7 +13,7 @@ and reports the results.
 \tabular{ll}{
 Package: \tab graphicsqc\cr
 Type: \tab Package\cr
-Version: \tab 1.0\cr
+Version: \tab 0.9\cr
 Date: \tab 2008-07-24\cr
 License: \tab GPL-2\cr
 }
@@ -25,10 +25,16 @@ Stephen Gardiner and Paul Murrell
 Maintainer: Paul Murrell <paul@stat.auckland.ac.nz>
 }
 \references{
-Murrell, P. & Hornik, K. 2003 Quality Assurance for Graphics in R
-\url{http://www.ci.tuwien.ac.at/Conferences/DSC-2003/Proceedings/MurrellHornik.pdf}
+Free Software Foundation, Inc. 2008 \emph{Diffutils}. <\url{http://www.gnu.org/software/diffutils/diffutils.html}> 
+
+ImageMagick Studio LLC. 2008 \emph{ImageMagick}. <\url{http://www.imagemagick.org/}>.
+
+Murrell, P. & Hornik, K. 2003 \emph{Quality Assurance for Graphics in \R} <\url{http://www.ci.tuwien.ac.at/Conferences/DSC-2003/Proceedings/MurrellHornik.pdf}>.
 }
-\keyword{package}
+\seealso{
+\code{plotExpr}, \code{plotFun}
+}
 \examples{
 #graphicsQC(...)
 }
+\keyword{utilities}

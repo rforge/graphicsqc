@@ -28,7 +28,7 @@ plotExpr(expr, filetype = NULL, prefix = NULL, path = NULL, clear = FALSE)
 \value{
   A list of class qcPlotExprResult containing the resulting plots.
 }
-\seealso{\code{\link{plotFun}}, \code{\link{plotPackage}}}
+\seealso{\code{\link{plotFun}}, \code{\link{plotExpr}}}
 \examples{
 test1 <- plotExpr(c("plot(1:10)", "plot(4:40)", "x<-3", "plot(2:23)"),
                   c("pdf", "ps"), "test", "testdir1", FALSE)
@@ -38,4 +38,4 @@ list.files("testdir1")
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ device } % This may not be a good keyword
+\keyword{ utilities }
