@@ -172,7 +172,8 @@ getValidPath <- function(path) {
     warns <- NULL
     # Reset last error message to ""
     tryCatch(stop(), error = function(e) {})
-    tryCatch(withCallingHandlers(eval(parse(text = expr)),
+    tryCatch(withCallingHandlers(eval(if (is.language(expr)) expr else 
+                                                         parse(text = expr)),
                     warning = function(w) { warns <<- c(warns, 
                                             paste("Warning in evalPlotCode :",
                                                   conditionMessage(w)));
@@ -267,7 +268,7 @@ getValidPath <- function(path) {
 #
 # --------------------------------------------------------------------
 "writeXmlPlotFunLog" <- function(exprPrefix, path, filePrefix) {
-    library(XML) ## might not run    
+    library(XML) ## might not run
 
     xmlResults <- xmlOutputDOM(tag="qcPlotFunResult")
      lapply(paste(path, exprPrefix, "-log.xml", sep = ""), xmlResults$addTag,
@@ -291,6 +292,10 @@ plotFile <- function(filename, # character vector
                        clear = FALSE
                        ) {
     ## Test if files exist first
+   ### If filename has .Platform$file.sep in it then the prefix HAS to be diff
+    if (length(grep(.Platform$file.sep, prefix)) > 0) {
+        stop(sQuote(prefix), " cannot contain the system file separator")
+    }
     expr <- lapply(filename, readLines)
     result <- mapply(plotExpr, expr = expr, prefix = prefix, path = path,
           MoreArgs = list(filetype = filetype, clear = clear),
@@ -317,19 +322,25 @@ plotFunction <- function(fun, # character vector
     # funs<-lapply(fun, function(x) { 
        #                 substitute(do.call(example,list(x))
        # (gets unusual behaviour without paste..?)
+    ## can also check if it's a function? .. is.function(match.fun(..
     path <- getValidPath(path)
+    if (!is.character(fun)) {
+      fun <- deparse(substitute(fun))
+      prefix <- fun
+    }
     funs <- paste("example(", fun, ", echo = FALSE, setRNG = TRUE)", sep = "")
     funMapplyResult <- mapply(plotExpr, expr = funs, prefix = prefix,
-          MoreArgs = list(filetype = filetype, path = path, clear = clear))
-    funResults <- vector("list", dim(funMapplyResult)[2])
-    for (i in 1:length(funResults)) {
-        funResults[[i]] <- funMapplyResult[,i]
-        class(funResults[[i]]) <- c("qcPlotExprResult")
-    }
+          MoreArgs = list(filetype = filetype, path = path, clear = clear),
+                                                             SIMPLIFY = FALSE)
+#    funResults <- vector("list", dim(funMapplyResult)[2])
+#    for (i in 1:length(funResults)) {
+#        funResults[[i]] <- funMapplyResult[,i]
+#        class(funResults[[i]]) <- c("qcPlotExprResult")
+#    }
     writeXmlPlotFunLog(prefix, paste(getAbsolutePath(path),
                     .Platform$file.sep, sep = ""), paste(fun, collapse = "-"))
-    class(funResults) <- c("qcPlotFunResult")
-    invisible(funResults)
+    class(funMapplyResult) <- c("qcPlotFunResult")
+    invisible(funMapplyResult)
 }
 
 # --------------------------------------------------------------------

@@ -12,6 +12,7 @@ list.files("testdir1")
   # ^^ i.e. like this ?
 expressions <- expression({ plot(1:10); plot(4:40); x<-3; plot(2:23) })
 test1b <- plotExpr(expressions, "png", "exprTest", "exprDir", FALSE)
+list.files("exprDir")
 
 # Repeating the same again should give an error as clear is False
 try(plotExpr(c("plot(1:10)", "plot(4:40)", "x<-3", "plot(2:23)"),
@@ -26,8 +27,8 @@ test2 <- plotFunction(c("plot", "lm"), c("pdf", "ps"), path="testdir2",
 list.files("testdir2")
 
 ## --Insert tests for plotFile when done
-plotFiletest <- plotFile(c("Rfile.txt", "Rfile2.txt"), "png", path =
-                         c("filedir1", "filedir2"))
+plotFiletest <- plotFile(file.path("testFiles", c("Rfile.R", "Rfile2.R")),
+                      "png", prefix="Rfile", path = c("filedir1", "filedir2"))
      # Note: If only 1 path is given, it will re-use it. Is this desired?  YES!
      # Also note the list of length 2 as the result
 list.files("filedir1")
@@ -79,6 +80,12 @@ funComparison <- compare(testFun, testFun2, "none")
 funComparison[[1]]
 # Note: Diff plots are being stored in the test directory, so
 list.files("testFun")
+
+# plotFunction with 2 functions and 1 path
+testFun3 <- plotFunction(c("plot", "barplot"), c("pdf", "png"),
+                                                  path="testFun3", clear=FALSE)
+list.files("testFun3")
+
 
 # Now delete testdir* ? testFun*   And also prefix-1.pdf and prefix-1.ps
 
