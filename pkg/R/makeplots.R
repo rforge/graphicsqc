@@ -283,14 +283,14 @@ getValidPath <- function(path) {
 # --------------------------------------------------------------------
 plotFile <- function(filename, # character vector
                              # R expression(s)
-                       filetype = NULL, # character vector
+                     filetype = NULL, # character vector
                                         # (valid) file formats
-                       prefix = filename, # char length 1
+                     prefix = basename(filename), # char length 1
                                       # file prefix
-                       path = NULL, # char length 1
+                     path = NULL, # char length 1
                                    # directory to create files in
-                       clear = FALSE
-                       ) {
+                     clear = FALSE
+                     ) {
     ## Test if files exist first
    ### If filename has .Platform$file.sep in it then the prefix HAS to be diff
     if (length(grep(.Platform$file.sep, prefix)) > 0) {

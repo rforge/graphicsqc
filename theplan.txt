@@ -145,7 +145,7 @@ someday, the report code has to handle qcCompare/compareLog OR
 
 - the files "Rfile.txt" and "Rfile2.txt" should go in 
   tests/ sub-dir OR inst/files/ or somesuch.
-  If the latter, use system.fie() to find them.
+  If the latter, use system.file() to find them.
   Then rename them with .R suffix.
 
 - evalPlotCode() should check for 'expr' being a language
@@ -163,4 +163,66 @@ someday, the report code has to handle qcCompare/compareLog OR
   and any report generating code) MUCH simpler.
 
 
+# 07/08/08
 
+- MAKE a ChangeLog file
+
+- default prefix for plotFunction():
+  use (as.character() of) only FIRST function name.
+  (put a NOTE about this in the help file!!)
+
+- WORRY about the fact that if we stop() in the middle of
+  one of our functions, then we may leave a complete mess
+  in a directory with no way to clean it up (other than
+  delete EVERYTHING).
+
+  What can we do about this ?
+  
+  A wish-plan:
+
+  - plot*() only fails BEFORE it creates any files (in which   
+    case there is nothing to clean up) or AFTER it has 
+    created everything (in which case it removes all files that
+    it created).
+
+    That would require checking where all stop()s are, and
+    adding code to do the back-out (deletion) for stop()s
+    that are AFTER files have been created (and removing any 
+    stop()s that occur in the middle of creating files!!!).
+
+  - delete any directories that are empty once we have removed
+    all our files.
+
+  - more complicated for functions above plotExpr() because, e.g.,
+    one plotExpr() may work, then the next plotExpr() fails.
+    The second plotExpr() can clean up after itself, BUT the 
+    function calling plotExpr() needs to know about the failure
+    so that it can clean up the first plotExpr()!
+
+    Possible solutions to this are: exception-handling (all higher
+    functions do something like a tryCatch(plotExpr(...));
+    replace all stop()s with warning()s and return a FALSE result
+    if plotExpr() fails !?
+    
+  Stephen's alternative plan:
+
+  - just run the code again with clear=TRUE !
+
+    Nice because it's simpler, but only works if, when we get
+    an error, we want to FORCE our original attempt to work.
+
+    If, when we get an error, we want to BAIL OUT on our original
+    attempt, this does not give us what we want.
+
+- MUST put warning in documentation NOT to send plotExpr() any
+  code that opens a graphics device (especially if it does not
+  also CLOSE that device).
+
+- plotFile() should (ALWAYS) produce qcPlotFileResult and write
+  fileLog file.
+
+- make compare() return different class of result for different 
+  comparisons, e.g., qcCompareExprResult vs. qcCompareFunResult,
+  AND create XML log files.
+
+- add a tests/tests.Rout.save

@@ -15,6 +15,7 @@
 # Note: Plots of diffs and .diff files are placed in the test directory
 #
 # --------------------------------------------------------------------
+
 "compare" <- function(test,
                       control,
                       erase = c("none", "identical", "files", "all")
