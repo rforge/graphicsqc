@@ -226,3 +226,10 @@ someday, the report code has to handle qcCompare/compareLog OR
   AND create XML log files.
 
 - add a tests/tests.Rout.save
+
+# 12/08/08
+
+- use anisotropy change to engine.c as example of change that
+  might only affect some formats (e.g., X11, but not PDF).
+  (revision 44417)
+
