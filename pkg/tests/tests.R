@@ -3,13 +3,12 @@ library(graphicsqc)
 # General Tests:
 # plotExpr takes arguments; expr, filetype, prefix, path, clear
 test1 <- plotExpr(c("plot(1:10)", "plot(4:40)", "x<-3", "plot(2:23)"),
-                  c("pdf", "ps"), "test", "testdir1", FALSE)
+                  c("pdf", "ps", "png"), "test", "testdir1/", FALSE)
 # There should now be a folder "testdir1" in getwd() containing
 # pdf and ps files and test-log.xml, ie
 list.files("testdir1")
 
 # plotExpr() allows expressions as well as text
-  # ^^ i.e. like this ?
 expressions <- expression({ plot(1:10); plot(4:40); x<-3; plot(2:23) })
 test1b <- plotExpr(expressions, "png", "exprTest", "exprDir", FALSE)
 list.files("exprDir")
@@ -26,9 +25,9 @@ test2 <- plotFunction(c("plot", "lm"), c("pdf", "ps"), path="testdir2",
 # lm-log.xml, and plot-lm-funLog.xml
 list.files("testdir2")
 
-## --Insert tests for plotFile when done
+# Test plotFile
 plotFiletest <- plotFile(file.path("testFiles", c("Rfile.R", "Rfile2.R")),
-                      "png", prefix="Rfile", path = c("filedir1", "filedir2"))
+                      "png", path="filedir1")
      # Note: If only 1 path is given, it will re-use it. Is this desired?  YES!
      # Also note the list of length 2 as the result
 list.files("filedir1")
@@ -47,7 +46,7 @@ lapply(c("pdf", "ps"), evalPlotCode, badExpression, "prefix-%d")
 test1Check <- readPlotExprLog(file.path("testdir1", "test-log.xml"))
 identical(test1, test1Check) # Should be True
 
-test2Check <- readPlotFunLog(file.path("testdir2", "plot-lm-funLog.xml"))
+test2Check <- readPlotFunLog(file.path("testdir2", "plot-funLog.xml"))
 identical(test2, test2Check) # Should be True
 
 test2AutoCheck <- getQCResult("testdir2") # Testing auto-detect
@@ -59,6 +58,8 @@ identical(test2, test2AutoCheck)
    #x readPlotFileLog just produces a qcPlotExpr result
 
 # --- Testing compare for plotExpr ---
+compare(test1, test1, "none") # all identical
+
 # Same as test1 but missing the last plot
 test1B <- plotExpr(c("plot(1:10)", "plot(4:40)"), c("pdf", "ps"), 
                    "test2", "testdir1B", FALSE)
@@ -67,14 +68,17 @@ compare(test1, test1B, "none") # No XML output yet. Should all be identical
 
 # Second plot is different, third plot is still unpaired, test1B will be wiped
 # with clear being TRUE
-test1C <- plotExpr(c("plot(1:10)", "plot(4:41)"), c("pdf", "ps"), 
+test1C <- plotExpr(c("plot(1:10)", "plot(4:41)"), c("pdf", "png"), 
                          "test2", "testdir1B", TRUE)
-compare(test1, test1C, "none")
+compare(test1, test1C, "none") # This creates (and overwrites!) a compareLog
+                               # in the test dir, i.e.
+list.files("testdir1") #test+test2-compareExprLog.xml is new
 
 # --- Testing compare for plotFun ---
 # All plots from plot are different to barplot
-testFun <- plotFunction(c("plot"), c("pdf", "ps"), path="testFun", clear=FALSE)
-testFun2 <- plotFunction(c("barplot"), c("pdf", "ps"), path="testFun2",
+testFun <- plotFunction(c("plot", "plot"), c("pdf", "ps"),
+                       prefix=c("plot", "plot2"), path="testFun", clear=FALSE)
+testFun2 <- plotFunction(c("barplot", "plot"), c("pdf", "ps"), path="testFun2",
                                                                    clear=FALSE)
 funComparison <- compare(testFun, testFun2, "none")
 funComparison[[1]]

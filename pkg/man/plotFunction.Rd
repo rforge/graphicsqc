@@ -1,18 +1,18 @@
-\name{plotExpr}
-\alias{plotExpr}
-\alias{plotPackage}
+\name{plotFunction}
+\alias{plotFunction}
+\alias{plotFun}
 %- Also NEED an '\alias' for EACH other topic documented here.
-\title{ plotExpr }
+\title{ plotFunction }
 \description{
-Takes an R expression (or expressions) and produces plots 
-in specific file formats of the intended plot(s).
+Takes an R function character vector naming an R function or functions and
+produces plots in specific file formats of the intended plot(s).
 }
 \usage{
-plotExpr(expr, filetype = NULL, prefix = NULL, path = NULL, clear = FALSE)
+plotFunction(fun, filetype = NULL, prefix = fun, path = NULL, clear = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{expr}{character vector of R expressions which may or may not
+  \item{fun}{character vector of R expressions which may or may not
               produce graphical output.}
   \item{filetype}{character vector specifying file formats to produce the
                   plots in.}
@@ -26,6 +26,12 @@ plotExpr(expr, filetype = NULL, prefix = NULL, path = NULL, clear = FALSE)
 }
 \value{
   A list of class qcPlotExprResult containing the resulting plots.
+}
+\note{
+  Don't give any code that will open a graphics device. If multiple functions
+  or multiple prefixes are given, the resulting plotFun xml file's prefix will
+  only be the first, and the resulting file will also be placed in the first
+  file's directory.
 }
 \seealso{\code{\link{plotFun}}, \code{\link{plotExpr}}}
 \examples{

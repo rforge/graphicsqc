@@ -110,7 +110,8 @@
                  as.character(getRversion()), "date" = date(),
                  "call" = paste(deparse(sys.call(1)), collapse = ""),
                 ## at some point deparse(width.cutoff) might need to be raised
-                 "filetype" = filetype, "directory" = getwd())
+                 "filetype" = filetype, "directory" = getwd(),
+                 "logFilename" = paste(prefix, "-log.xml", sep = ""))
                  #using getwd() here forces expansion
                  #of directory (ie, expands "./" or "~/")
     ## Write all errors (i.e. for every filetype), or just one set?
@@ -118,7 +119,7 @@
                     evalResult[[1]][["warnings"]], "errors" =
                     evalResult[[1]][["errors"]], "info" = info)
 
-    writeXmlPlotExprLog(results, prefix)
+    writeXmlPlotExprLog(results)
     class(results) <- "qcPlotExprResult"
     # ---------- return results ----------
     invisible(results)
@@ -235,7 +236,7 @@ getValidPath <- function(path) {
 # writeXmlPlotExprLog()
 #
 # --------------------------------------------------------------------
-"writeXmlPlotExprLog" <- function(results, prefix) {
+"writeXmlPlotExprLog" <- function(results) {
     library(XML) ## might not run    
     ## Should be a listToXml function.. this can still be more efficient
     xmlResults <- xmlOutputDOM(tag="qcPlotExprResult")
@@ -249,6 +250,7 @@ getValidPath <- function(path) {
      lapply(results[["info"]][["filetype"]], xmlResults$addTag,
                                                               tag="filetype")
      xmlResults$addTag("directory", results[["info"]][["directory"]])
+     xmlResults$addTag("logFilename", results[["info"]][["logFilename"]])
     xmlResults$closeTag() # info
     xmlResults$addTag("warnings", close = FALSE)
      lapply(results[["warnings"]], xmlResults$addTag, tag="warning")
@@ -259,21 +261,23 @@ getValidPath <- function(path) {
     xmlResults$addTag("filenames", close = FALSE)
      lapply(results[["filenames"]], xmlResults$addTag, tag="filename")
     xmlResults$closeTag() # filenames
-    saveXML(xmlResults, paste(prefix, "-log.xml", sep = ""))
+    saveXML(xmlResults, results[["info"]][["logFilename"]])
 }
 
 # --------------------------------------------------------------------
 #
-# writeXmlPlotFunLog()
+# writeXmlPlotTypeLog()
 #
 # --------------------------------------------------------------------
-"writeXmlPlotFunLog" <- function(exprPrefix, path, filePrefix) {
+"writeXmlPlotTypeLog" <- function(exprPrefix, path, filePrefix, type) {
     library(XML) ## might not run
 
-    xmlResults <- xmlOutputDOM(tag="qcPlotFunResult")
+    xmlResults <- xmlOutputDOM(tag=paste("qcPlot", chartr("f", "F", type),
+                                                          "Result", sep = ""))
      lapply(paste(path, exprPrefix, "-log.xml", sep = ""), xmlResults$addTag,
                                                        tag="qcPlotExprResult")
-    saveXML(xmlResults, paste(path, filePrefix, "-funLog.xml", sep = ""))
+    saveXML(xmlResults, paste(path, filePrefix, "-", type, "Log.xml",
+                                                                   sep = ""))
 }
 
 # --------------------------------------------------------------------
@@ -291,17 +295,30 @@ plotFile <- function(filename, # character vector
                                    # directory to create files in
                      clear = FALSE
                      ) {
-    ## Test if files exist first
+    ## Test if files exist first?
    ### If filename has .Platform$file.sep in it then the prefix HAS to be diff
+    if (length(filename) != length(prefix)) {
+        stop(sQuote(prefix), " must be the same length as ", sQuote(filename))
+    }
+    path <- getValidPath(path)
     if (length(grep(.Platform$file.sep, prefix)) > 0) {
         stop(sQuote(prefix), " cannot contain the system file separator")
     }
     expr <- lapply(filename, readLines)
-    result <- mapply(plotExpr, expr = expr, prefix = prefix, path = path,
-          MoreArgs = list(filetype = filetype, clear = clear),
-          SIMPLIFY = FALSE)
-    # Note: XML file gets written in the call to plotExpr
-    result
+    fileMapplyResult <- mapply(plotExpr, expr = expr, prefix = prefix, 
+             path = path, MoreArgs = list(filetype = filetype, clear = clear),
+                                                             SIMPLIFY = FALSE)
+    if (length(prefix) > 1) {
+        # No warning - there is a note in the help file
+        filePrefix <- prefix[1]
+    } else {
+        filePrefix <- prefix
+    }
+    # Note: plotExpr XML file gets written in the call to plotExpr
+    writeXmlPlotTypeLog(prefix, paste(normalizePath(path.expand(path)),
+                            .Platform$file.sep, sep = ""), filePrefix, "file")
+    class(fileMapplyResult) <- c("qcPlotFileResult")
+    invisible(fileMapplyResult)
 }
 
 # --------------------------------------------------------------------
@@ -323,6 +340,9 @@ plotFunction <- function(fun, # character vector
        #                 substitute(do.call(example,list(x))
        # (gets unusual behaviour without paste..?)
     ## can also check if it's a function? .. is.function(match.fun(..
+    if (length(fun) != length(prefix)) {
+        stop(sQuote(prefix), " must be the same length as ", sQuote(fun))
+    }
     path <- getValidPath(path)
     if (!is.character(fun)) {
       fun <- deparse(substitute(fun))
@@ -337,8 +357,14 @@ plotFunction <- function(fun, # character vector
 #        funResults[[i]] <- funMapplyResult[,i]
 #        class(funResults[[i]]) <- c("qcPlotExprResult")
 #    }
-    writeXmlPlotFunLog(prefix, paste(getAbsolutePath(path),
-                    .Platform$file.sep, sep = ""), paste(fun, collapse = "-"))
+    if (length(prefix) > 1) {
+        # No warning - there is a note in the help file
+        filePrefix <- prefix[1]
+    } else {
+        filePrefix <- prefix
+    }
+    writeXmlPlotTypeLog(prefix, paste(normalizePath(path.expand(path)),
+                             .Platform$file.sep, sep = ""), filePrefix, "fun")
     class(funMapplyResult) <- c("qcPlotFunResult")
     invisible(funMapplyResult)
 }
@@ -402,18 +428,6 @@ removeIfBlank <- function(filename, blankImageSizes) {
         }
     }
     return(TRUE)
-}
-
-# --------------------------------------------------------------------
-#
-# getAbsolutePath()
-#
-# --------------------------------------------------------------------
-getAbsolutePath <- function(path) {
-    wd <- getwd()
-    on.exit(setwd(wd))
-    setwd(path)
-    getwd()
 }
 
 # --------------------------------------------------------------------

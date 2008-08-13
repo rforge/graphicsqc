@@ -1,0 +1,24 @@
+2007-08-13  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
+
+* makeplots.R (getAbsolutePath): Removed and replaced with
+  normalizePath(path.expand()) in plotFunction.
+(plotFunction): Set to use only the first prefix when naming the XML log file.
+(plotFile): Likewise.
+(readPlotExprLog): Now reads logFilename.
+(writeXmlPlotExprLog): Now writes logFilename too.
+(writeXmlPlotFunLog): New function.
+(writeXmlPlotTypeLog): refactored (and renamed) so plotFile can use it too.
+
+* compare.R (getDiffName): Changed to use basename.
+(comparePDF, comparePNG, compareBMP, comparePS, GNUdiff): return list results
+(compareExpr): Sets names for the resulting list.
+(compareType): Set to use SIMPLIFY = FALSE to return a list. Reordered calls
+  to other compare functions so it's: test, control, for consistency.
+(writeXMLCompareExprLog): New function.
+(getCompareExprLogFilename): Likewise.
+
+* plotFile.Rd (): Brief/skeleton documentation created.
+
+* plotFunction.Rd (): Likewise.
+
+* tests.R (): Updated some tests.
