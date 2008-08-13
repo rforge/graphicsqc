@@ -52,16 +52,16 @@
         }
     }
     ## first package, then:
-    if (inherits(test, "qcPlotFunResult") && inherits(control,
-                                                         "qcPlotFunResult")) {
-        results <- mapply(compareExpr, test, control, MoreArgs = 
-                                          list(erase=erase), SIMPLIFY = FALSE)
+    if (inherits(test, "qcPlotFunResult") &&
+        inherits(control, "qcPlotFunResult")) {
+        results <- mapply(compareExpr, test, control,
+                          MoreArgs = list(erase=erase), SIMPLIFY = FALSE)
         class(results) <- "qcCompareFunResult"
-    } else if (inherits(test, "qcPlotExprResult") && inherits(control,
-                                                        "qcPlotExprResult")) {
+    } else if (inherits(test, "qcPlotExprResult") &&
+               inherits(control, "qcPlotExprResult")) {
         results <- compareExpr(test, control, erase)
-        writeXmlCompareExprLog(results, getCompareExprLogFilename(test,
-                                                                     control))
+        writeXmlCompareExprLog(results,
+                               getCompareExprLogFilename(test, control))
     } else {
         ## test and control are not the same classes!
         notYetImplemented()

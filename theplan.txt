@@ -233,3 +233,36 @@ someday, the report code has to handle qcCompare/compareLog OR
   might only affect some formats (e.g., X11, but not PDF).
   (revision 44417)
 
+- NAMESPACE file for package
+
+- shift ChangeLog down into pkg/ dir
+
+- mod ChangeLog once per week (i.e., for each meeting)
+
+- make the \note{} in .Rd files a \warning{} (for the bit about
+  NOT using code that opens graphics devices)
+
+- compare() result (and log file), 
+  unpaired part, should be split into test$unpaired
+  and control$unpaired
+
+- fix fail-to-delete warning in compare(test1, test1B, "none") test.
+
+- remove names (names(x) <- NULL) from plot*() result objects
+  so that can "round trip" from R object to log file and back   
+  again and end up with identical() result.
+
+- print() method for plotExprResult (etc) objects.
+
+- why is compare() producing a diff PNG for *identical* PNG files?
+
+- compare() result should include <info> from both test and control.
+
+- random thought: generate report from XML log files using XSL ?
+
+- more of the same for compare() (extend to compareFun and compareFile)
+
+- add overall result value to compare() result.
+
+- add comparison of warnings and errors to compare().
+
