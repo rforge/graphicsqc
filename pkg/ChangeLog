@@ -2,7 +2,8 @@
 
 * NAMESPACE: created
 
-* compare.R (writeXmlCompareExprLog): Writes blank results nicely.
+* compare.R 
+	(writeXmlCompareExprLog): Writes blank results nicely.
 	               Writes unpaired according to test/control.
 	               Writes test and control info too.
 	               (Note: Still needs to readPlotExprLog them).

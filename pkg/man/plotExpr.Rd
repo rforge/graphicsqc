@@ -27,7 +27,7 @@ plotExpr(expr, filetype = NULL, prefix = NULL, path = NULL, clear = FALSE)
 \value{
   A list of class qcPlotExprResult containing the resulting plots.
 }
-\warning{
+\section{Warning}{
   Don't give any code that will open a graphics device.
 }
 \seealso{\code{\link{plotFun}}, \code{\link{plotExpr}}}
