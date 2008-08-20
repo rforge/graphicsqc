@@ -8,6 +8,12 @@ test1 <- plotExpr(c("plot(1:10)", "plot(4:40)", "x<-3", "plot(2:23)"),
 # pdf and ps files and test-log.xml, ie
 list.files("testdir1")
 
+# No file result
+blankTest <- plotExpr(c("x<-3", "x+2"), c("pdf", "ps", "png"),
+                  "test", "blankTest/", FALSE)
+blankTest2 <- plotExpr(c("x<-2", "x+3"), c("pdf", "png"),
+                  "blankTest", "blankTest2/", FALSE)
+
 # plotExpr() allows expressions as well as text
 expressions <- expression({ plot(1:10); plot(4:40); x<-3; plot(2:23) })
 test1b <- plotExpr(expressions, "png", "exprTest", "exprDir", FALSE)
@@ -39,17 +45,19 @@ list.files("filedir2")
 badExpression <- c("x<-3", "plot(x:8)", "warning(\"firstWarning\")",
           "warning(\"secondWarning\")", "stop(\"end error\")",
           "warning(\"NOTCALLED\")")
-lapply(c("pdf", "ps"), evalPlotCode, badExpression, "prefix-%d")
+lapply(c("pdf", "ps"), graphicsqc:::evalPlotCode, badExpression, "prefix-%d")
 
 # ------------------- Testing compare.R -------------------------
 # --- Testing reading of XML log files ---
-test1Check <- readPlotExprLog(file.path("testdir1", "test-log.xml"))
+test1Check <- graphicsqc:::readPlotExprLog(file.path("testdir1",
+                                                     "test-log.xml"))
 identical(test1, test1Check) # Should be True
 
-test2Check <- readPlotFunLog(file.path("testdir2", "plot-funLog.xml"))
+test2Check <- graphicsqc:::readPlotFunLog(file.path("testdir2",
+                                                    "plot-funLog.xml"))
 identical(test2, test2Check) # Should be True
 
-test2AutoCheck <- getQCResult("testdir2") # Testing auto-detect
+test2AutoCheck <- graphicsqc:::getQCResult("testdir2") # Testing auto-detect
 identical(test2, test2AutoCheck)
 
 ## --Insert test for readPlotPackageLog when done
@@ -58,13 +66,18 @@ identical(test2, test2AutoCheck)
    #x readPlotFileLog just produces a qcPlotExpr result
 
 # --- Testing compare for plotExpr ---
+compare(blankTest, blankTest2, "none") # no comparisons/no files
+
 compare(test1, test1, "none") # all identical
 
-# Same as test1 but missing the last plot
-test1B <- plotExpr(c("plot(1:10)", "plot(4:40)"), c("pdf", "ps"), 
+# Same as test1 but missing the last plot and png
+test1b <- plotExpr(c("plot(1:10)", "plot(4:40)", "plot(2:23)"),
+                  c("pdf", "ps"), "test", "testdir1b/", FALSE)                  
+test1B <- plotExpr(c("plot(1:10)", "plot(4:40)"), c("pdf", "png"), 
                    "test2", "testdir1B", FALSE)
-compare(test1, test1B, "none") # No XML output yet. Should all be identical
-                               # but with unpaired files
+compare(test1b, test1B, "none") # Should all be identical but with unpaired
+                                # files (test1b has an extra plot and ps
+                                #        test1B has png)
 
 # Second plot is different, third plot is still unpaired, test1B will be wiped
 # with clear being TRUE

@@ -27,11 +27,13 @@ plotFunction(fun, filetype = NULL, prefix = fun, path = NULL, clear = FALSE)
 \value{
   A list of class qcPlotExprResult containing the resulting plots.
 }
+\warning{
+  Don't give any code that will open a graphics device.
+}
 \note{
-  Don't give any code that will open a graphics device. If multiple functions
-  or multiple prefixes are given, the resulting plotFun xml file's prefix will
-  only be the first, and the resulting file will also be placed in the first
-  file's directory.
+  If multiple functions or multiple prefixes are given, the resulting plotFun
+  xml file's prefix will only be the first, and the resulting file will also
+  be placed in the first file's directory.
 }
 \seealso{\code{\link{plotFun}}, \code{\link{plotExpr}}}
 \examples{

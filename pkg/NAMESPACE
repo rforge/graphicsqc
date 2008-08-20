@@ -1,0 +1,1 @@
+export(plotExpr, plotFunction, plotFile, plotPackage, compare)

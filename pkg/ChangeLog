@@ -1,0 +1,58 @@
+2007-08-13  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
+
+* NAMESPACE: created
+
+* compare.R (writeXmlCompareExprLog): Writes blank results nicely.
+	               Writes unpaired according to test/control.
+	               Writes test and control info too.
+	               (Note: Still needs to readPlotExprLog them).
+	               Writes overall result.
+	(compareType): Checks to see if there's anything to compare first.
+	               Removes automatic names for 'round trip'.
+	(compareExpr): Includes test and control info in result. 
+	               Includes 'overall' result (include there are unpaired?).
+	(comparePNG): Fixed to only return the diffPlot name if it made one.
+	(GNUdiff): Fixed output redirection so all blanks get deleted.
+	(readPlotExprLog): Reads overall result.
+
+* tests.R
+	(): made 'blank' tests and updated miscellaneous tests.
+
+* plotFile.Rd 
+	(): Changed note about opening graphics device to warning
+
+* plotFunction.Rd 
+	(): Likewise.
+
+2007-08-13  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
+
+* makeplots.R 
+	(getAbsolutePath): Removed and replaced with 
+	normalizePath(path.expand()) in plotFunction.
+	(plotFunction): 
+	Set to use only the first prefix when naming the XML log file.
+	(plotFile): Likewise.
+	(readPlotExprLog): Now reads logFilename.
+	(writeXmlPlotExprLog): Now writes logFilename too.
+	(writeXmlPlotFunLog): New function.
+	(writeXmlPlotTypeLog): refactored (and renamed) so plotFile can use it too.
+
+* compare.R 
+	(getDiffName): Changed to use basename.
+	(comparePDF, comparePNG, compareBMP, comparePS, GNUdiff):
+	return list results
+	(compareExpr): Sets names for the resulting list.
+	(compareType): Set to use SIMPLIFY = FALSE to return a list. 
+	Reordered calls to other compare functions so it's: test, control, 
+	for consistency.
+	(writeXMLCompareExprLog): New function.
+	(getCompareExprLogFilename): Likewise.
+
+* plotFile.Rd 
+	(): Brief/skeleton documentation created.
+
+* plotFunction.Rd 
+	(): Likewise.
+
+* tests.R 
+	(): Updated some tests.

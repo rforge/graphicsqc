@@ -27,6 +27,9 @@ plotExpr(expr, filetype = NULL, prefix = NULL, path = NULL, clear = FALSE)
 \value{
   A list of class qcPlotExprResult containing the resulting plots.
 }
+\warning{
+  Don't give any code that will open a graphics device.
+}
 \seealso{\code{\link{plotFun}}, \code{\link{plotExpr}}}
 \examples{
 #test1 <- plotExpr(c("plot(1:10)", "plot(4:40)", "x<-3", "plot(2:23)"),

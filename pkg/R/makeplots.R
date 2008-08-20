@@ -350,13 +350,8 @@ plotFunction <- function(fun, # character vector
     }
     funs <- paste("example(", fun, ", echo = FALSE, setRNG = TRUE)", sep = "")
     funMapplyResult <- mapply(plotExpr, expr = funs, prefix = prefix,
-          MoreArgs = list(filetype = filetype, path = path, clear = clear),
-                                                             SIMPLIFY = FALSE)
-#    funResults <- vector("list", dim(funMapplyResult)[2])
-#    for (i in 1:length(funResults)) {
-#        funResults[[i]] <- funMapplyResult[,i]
-#        class(funResults[[i]]) <- c("qcPlotExprResult")
-#    }
+                              MoreArgs = list(filetype = filetype, path = path,
+                              clear = clear), SIMPLIFY = FALSE)
     if (length(prefix) > 1) {
         # No warning - there is a note in the help file
         filePrefix <- prefix[1]

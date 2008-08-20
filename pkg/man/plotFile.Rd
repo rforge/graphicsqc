@@ -26,8 +26,11 @@ plotFile(filename, filetype = NULL, prefix = basename(filename), path = NULL,
 \value{
   A list of class qcPlotFileResult containing the resulting plots.
 }
+\warning{
+  Don't give any code that will open a graphics device.
+}
 \note{
-  Don't give any code that will open a graphics device. If multiple functions
+  If multiple functions
   or multiple prefixes are given, the resulting plotFile xml file's prefix will
   only be the first, and the resulting file will also be placed in the first
   file's directory.
