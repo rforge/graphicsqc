@@ -29,6 +29,9 @@
                       ) {
     # Start warning handler
     assign("graphicsQCWarnings", character(0), envir = globalenv())
+    # Clear warning handler on exit
+    on.exit(rm(graphicsQCWarnings, envir = globalenv()))
+    
     if (is.character(test) && is.character(control) && test == control) {
         ## if they're in the same dir it's just asking for trouble
         # when trying to get QCResult..
@@ -49,6 +52,7 @@
             RESULT <- mapply(compare, test, list, erase) ## return?
         } else {
             stop("can't have a list of em vs. one") ##
+            notYetImplemented()
         }
     }
     ## first package, then:
@@ -56,18 +60,24 @@
         inherits(control, "qcPlotFunResult")) {
         results <- mapply(compareExpr, test, control,
                           MoreArgs = list(erase=erase), SIMPLIFY = FALSE)
+        writeXmlCompareTypeLog(results, "Fun")
         class(results) <- "qcCompareFunResult"
+        return(results)
+    } else if (inherits(test, "qcPlotFileResult") &&
+        inherits(control, "qcPlotFileResult")) {
+        results <- mapply(compareExpr, test, control,
+                          MoreArgs = list(erase=erase), SIMPLIFY = FALSE)
+        writeXmlCompareTypeLog(results, "File")
+        class(results) <- "qcCompareFileResult"
+        return(results)
     } else if (inherits(test, "qcPlotExprResult") &&
                inherits(control, "qcPlotExprResult")) {
         results <- compareExpr(test, control, erase)
-        writeXmlCompareExprLog(results,
-                               getCompareExprLogFilename(test, control))
+        return(results)
     } else {
         ## test and control are not the same classes!
         notYetImplemented()
     }
-    # Clear warning handler
-    rm(graphicsQCWarnings, envir = globalenv())
     results
 }
 
@@ -99,6 +109,11 @@
                 if (length(files) == 1) {
                     return(readLog(files))
                 } ## else it's many funLog files..
+            } else if (length(files <- list.files(result, "-fileLog.xml",
+                                                  full.names = TRUE)) > 0) {
+                if (length(files) == 1) {
+                    return(readLog(files))
+                } ## else it's many fileLog files..
             } else if (length(files <- list.files(result, "-log.xml",
                                                   full.names = TRUE)) > 0) {
                 if (length(files) == 1) {
@@ -109,7 +124,7 @@
             }
         }        
     } else if (inherits(result, c("qcPlotExprResult", "qcPlotFunResult",
-                                                    "qcPlotPackageResult"))) {
+                        "qcPlotFileResult", "qcPlotPackageResult"))) {
         return(result)
     } else {
         stop(sQuote(result), "is not a graphicsQC result", call. = FALSE)
@@ -124,9 +139,6 @@
 # --------------------------------------------------------------------
 "compareExpr" <- function(test, control, erase) {
     filePairs <- getPairs(test, control)
-    if (length(filePairs$unpaired) == 0) {
-        filePairs$unpaired <- NULL
-    }
     # names(filepairs) are the filetypes to compare
     results <- lapply(names(filePairs[["test"]]), compareType, 
                  filePairs[["control"]], control[["info"]][["directory"]], 
@@ -139,19 +151,14 @@
     info <- list("OS" = .Platform$OS.type, "Rver" = 
                  as.character(getRversion()), "date" = date(),
                  "call" = paste(deparse(sys.call(1)), collapse = ""),
-                 "filetype" = names(results),
+                 "controlDirectory" = control[["info"]][["directory"]],
                  "testDirectory" = test[["info"]][["directory"]],
-                 "controlDirectory" = control[["info"]][["directory"]])
+                 "logFilename" = getCompareExprLogFilename(test, control))
     results[["unpaired"]] <- filePairs[["unpaired"]]
-    if (any(grep("^different$", unlist(results)) %% 3 == 0)) {
-        overall = "different"
-    } else {
-        overall = "identical"
-    }
-    results <- list("overall" = overall, "info" = info,
-                    "testInfo" = test[["info"]], "controlInfo" = 
-                    control[["info"]], "results" = results)
+    results <- list("info" = info, "testInfo" = test[["info"]],
+                    "controlInfo" = control[["info"]], "results" = results)
     class(results) <- "qcCompareExprResult"
+    writeXmlCompareExprLog(results)
     results
     # Compare one plotExpr at a time (using natural order of qcresult
     # OR order specified explicitly by log files OR the natural
@@ -162,53 +169,99 @@
 #
 # getPairs()
 #
+# Also sorts unpaired warnings
 # --------------------------------------------------------------------
 "getPairs" <- function(test, control) {
-    testFiletypes <- test[["info"]][["filetype"]]
-    controlFiletypes <- control[["info"]][["filetype"]]
-    filetypes <- unique(c(testFiletypes, controlFiletypes))
-    testPairs <- vector("list", 0)
-    controlPairs <- vector("list", 0)
-    unpaired <- vector("list", 0)
-    for (filetype in filetypes) {
-        testPairs[filetype] <- list(grep(filetype, test[["filenames"]],
-                                         value = TRUE))
-        controlPairs[filetype] <- list(grep(filetype, control[["filenames"]],
-                                            value = TRUE))
-        testPairsLength <- length(testPairs[[filetype]])
-        controlPairsLength <- length(controlPairs[[filetype]])
-        if (testPairsLength != controlPairsLength) {
-            warningHandler("length of files to compare are different;",
-                    " unpaired files ignored")
-            # If the amount of files for a given filetype have different
-            # length, put the leftovers in 'unpaired' and cut the group
-            # with more files down to size
-            # NB: when this is the case, it is likely that one extra plot in
-            # the middle of the other plots would cause the rest to fail.
-            if (testPairsLength > controlPairsLength) {
-                unpaired$test <- c(unpaired$test, testPairs[[filetype]][(
-                              controlPairsLength + 1):testPairsLength])
-                if (controlPairsLength == 0) {
-                    testPairs[[filetype]] <- NULL
-                } else {
-                    testPairs[[filetype]] <- testPairs[[filetype]][
-                                                        1:controlPairsLength]
-                }
-            } else {
-                unpaired$control <- c(unpaired$control,
-                                    controlPairs[[filetype]][(testPairsLength +
-                                                        1):controlPairsLength])
-                if (testPairsLength == 0) {
-                    controlPairs[[filetype]] <- NULL
-                } else {
-                    controlPairs[[filetype]] <- controlPairs[[filetype]][
-                                                           1:testPairsLength]
-                }
-            }
+    testFiletypes <- names(test[["plots"]])
+    controlFiletypes <- names(control[["plots"]])
+
+    # If the amount of files for a given filetype have different
+    # length, put the leftovers in 'unpaired' and cut the group
+    # with more files down to size
+    # NB: when this is the case, it is likely that one extra plot in
+    # the middle of the other plots would cause the rest to fail.
+
+    allFiletypes <- unique(c(testFiletypes, controlFiletypes))
+    filetypesToCompare <- controlFiletypes[controlFiletypes %in% testFiletypes]
+    
+    controlUnpairedFiletype <- controlFiletypes[!(controlFiletypes %in%
+                                                  filetypesToCompare)]
+    testUnpairedFiletype <- testFiletypes[!(testFiletypes %in%
+                                            filetypesToCompare)]
+    
+    # Control filetypes are being compared, everything else is unpaired
+    controlPaired <- vector("list", length(controlFiletypes))
+    names(controlPaired) <- controlFiletypes
+    testPaired <- controlPaired
+    
+    testUnpaired <- vector("list", length(testFiletypes))
+    names(testUnpaired) <- testFiletypes
+    controlUnpaired <- controlPaired
+    # First take out all the ones that aren't even paired filetypes
+    lapply(controlUnpairedFiletype, function(type) {
+        lapply(names(control[["plots"]][[type]]), function (ele)
+            if (!is.null(control[["plots"]][[type]][[ele]])) {
+                controlUnpaired[[type]][ele] <<- list(control[["plots"]][[
+                                                               type]][[ele]])
+            })
+        if (length(controlUnpaired[[type]]) == 0) controlUnpaired[[type]] <<- NULL
+        })
+    lapply(testUnpairedFiletype, function(type) {
+        lapply(names(test[["plots"]][[type]]), function (ele)
+            if (!is.null(test[["plots"]][[type]][[ele]])) {
+                testUnpaired[[type]][ele] <<- list(test[["plots"]][[
+                                                         type]][[ele]])
+            })
+        if (length(controlUnpaired[[type]]) == 0) testUnpaired[[type]] <<- NULL
+        })
+    # Take out unpaired files within the paired filetypes
+    lapply(filetypesToCompare, function (filetype) {
+        testUnpairedOutput <- controlUnpairedOutput <-
+                                    list(warnings=NULL, errors=NULL, plot=NULL)
+        for (warns in c("warnings", "errors")) {
+            testWarns <- test[["plots"]][[filetype]][[warns]]
+            controlWarns <- control[["plots"]][[filetype]][[warns]]
+            unpTestWarns <- testWarns[!(testWarns %in% controlWarns)]
+            testUnpairedOutput[[warns]] <- unpTestWarns
+            unpControlWarns <- controlWarns[!(controlWarns %in% testWarns)]
+            controlUnpairedOutput[[warns]] <- unpControlWarns
         }
-    }
-    return(list("control" = controlPairs, "test" = testPairs,
-                "unpaired" = unpaired))
+
+        testPlotIndices <- seq_along(test[["plots"]][[filetype]][["plot"]])
+        controlPlotIndices <- seq_along(control[["plots"]][[
+                                                          filetype]][["plot"]])
+        shortest <- seq_len(min(length(testPlotIndices),
+                                length(controlPlotIndices)))
+        unpTestPlots <- test[["plots"]][[filetype]][["plot"]][
+                                              !(testPlotIndices %in% shortest)]
+        if (length(unpTestPlots) == 0) unpTestPlots <- NULL
+        testUnpairedOutput[["plot"]] <- unpTestPlots
+        unpControlPlots <- control[["plots"]][[filetype]][["plot"]][
+                                           !(controlPlotIndices %in% shortest)]
+        if (length(unpControlPlots) == 0) unpControlPlots <- NULL
+        controlUnpairedOutput[["plot"]] <- unpControlPlots
+        if (length(unpTestPlots) > 0 || length(unpControlPlots) > 0) {
+            warningHandler("length of files to compare are different;",
+                           " unpaired files ignored")
+        }
+        
+        if(length(testUnpairedOutput) == 0) testUnpairedOutput <- NULL
+        testUnpaired[[filetype]] <<- testUnpairedOutput
+        if(length(controlUnpairedOutput) == 0) controlUnpairedOutput <- NULL
+        
+        controlUnpaired[[filetype]] <<- controlUnpairedOutput
+        
+        controlPaired[filetype] <<- list(control[["plots"]][[filetype]][[
+                                                         "plot"]][shortest])
+        testPaired[filetype] <<- list(test[["plots"]][[filetype]][[
+                                                         "plot"]][shortest])
+        })
+    # If the unpaireds are just list() or blank, change them to NULL
+    # for consistency when reading the XML file later on
+    if (length(testUnpaired) == 0) testUnpaired <- NULL
+    if (length(controlUnpaired) == 0) controlUnpaired <- NULL
+    return(list("test" = testPaired, "control" = controlPaired, "unpaired" = 
+         list("test"=testUnpaired, "control"=controlUnpaired)))
 }
 
 ## Note: To extend this to allow for more filetypes, just add a function
@@ -228,9 +281,9 @@
         return(NULL)
     } else {
         result <- mapply(paste("compare", toupper(filetype), sep = ""), 
-           paste(testPath, .Platform$file.sep, test[[filetype]], sep = ""),
-           paste(controlPath, .Platform$file.sep, control[[filetype]],
-           sep = ""), hasIM() && filetype %in% getSupportedIMFormats() && 
+           paste(testPath, test[[filetype]], sep = .Platform$file.sep),
+           paste(controlPath, control[[filetype]], sep = .Platform$file.sep),
+           hasIM() && filetype %in% getSupportedIMFormats() && 
            any(erase == c("none", "identical")), testPath, SIMPLIFY = FALSE)
         names(result) <- NULL
         return(result)
@@ -252,16 +305,15 @@
     diffName <- getDiffName(file1, file2)
     diffFileName <- paste(diffName, ".diff", sep = "")
     diffPlotName <- paste(diffName, ".png", sep = "")
-    diffFilePath <- paste(diffPlotPath, .Platform$file.sep, diffFileName,
-                                                                     sep = "")
+    diffFilePath <- paste(diffPlotPath, diffFileName, sep = .Platform$file.sep)
     diffResult <- GNUdiff(file1, file2, diffFilePath)
     ##diffResult (the actual file) might not even exist.. didn't stop()
     if (diffResult == "different" && length(readLines(diffFilePath, n = 7)) 
                                                                         > 6) {
         # There is a true difference, not just the dates/times
         if (useIM) {
-            diffPlot <- paste(diffPlotPath, .Platform$file.sep, diffPlotName,
-                                                                     sep = "")
+            diffPlot <- paste(diffPlotPath, diffPlotName,
+                              sep = .Platform$file.sep)
             makeIMDiffPlot(file1, file2, diffPlot)
         }
     } else {
@@ -270,7 +322,7 @@
         diffFileName <- diffPlotName <- NULL
         diffResult <- "identical"
     }
-    return(list(testFile=file1, controlFile=file2, result=diffResult,
+    return(list(controlFile=file2, testFile=file1, result=diffResult,
                                 diffFile=diffFileName, diffPlot=diffPlotName))
 }
 
@@ -283,19 +335,18 @@
     diffName <- getDiffName(file1, file2)
     diffFileName <- paste(diffName, ".diff", sep = "")
     diffPlotName <- paste(diffName, ".png", sep = "")
-    diffFilePath <- paste(diffPlotPath, .Platform$file.sep, diffFileName,
-                                                                     sep = "")
+    diffFilePath <- paste(diffPlotPath, diffFileName, sep = .Platform$file.sep)
     diffResult <- GNUdiff(file1, file2, diffFilePath)
     if (diffResult == "different") {
         if (useIM) {
-            diffPlot <- paste(diffPlotPath, .Platform$file.sep, diffPlotName,
-                                                                     sep = "")
+            diffPlot <- paste(diffPlotPath, diffPlotName,
+                              sep = .Platform$file.sep)
             makeIMDiffPlot(file1, file2, diffPlot)
         }
     } else {
         diffFileName <- diffPlotName <- NULL
     }
-    return(list(testFile=file1, controlFile=file2, result=diffResult,
+    return(list(controlFile=file2, testFile=file1, result=diffResult,
                                 diffFile=diffFileName, diffPlot=diffPlotName))
 }
 
@@ -310,11 +361,11 @@
     diffResult <- GNUdiff(file1, file2)
     if (useIM && diffResult == "different") {
         diffPlotName <- paste(diffName, ".png", sep = "")
-        diffPlot <- paste(diffPlotPath, .Platform$file.sep, diffPlotName,
-                                                                     sep = "")
+        diffPlot <- paste(diffPlotPath, diffPlotName,
+                          sep = .Platform$file.sep)
         makeIMDiffPlot(file1, file2, diffPlot)
     }
-    return(list(testFile=file1, controlFile=file2, result=diffResult,
+    return(list(controlFile=file2, testFile=file1, result=diffResult,
                                 diffFile=NULL, diffPlot=diffPlotName))
 }
 
@@ -328,11 +379,10 @@
     diffPlotName <- paste(diffName, ".png", sep = "")
     diffResult <- GNUdiff(file1, file2)
     if (useIM && diffResult == "different") {
-        diffPlot <- paste(diffPlotPath, .Platform$file.sep, diffPlotName,
-                                                                     sep = "")
+        diffPlot <- paste(diffPlotPath, diffPlotName, sep = .Platform$file.sep)
         makeIMDiffPlot(file1, file2, diffPlot)
     }
-    return(list(testFile=file1, controlFile=file2, result=diffResult,
+    return(list(controlFile=file2, testFile=file1, result=diffResult,
                                 diffFile=NULL, diffPlot=diffPlotName))
 }
 
@@ -425,10 +475,14 @@
     supportedFormats <- character(0)
     formats <- system("identify -list Format", intern = TRUE,
                       ignore.stderr = TRUE) ##this command has trouble..
-    bmpLine <- grep("Microsoft Windows bitmap image$", formats, value = TRUE)
-    pdfLine <- grep("Portable Document Format$", formats, value = TRUE)
-    pngLine <- grep("Portable Network Graphics", formats, value = TRUE)
-    psLine <- grep("PostScript$", formats, value = TRUE)
+    bmpLine <- grep("Microsoft Windows bitmap image$", formats, value = TRUE,
+                    perl = TRUE, useBytes = TRUE)
+    pdfLine <- grep("Portable Document Format$", formats, value = TRUE,
+                    perl = TRUE, useBytes = TRUE)
+    pngLine <- grep("Portable Network Graphics", formats, value = TRUE,
+                    perl = TRUE, useBytes = TRUE)
+    psLine <- grep("PostScript$", formats, value = TRUE, perl = TRUE,
+                   useBytes = TRUE)
     if (length(bmpLine > 0) && grep("[ ]r[^ ][^ ][ ]", bmpLine) > 0) {
         supportedFormats <- c(supportedFormats, "bmp")
     }
@@ -451,65 +505,37 @@
 # --------------------------------------------------------------------
 "readPlotExprLog" <- function(filename) {
 ## better error handling on bad files?
-    readLogHandler = function() {
-        qcResult <- list(filenames = character(0), warnings = NULL,
-                         errors = NULL)
-        qcInfo <- list()
-        list("filename" = function(x) {
-             ## anything more efficient than c(value, x) ?
-             ## xmlSApply more costly? see ?xmlTreeParse
-             ## assign() slightly neater.. but less efficient?
-             qcResult[["filenames"]] <<- c(qcResult[["filenames"]],
-                                           xmlValue(x[[1]]))
-             },
-             "warning" = function(x) {
-                 qcResult[["warnings"]] <<- c(qcResult[["warnings"]],
-                                              xmlValue(x[[1]]))
-             },
-             "error" = function(x) {
-                 qcResult[["errors"]] <<- c(qcResult[["errors"]],
-                                            xmlValue(x[[1]]))
-             },
-             "OS" = function(x) { 
-                 qcInfo[["OS"]] <<- c(qcInfo[["OS"]], xmlValue(x[[1]])) 
-             },
-             "Rver" = function(x) { 
-                 qcInfo["Rver"] <<- c(qcInfo[["Rver"]], xmlValue(x[[1]]))
-             },
-             "date" = function(x) { 
-                 qcInfo["date"] <<- c(qcInfo[["date"]], xmlValue(x[[1]])) 
-                             },
-             "call" = function(x) { 
-                 qcInfo["call"] <<- c(qcInfo[["call"]],
-                                                         xmlValue(x[[1]]))
-             },
-             "filetype" = function(x) {
-                 qcInfo[["filetype"]] <<- c(qcInfo[["filetype"]],
-                                            xmlValue(x[[1]]))
-             },
-             "directory" = function(x) {
-                 qcInfo[["directory"]] <<- c(qcInfo[["directory"]],
-                                            xmlValue(x[[1]]))
-             },
-             "logFilename" = function(x) {
-                 qcInfo[["logFilename"]] <<- c(qcInfo[["logFilename"]],
-                                            xmlValue(x[[1]]))
-             },
-             "overall" = function(x) {
-                 qcInfo[["overall"]] <<- c(qcInfo[["overall"]],
-                                            xmlValue(x[[1]]))
-             },
-             "getResult" = function() {
-                 qcResult[["info"]] <<- qcInfo
-                 return(qcResult)
-             }
-             )
-    }    
-    h = readLogHandler()    
-    xmlTreeParse(filename, handlers = h) #useInternalNodes = TRUE) (call fails) 
-    logQCResult <- h$getResult()
-    class(logQCResult) <- "qcPlotExprResult"
-    return(logQCResult)
+    logTree <- xmlRoot(xmlTreeParse(filename))
+    
+    # Read Info
+    info <- xmlApply(logTree[[1]], xmlValue)
+    
+    # Read plot information
+    plots <- lapply(seq(2, length(logTree)), function(i) 
+                          mergeList(xmlApply(logTree[[i]], xmlValue)))
+    names(plots) <- unlist(xmlApply(logTree, xmlAttrs))
+    
+    qcLogResult <- list(info = info, plots = plots)
+    class(qcLogResult) <- "qcPlotExprResult"
+    return(qcLogResult)
+}
+
+# -------------------------------------------------------------------- 
+#
+# mergeList()
+# 
+# Merges elements in named lists which have repeated names
+# --------------------------------------------------------------------
+mergeList <- function(x) {
+    if (any(duplicated(names(x)))) {
+        tags <- unique(names(x))
+        output <- lapply(tags, function (tag)
+                                   as.vector(unlist(x[names(x) == tag])))
+        names(output) <- tags
+        return(output)
+    } else {
+        return(x)
+    }
 }
 
 # -------------------------------------------------------------------- 
@@ -519,7 +545,9 @@
 # --------------------------------------------------------------------
 "getLogType" <- function(result) {
     validLogTypes <- c("qcPlotExprResult", "qcPlotFunResult",
-                       "qcPlotPackageResult")
+                       "qcPlotFileResult", "qcPlotPackageResult",
+                       "qcCompareExprResult", "qcCompareFunResult",
+                       "qcCompareFileResult")
     if (length(grep("[Ll]og[.]xml$", result)) > 0) {
         type <- xmlName(xmlRoot(xmlTreeParse(result)))
         if (type %in% validLogTypes) {
@@ -540,8 +568,17 @@
     if (logType == "qcPlotExprResult") {
         return(readPlotExprLog(logFile))
     } else if (logType == "qcPlotFunResult") {
-        return(readPlotFunLog(logFile))
+        return(readPlotFunLog(logFile, "qcPlotFunResult"))
+    } else if (logType == "qcPlotFileResult") {
+        return(readPlotFunLog(logFile, "qcPlotFileResult"))
+    } else if (logType == "qcCompareExprResult") {
+        return(readCompareExprLog(logFile))
+    } else if (logType == "qcCompareFunResult") {
+        return(readCompareFunLog(logFile, "qcCompareFunResult"))
+    } else if (logType == "qcCompareFileResult") {
+        return(readCompareFunLog(logFile, "qcCompareFileResult"))
     } ## else plotPackageResult
+    notYetImplemented()
 }
 
 # -------------------------------------------------------------------- 
@@ -549,12 +586,12 @@
 # readPlotFunLog()
 #
 # --------------------------------------------------------------------
-"readPlotFunLog" <- function(logFile) {
-    exprResults <- unlist(lapply(xmlChildren(xmlRoot(xmlTreeParse(logFile)
-                                                               )), xmlValue))
-    names(exprResults) <- NULL
+"readPlotFunLog" <- function(logFile, logClass) {
+    exprResults <- unlist(lapply(xmlChildren(xmlRoot(xmlTreeParse(logFile))),
+                                 xmlValue))
+    names(exprResults) <- NULL ### note to Stephen - is this needed?
     funResults <- lapply(exprResults, readPlotExprLog)
-    class(funResults) <- "qcPlotFunResult"
+    class(funResults) <- logClass
     funResults
 }
 
@@ -563,72 +600,83 @@
 # writeXmlCompareExprLog()
 #
 # --------------------------------------------------------------------
-"writeXmlCompareExprLog" <- function(results, filename) {
-    library(XML) ## might not run    
-    ## Should be a listToXml function.. this can still be more efficient
+"writeXmlCompareExprLog" <- function(results) {
+    library(XML) ## might not run
     xmlResults <- xmlOutputDOM(tag="qcCompareExprResult")
-    xmlResults$addTag(results[["overall"]], tag="overall")
-    xmlResults$addTag("info", close = FALSE)
-     xmlResults$addTag("OS", results[["info"]][["OS"]])
-     xmlResults$addTag("Rver", results[["info"]][["Rver"]])
-     xmlResults$addTag("date", results[["info"]][["date"]])
-     xmlResults$addTag("call", close = FALSE)
-      xmlResults$addCData(results[["info"]][["call"]])
-     xmlResults$closeTag() # call
-     lapply(results[["info"]][["filetype"]], xmlResults$addTag,
-                                                              tag="filetype")
-     xmlResults$addTag("testDirectory", results[["info"]][["testDirectory"]])
-     xmlResults$addTag("controlDirectory",
-                                      results[["info"]][["controlDirectory"]])
-    xmlResults$closeTag() # info
-    for (info in names(results)[2:3]) {
-        xmlResults$addTag(info, close = FALSE)
-         xmlResults$addTag("OS", results[[info]][["OS"]])
-         xmlResults$addTag("Rver", results[[info]][["Rver"]])
-         xmlResults$addTag("date", results[[info]][["date"]])
-         xmlResults$addTag("call", close = FALSE)
-          xmlResults$addCData(results[[info]][["call"]])
-         xmlResults$closeTag() # call
-         lapply(results[[info]][["filetype"]], xmlResults$addTag,
-                                                              tag="filetype")
-         xmlResults$addTag("directory", results[[info]][["directory"]])
-         xmlResults$addTag("logFilename", results[[info]][["logFilename"]])
-        xmlResults$closeTag() # info
-    }
-    filetypes <- names(results[[5]])
-    lengthNames <- length(names(results[[5]]))
-    if (filetypes[lengthNames] == "unpaired") {
-        filetypes <- filetypes[-lengthNames]
-    }
-    # results[[5]] is == results[["results"]]
-    for (filetype in filetypes) {
-        xmlResults$addTag("compare", close = FALSE, attrs=c(type=filetype))
-        for (i in seq_along(results[[5]][[filetype]])) {
-            xmlResults$addTag("comparison", close = FALSE, attrs = 
-                c(controlFile = results[[5]][[filetype]][[i]][["controlFile"]],
-                     testFile = results[[5]][[filetype]][[i]][["testFile"]]))
-             xmlResults$addTag("result",
-                                    results[[5]][[filetype]][[i]][["result"]])
-             xmlResults$addTag("diffFile",
-                                  results[[5]][[filetype]][[i]][["diffFile"]])
-             xmlResults$addTag("diffPlot",
-                                  results[[5]][[filetype]][[i]][["diffPlot"]])
-            xmlResults$closeTag() # comparison
-        }
-        xmlResults$closeTag() # compare
-    }
+    
+    # Write info
+    writeXmlInfo(xmlResults, results)
+    writeXmlInfo(xmlResults, results, "testInfo")
+    writeXmlInfo(xmlResults, results, "controlInfo")
+    
+    # Write comparisons
+    resultNames <- names(results[["results"]])
+    lapply(resultNames[resultNames != "unpaired"],
+        function(type) {
+            xmlResults$addTag("compare", close = FALSE, attrs = c(type=type))
+             lapply(results[["results"]][[type]],
+                 function(comparison) {
+                     xmlResults$addTag("comparison", close = FALSE, attrs =
+                                       c(controlFile = comparison$controlFile,
+                                         testFile = comparison$testFile))
+                      xmlResults$addTag("result", comparison[["result"]])
+                      xmlResults$addTag("diffFile", comparison[["diffFile"]])
+                      xmlResults$addTag("diffPlot", comparison[["diffPlot"]])
+                     xmlResults$closeTag() # comparison
+                 })
+            xmlResults$closeTag() # compare
+        })
+
+    # Write unpaired
     xmlResults$addTag("unpaired", close = FALSE)
-     xmlResults$addTag("test", close = FALSE)
-      lapply(results[[4]][["unpaired"]][["test"]], xmlResults$addTag,
-             tag="file")
-     xmlResults$closeTag() # test
-     xmlResults$addTag("control", close = FALSE)
-      lapply(results[[4]][["unpaired"]][["control"]], xmlResults$addTag,
-             tag="file")
-     xmlResults$closeTag() # control
+    lapply(c("test", "control"), # or names(results[["results"]][["unpaired"]]
+        function(testOrControl) {
+            xmlResults$addTag(testOrControl, close = FALSE)
+            lapply(names(results[["results"]][["unpaired"]][[testOrControl]]),
+                function(type) {
+                    xmlResults$addTag(type, close = FALSE)
+                    lapply(names(results[["results"]][["unpaired"]][[
+                                          testOrControl]][[type]]),
+                          function(ele) {
+                              if (is.null(results[["results"]][["unpaired"]][[
+                                          testOrControl]][[type]][[ele]])) {
+                                  xmlResults$addTag(ele)
+                              } else {
+                                  lapply(results[["results"]][["unpaired"]][[
+                                     testOrControl]][[type]][[ele]],
+                                     xmlResults$addTag, tag=ele)
+                              }
+                          })
+                   xmlResults$closeTag() # type
+                })
+            xmlResults$closeTag() # testOrControl
+        })
     xmlResults$closeTag() # unpaired
     saveXML(xmlResults, paste(results[["info"]][["testDirectory"]],
-                                      .Platform$file.sep, filename, sep = ""))
+                              results[["info"]][["logFilename"]],
+                              sep = .Platform$file.sep))
+}
+
+# --------------------------------------------------------------------
+#
+# writeXmlCompareTypeLog()
+#
+# --------------------------------------------------------------------
+"writeXmlCompareTypeLog" <- function(results, type) {
+    library(XML) ## might not run
+
+    xmlResults <- xmlOutputDOM(tag=paste("qcCompare", type, "Result",
+                                         sep = ""))
+     logs <- sapply(seq_along(results), function(i)
+                 paste(results[[i]][["testInfo"]][["directory"]],
+                       results[[i]][["info"]][["logFilename"]],
+                       sep = .Platform$file.sep))
+     lapply(logs, xmlResults$addTag, tag="qcCompareExprResult")
+     filename <- paste(unlist(strsplit(results[[1]][["testInfo"]][[
+                       "logFilename"]], "-log.xml")), "-compare", type,
+                       "Log.xml", sep = "")
+    saveXML(xmlResults, paste(results[[1]][["testInfo"]][["directory"]],
+                              filename, sep = .Platform$file.sep))
 }
 
 # -------------------------------------------------------------------- 
@@ -653,9 +701,9 @@
 # --------------------------------------------------------------------
 "getCompareExprLogFilename" <- function(test, control) {
     testPrefix <- unlist(strsplit(test[["info"]][["logFilename"]],
-                                                                  "-log.xml"))
+                         "-log.xml"))
     controlPrefix <- unlist(strsplit(control[["info"]][["logFilename"]],
-                                                                  "-log.xml"))
+                            "-log.xml"))
     paste(testPrefix, "+", controlPrefix, "-compareExprLog.xml", sep = "")
 }
 

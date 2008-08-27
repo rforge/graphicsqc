@@ -27,7 +27,7 @@ plotFunction(fun, filetype = NULL, prefix = fun, path = NULL, clear = FALSE)
 \value{
   A list of class qcPlotExprResult containing the resulting plots.
 }
-\warning{
+\section{Warning}{
   Don't give any code that will open a graphics device.
 }
 \note{

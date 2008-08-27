@@ -83,10 +83,10 @@
     
     filenameFormat <- paste(prefix, "-%d", sep = "")
     setwd(path)
-    evalResult <- lapply(filetype, evalPlotCode, expr, filenameFormat)      
+    evalResult <- lapply(filetype, evalPlotCode, expr, filenameFormat)
+    names(evalResult) <- filetype
     # ---------- Get info of results ----------
     # (We only created files if none already existed)
-    filenames <- list.files(getwd(), filenamePattern, full.names = TRUE)
     blankImageSizes <- getBlankImageSizes()
     if (any(is.na(blankImageSizes))) {
         generateBlankImages()
@@ -96,28 +96,34 @@
                     "files will not be removed")
         }
     }
+
+    filenames <- list.files(getwd(), filenamePattern)
     # Remove blanks
-    wereRemoved <- unlist(lapply(filenames, removeIfBlank, blankImageSizes))
+    wereRemoved <- sapply(filenames, removeIfBlank, blankImageSizes,
+                          USE.NAMES = FALSE)
     if (any(!wereRemoved)) {
            warning("some blank images could not be removed")
     }
-    filenames <- list.files(getwd(), filenamePattern)
-    if (length(filenames) == 0) {
-        filenames <- NULL
-    }
+    filenames <- list.files(getwd(), filenamePattern) ##full.names = TRUE
+    plots <- lapply(filetype,
+                function(filetype) {
+                    plots <- grep(filetype, filenames, value = TRUE)
+                    if (length(plots) > 0) plots else NULL
+                })
+    names(plots) <- filetype
+    lapply(filetype, function(type)
+                         evalResult[[type]]["plot"] <<- list(plots[[type]]))
     
     info <- list("OS" = .Platform$OS.type, "Rver" = 
                  as.character(getRversion()), "date" = date(),
                  "call" = paste(deparse(sys.call(1)), collapse = ""),
                 ## at some point deparse(width.cutoff) might need to be raised
-                 "filetype" = filetype, "directory" = getwd(),
-                 "logFilename" = paste(prefix, "-log.xml", sep = ""))
-                 #using getwd() here forces expansion
-                 #of directory (ie, expands "./" or "~/")
+                 "directory" = getwd(), "logFilename" = 
+                 paste(prefix, "-log.xml", sep = ""))
+                 # using getwd() here forces expansion
+                 # of directory (ie, expands "./" or "~/")
     ## Write all errors (i.e. for every filetype), or just one set?
-    results <- list("filenames" = filenames, "warnings" =
-                    evalResult[[1]][["warnings"]], "errors" =
-                    evalResult[[1]][["errors"]], "info" = info)
+    results <- list("info" = info, "plots" = evalResult)
 
     writeXmlPlotExprLog(results)
     class(results) <- "qcPlotExprResult"
@@ -237,31 +243,48 @@ getValidPath <- function(path) {
 #
 # --------------------------------------------------------------------
 "writeXmlPlotExprLog" <- function(results) {
-    library(XML) ## might not run    
-    ## Should be a listToXml function.. this can still be more efficient
+    library(XML) ## might not run
     xmlResults <- xmlOutputDOM(tag="qcPlotExprResult")
-    xmlResults$addTag("info", close = FALSE)
-     xmlResults$addTag("OS", results[["info"]][["OS"]])
-     xmlResults$addTag("Rver", results[["info"]][["Rver"]])
-     xmlResults$addTag("date", results[["info"]][["date"]])
-     xmlResults$addTag("call", close = FALSE)
-      xmlResults$addCData(results[["info"]][["call"]])
-     xmlResults$closeTag() # call
-     lapply(results[["info"]][["filetype"]], xmlResults$addTag,
-                                                              tag="filetype")
-     xmlResults$addTag("directory", results[["info"]][["directory"]])
-     xmlResults$addTag("logFilename", results[["info"]][["logFilename"]])
-    xmlResults$closeTag() # info
-    xmlResults$addTag("warnings", close = FALSE)
-     lapply(results[["warnings"]], xmlResults$addTag, tag="warning")
-    xmlResults$closeTag() # warnings
-    xmlResults$addTag("errors", close = FALSE)
-     lapply(results[["errors"]], xmlResults$addTag, tag="error")
-    xmlResults$closeTag() # errors
-    xmlResults$addTag("filenames", close = FALSE)
-     lapply(results[["filenames"]], xmlResults$addTag, tag="filename")
-    xmlResults$closeTag() # filenames
+    
+    # Add info to XML
+    writeXmlInfo(xmlResults, results)
+
+    # Write plots for each filetype including warnings/errors
+    lapply(names(results[["plots"]]),
+        function(type) {
+            xmlResults$addTag("plots", close = FALSE, attrs=c(type=type))
+             lapply(names(results[["plots"]][[type]]),
+                 function(x) {
+                     if (is.null(results[["plots"]][[type]][[x]])) {
+                         xmlResults$addTag(x)
+                     } else {
+                         lapply(results[["plots"]][[type]][[x]],
+                                xmlResults$addTag, tag=x)
+                     }
+                 })
+            xmlResults$closeTag() # plots
+        })
     saveXML(xmlResults, results[["info"]][["logFilename"]])
+}
+
+# --------------------------------------------------------------------
+#
+# writeXmlInfo()
+#
+# --------------------------------------------------------------------
+"writeXmlInfo" <- function(xmlResults, results, tag="info") {
+    xmlResults$addTag(tag, close = FALSE)
+     mapply(function(name, info) {
+                if (name == "call") {
+                    xmlResults$addTag("call", close = FALSE)
+                     xmlResults$addCData(info)
+                    xmlResults$closeTag() # call
+                } else {
+                    xmlResults$addTag(name, info)
+                }
+            }
+     , names(results[[tag]]), results[[tag]])
+    xmlResults$closeTag() # info
 }
 
 # --------------------------------------------------------------------
@@ -273,11 +296,11 @@ getValidPath <- function(path) {
     library(XML) ## might not run
 
     xmlResults <- xmlOutputDOM(tag=paste("qcPlot", chartr("f", "F", type),
-                                                          "Result", sep = ""))
+                                         "Result", sep = ""))
      lapply(paste(path, exprPrefix, "-log.xml", sep = ""), xmlResults$addTag,
-                                                       tag="qcPlotExprResult")
+            tag="qcPlotExprResult")
     saveXML(xmlResults, paste(path, filePrefix, "-", type, "Log.xml",
-                                                                   sep = ""))
+                              sep = ""))
 }
 
 # --------------------------------------------------------------------
@@ -308,6 +331,7 @@ plotFile <- function(filename, # character vector
     fileMapplyResult <- mapply(plotExpr, expr = expr, prefix = prefix, 
              path = path, MoreArgs = list(filetype = filetype, clear = clear),
                                                              SIMPLIFY = FALSE)
+    names(fileMapplyResult) <- NULL
     if (length(prefix) > 1) {
         # No warning - there is a note in the help file
         filePrefix <- prefix[1]
@@ -352,6 +376,7 @@ plotFunction <- function(fun, # character vector
     funMapplyResult <- mapply(plotExpr, expr = funs, prefix = prefix,
                               MoreArgs = list(filetype = filetype, path = path,
                               clear = clear), SIMPLIFY = FALSE)
+    names(funMapplyResult) <- NULL
     if (length(prefix) > 1) {
         # No warning - there is a note in the help file
         filePrefix <- prefix[1]
@@ -386,10 +411,10 @@ generateBlankImages <- function() {
     tempDir <- tempdir()
     # Only pdf and ps blank images are made as the filesize for bmp and png
     # blanks are 0
-    pdf(paste(tempDir, .Platform$file.sep, "blankPDF.pdf", sep = ""),
+    pdf(paste(tempDir, "blankPDF.pdf", sep = .Platform$file.sep),
         onefile = FALSE)
     dev.off()
-    postscript(paste(tempDir, .Platform$file.sep, "blankPS.ps", sep = ""),
+    postscript(paste(tempDir, "blankPS.ps", sep = .Platform$file.sep),
                onefile = FALSE)
     dev.off()
     invisible()
@@ -401,8 +426,8 @@ generateBlankImages <- function() {
 #
 # --------------------------------------------------------------------
 getBlankImageSizes <- function() {
-    sizes <- file.info(paste(tempdir(), .Platform$file.sep,
-              c("blankPDF.pdf", "blankPS.ps"), sep=""))[,1]
+    sizes <- file.info(paste(tempdir(), c("blankPDF.pdf", "blankPS.ps"),
+                             sep = .Platform$file.sep))[,1]
     names(sizes) <- c("pdf", "ps")
     sizes
 }
@@ -424,6 +449,16 @@ removeIfBlank <- function(filename, blankImageSizes) {
     }
     return(TRUE)
 }
+
+# --------------------------------------------------------------------
+#
+# print.qcPlotExprResult()
+#
+# --------------------------------------------------------------------
+#print.qcPlotExprResult <- function (obj) {
+#    cat(obj[[1]], "\n")
+#}
+
 
 # --------------------------------------------------------------------
 #

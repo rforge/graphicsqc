@@ -26,7 +26,7 @@ plotFile(filename, filetype = NULL, prefix = basename(filename), path = NULL,
 \value{
   A list of class qcPlotFileResult containing the resulting plots.
 }
-\warning{
+\section{Warning}{
   Don't give any code that will open a graphics device.
 }
 \note{

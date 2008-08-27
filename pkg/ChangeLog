@@ -1,17 +1,62 @@
+2007-08-27  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
+
+* compare.R
+	(getSupportedIMFormats): Fixed warning about locale message from Deja Vu.
+	(writeXmlCompareExprLog): Removed overall result.
+		Re-written. Fixed bug to include unpaired files.
+		Fixed bug in compare so "controlInfo" gets written properly.
+	(compareExpr, writeXmlCompareExprLog):
+		Removed filetype writing to compareLog as it's already found in the log
+	(readPlotExprLog): Updated to read changes in plotExpr (see below).
+		Also vastly improved and neatened.
+	(mergeList): New Function.
+	(readLog): Now also reads qcPlotFileResult.
+	(compare): Added comparison for qcPlotFileResult.
+	(getQCResult): Detects qcPlotFileResults now too.
+	(getLogType): Added qcPlotFileResult, qcCompareExprResult,
+		qcCompareFunResult, and qcCompareFileResult to valid log types.
+	(readLog): Likewise.
+	(getPairs): Re-written - reads new plotExpr logs and sorts unpaired
+		warnings/errors as well.
+	(writeXmlCompareTypeLog): New function.
+
+* makeplots.R
+	(plotExpr): Changed to write filenames, warnings, and errors by type.
+	(writeXmlPlotExprLog): Likewise. Also vastly improved/neatened.
+	(writeXmlInfo): New function.
+	(plotFunction): Set rogue $`example..` names to NULL for round trip.
+	(plotFile): Likewise.
+
+* tests.R
+	(): Made round-trip test for compareExpr results.
+
+* report.R
+	(readCompareExprLog): New Function.
+	(readCompareFunLog): Likewise.
+	
+* plotFile.Rd
+	(): Fixed \warning{} about opening graphics device to \section{}
+
+* plotFunction.Rd
+	(): Likewise.
+
+* compare.Rd
+	(): New file containing brief documentation.
+
 2007-08-13  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
 
 * NAMESPACE: created
 
-* compare.R 
+* compare.R
 	(writeXmlCompareExprLog): Writes blank results nicely.
-	               Writes unpaired according to test/control.
-	               Writes test and control info too.
-	               (Note: Still needs to readPlotExprLog them).
-	               Writes overall result.
+		Writes unpaired according to test/control.
+		Writes test and control info too.
+		(Note: Still needs to readPlotExprLog them).
+		Writes overall result.
 	(compareType): Checks to see if there's anything to compare first.
-	               Removes automatic names for 'round trip'.
+		Removes automatic names for 'round trip'.
 	(compareExpr): Includes test and control info in result. 
-	               Includes 'overall' result (include there are unpaired?).
+		Includes 'overall' result (include there are unpaired?).
 	(comparePNG): Fixed to only return the diffPlot name if it made one.
 	(GNUdiff): Fixed output redirection so all blanks get deleted.
 	(readPlotExprLog): Reads overall result.
@@ -19,19 +64,19 @@
 * tests.R
 	(): made 'blank' tests and updated miscellaneous tests.
 
-* plotFile.Rd 
+* plotFile.Rd
 	(): Changed note about opening graphics device to warning
 
-* plotFunction.Rd 
+* plotFunction.Rd
 	(): Likewise.
 
 2007-08-13  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
 
 * makeplots.R 
 	(getAbsolutePath): Removed and replaced with 
-	normalizePath(path.expand()) in plotFunction.
+		normalizePath(path.expand()) in plotFunction.
 	(plotFunction): 
-	Set to use only the first prefix when naming the XML log file.
+		Set to use only the first prefix when naming the XML log file.
 	(plotFile): Likewise.
 	(readPlotExprLog): Now reads logFilename.
 	(writeXmlPlotExprLog): Now writes logFilename too.
@@ -41,11 +86,11 @@
 * compare.R 
 	(getDiffName): Changed to use basename.
 	(comparePDF, comparePNG, compareBMP, comparePS, GNUdiff):
-	return list results
+		return list results
 	(compareExpr): Sets names for the resulting list.
 	(compareType): Set to use SIMPLIFY = FALSE to return a list. 
-	Reordered calls to other compare functions so it's: test, control, 
-	for consistency.
+		Reordered calls to other compare functions so it's: test, control, 
+		for consistency.
 	(writeXMLCompareExprLog): New function.
 	(getCompareExprLogFilename): Likewise.
 
