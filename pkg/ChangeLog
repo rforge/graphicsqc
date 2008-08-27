@@ -29,6 +29,7 @@
 
 * tests.R
 	(): Made round-trip test for compareExpr results.
+	    Many miscellaneous updates.
 
 * report.R
 	(readCompareExprLog): New Function.

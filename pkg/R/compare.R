@@ -589,7 +589,7 @@ mergeList <- function(x) {
 "readPlotFunLog" <- function(logFile, logClass) {
     exprResults <- unlist(lapply(xmlChildren(xmlRoot(xmlTreeParse(logFile))),
                                  xmlValue))
-    names(exprResults) <- NULL ### note to Stephen - is this needed?
+    names(exprResults) <- NULL
     funResults <- lapply(exprResults, readPlotExprLog)
     class(funResults) <- logClass
     funResults

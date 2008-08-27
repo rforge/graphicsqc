@@ -2,11 +2,13 @@
 \alias{compare}
 \alias{compareExpr}
 \alias{compareFun}
+\alias{compareFile}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{ compare }
 \description{
-Takes the filename/path of a file containing R code and produces plots in
-specific file formats of the intended plot(s).
+  Takes the results from plotExpr or plotFun etc. and compares the files for
+  differences. If ImageMagick is installed it will also produce plots of the
+  differences.
 }
 \usage{
 compare(test, control, erase=c("none", "identical", "files", "all"))
@@ -35,7 +37,10 @@ compare(test, control, erase=c("none", "identical", "files", "all"))
 }
 \note{
   GNU diff must be installed on the system. ImageMagick will be used if it is
-  installed.
+  installed. The resulting log files, .diff files, and (possibly) images of
+  differences are placed in the same directory as the test files.
+  'compareFun' and 'compareFile' use the first test file prefix for the prefix
+  of the resulting comparison.
 }
 \seealso{\code{\link{plotExpr}}, \code{\link{plotFun}}, \code{\link{plotFile}}}
 \examples{

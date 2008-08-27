@@ -116,7 +116,7 @@ identical(testFun2, testFun2ReadCheck)
 funComparison <- compare(testFun1, testFun2, "none")
 funComparisonReadCheck <- graphicsqc:::readLog(file.path("testFun",
                                                "plot-compareFunLog.xml"))
-identical(funComparison, funComparisonReadCheck) #This test currently fails...
+identical(funComparison, funComparisonReadCheck)
 
 # --- Testing compare for plotFile ---
 testFile3 <- plotFile(file.path("testFiles", "Rfile.R"), c("pdf", "png"),

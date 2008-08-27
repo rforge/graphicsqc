@@ -20,7 +20,7 @@
 # --------------------------------------------------------------------
 "readCompareExprLog" <- function(filename) {
     library(XML)
-    ## better error handling on bad files? Check file/filename first?
+    ## better error handling on bad files?
     # Gets the overall tree, then collects sub-parts, then combines them
     comparisonTree <- xmlRoot(xmlTreeParse(filename))
     info <- xmlApply(comparisonTree[[1]], xmlValue)
@@ -42,7 +42,7 @@
         if (length(combined) == 0) combined <- NULL
         combined
        }, mergeList(topLevelElements)$compare,
-          which(names(topLevelElements) == "compare"))
+          which(names(topLevelElements) == "compare"), SIMPLIFY = FALSE)
     
     # Get unpaired results
     testUnpairedTypes <- unlist(xmlApply(comparisonTree[[length(topLevelElements)]][["test"]], xmlName), use.names = FALSE)
@@ -77,7 +77,7 @@
 "readCompareFunLog" <- function(logFile, logClass) {
     exprResults <- unlist(lapply(xmlChildren(xmlRoot(xmlTreeParse(logFile))),
                                  xmlValue))
-    #names(exprResults) <- NULL
+    names(exprResults) <- NULL
     funResults <- lapply(exprResults, readCompareExprLog)
     class(funResults) <- logClass
     funResults
