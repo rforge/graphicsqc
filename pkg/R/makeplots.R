@@ -14,7 +14,7 @@
 # MUST always work (=> tryCatch)
 #
 # Return value is record of files created
-# 
+#
 #
 #  _______-------======= TODO: FIND ##'s =======-------_______
 #
@@ -34,7 +34,7 @@
 ## what about these warnings not in evalPlotCode?
     if (is.list(expr))
         expr <- unlist(expr)
-    
+
     # Testing filetype is valid
     filetype <- getValidFiletypes(filetype)
     fileExtension <- paste(".", filetype, sep = "")
@@ -45,12 +45,12 @@
         prefix <- as.character(prefix)
     } else {
         stop(sQuote("prefix"), " must be a character vector of length 1")
-    }    
+    }
     wd <- getwd()
     on.exit(setwd(wd))
     # Get valid path
     path <- getValidPath(path)
-    
+
     # Check we are not going to overwrite any files
     filenamePattern <- paste("^(", prefix, "-", "[0-9]+[.](",
                    paste(filetype, collapse = "|"),
@@ -80,7 +80,7 @@
     } else {
         stop(sQuote("clear"), " must be either TRUE or FALSE")
     }
-    
+
     filenameFormat <- paste(prefix, "-%d", sep = "")
     setwd(path)
     evalResult <- lapply(filetype, evalPlotCode, expr, filenameFormat)
@@ -113,12 +113,12 @@
     names(plots) <- filetype
     lapply(filetype, function(type)
                          evalResult[[type]]["plot"] <<- list(plots[[type]]))
-    
-    info <- list("OS" = .Platform$OS.type, "Rver" = 
+
+    info <- list("OS" = .Platform$OS.type, "Rver" =
                  as.character(getRversion()), "date" = date(),
                  "call" = paste(deparse(sys.call(1)), collapse = ""),
                 ## at some point deparse(width.cutoff) might need to be raised
-                 "directory" = getwd(), "logFilename" = 
+                 "directory" = getwd(), "logFilename" =
                  paste(prefix, "-log.xml", sep = ""))
                  # using getwd() here forces expansion
                  # of directory (ie, expands "./" or "~/")
@@ -162,7 +162,7 @@ getValidPath <- function(path) {
 # evalPlotCode()
 #
 # --------------------------------------------------------------------
-"evalPlotCode" <- function(filetype, expr, filenameFormat) { 
+"evalPlotCode" <- function(filetype, expr, filenameFormat) {
     if (filetype == "ps") {
         fileExtension <- ".ps"
         filetype <- "postscript"
@@ -179,9 +179,9 @@ getValidPath <- function(path) {
     warns <- NULL
     # Reset last error message to ""
     tryCatch(stop(), error = function(e) {})
-    tryCatch(withCallingHandlers(eval(if (is.language(expr)) expr else 
+    tryCatch(withCallingHandlers(eval(if (is.language(expr)) expr else
                                                          parse(text = expr)),
-                    warning = function(w) { warns <<- c(warns, 
+                    warning = function(w) { warns <<- c(warns,
                                             paste("Warning in evalPlotCode :",
                                                   conditionMessage(w)));
                     invokeRestart("muffleWarning") }), error = function(e) {})
@@ -194,7 +194,7 @@ getValidPath <- function(path) {
     }
 
     dev.off()
-    return(list("warnings" = warns, "errors" = error))
+    return(list("warnings" = warns, "error" = error))
 }
 
 # --------------------------------------------------------------------
@@ -208,7 +208,7 @@ getValidPath <- function(path) {
     if (.Platform$OS.type != "windows") {
         validFiletypes<-validFiletypes[-4]
     }
-    
+
     # check for duplications
     if (any(duplicated(filetypes))) {
         warning("duplicated filetypes: ",
@@ -217,7 +217,7 @@ getValidPath <- function(path) {
                 , " duplication ignored", call. = FALSE)
         filetypes <- filetypes[!duplicated(filetypes)]
     }
-    
+
     # check given filetypes against valid filetypes
     invalidTypes <- !filetypes %in% validFiletypes
     if (any(invalidTypes)) {
@@ -225,82 +225,16 @@ getValidPath <- function(path) {
            warning("sorry, BMP format only supported in Windows",
                    call. = FALSE)
        }
-       warning("invalid filetype(s) given: ", 
+       warning("invalid filetype(s) given: ",
                paste(dQuote(filetypes[invalidTypes]), collapse = ", "),
                " ignored", call. = FALSE)
     }
-    
+
     if (length(filetypes[!invalidTypes]) > 0) {
         return(filetypes[!invalidTypes])
     } else {
         stop("no valid filetypes given", call. = FALSE)
     }
-}
-
-# --------------------------------------------------------------------
-#
-# writeXmlPlotExprLog()
-#
-# --------------------------------------------------------------------
-"writeXmlPlotExprLog" <- function(results) {
-    library(XML) ## might not run
-    xmlResults <- xmlOutputDOM(tag="qcPlotExprResult")
-    
-    # Add info to XML
-    writeXmlInfo(xmlResults, results)
-
-    # Write plots for each filetype including warnings/errors
-    lapply(names(results[["plots"]]),
-        function(type) {
-            xmlResults$addTag("plots", close = FALSE, attrs=c(type=type))
-             lapply(names(results[["plots"]][[type]]),
-                 function(x) {
-                     if (is.null(results[["plots"]][[type]][[x]])) {
-                         xmlResults$addTag(x)
-                     } else {
-                         lapply(results[["plots"]][[type]][[x]],
-                                xmlResults$addTag, tag=x)
-                     }
-                 })
-            xmlResults$closeTag() # plots
-        })
-    saveXML(xmlResults, results[["info"]][["logFilename"]])
-}
-
-# --------------------------------------------------------------------
-#
-# writeXmlInfo()
-#
-# --------------------------------------------------------------------
-"writeXmlInfo" <- function(xmlResults, results, tag="info") {
-    xmlResults$addTag(tag, close = FALSE)
-     mapply(function(name, info) {
-                if (name == "call") {
-                    xmlResults$addTag("call", close = FALSE)
-                     xmlResults$addCData(info)
-                    xmlResults$closeTag() # call
-                } else {
-                    xmlResults$addTag(name, info)
-                }
-            }
-     , names(results[[tag]]), results[[tag]])
-    xmlResults$closeTag() # info
-}
-
-# --------------------------------------------------------------------
-#
-# writeXmlPlotTypeLog()
-#
-# --------------------------------------------------------------------
-"writeXmlPlotTypeLog" <- function(exprPrefix, path, filePrefix, type) {
-    library(XML) ## might not run
-
-    xmlResults <- xmlOutputDOM(tag=paste("qcPlot", chartr("f", "F", type),
-                                         "Result", sep = ""))
-     lapply(paste(path, exprPrefix, "-log.xml", sep = ""), xmlResults$addTag,
-            tag="qcPlotExprResult")
-    saveXML(xmlResults, paste(path, filePrefix, "-", type, "Log.xml",
-                              sep = ""))
 }
 
 # --------------------------------------------------------------------
@@ -328,7 +262,7 @@ plotFile <- function(filename, # character vector
         stop(sQuote(prefix), " cannot contain the system file separator")
     }
     expr <- lapply(filename, readLines)
-    fileMapplyResult <- mapply(plotExpr, expr = expr, prefix = prefix, 
+    fileMapplyResult <- mapply(plotExpr, expr = expr, prefix = prefix,
              path = path, MoreArgs = list(filetype = filetype, clear = clear),
                                                              SIMPLIFY = FALSE)
     names(fileMapplyResult) <- NULL
@@ -359,8 +293,8 @@ plotFunction <- function(fun, # character vector
                        path = NULL, # char length 1
                                     # directory to create files in
                        clear = FALSE) {
-    ## if not paste, then something like... 
-    # funs<-lapply(fun, function(x) { 
+    ## if not paste, then something like...
+    # funs<-lapply(fun, function(x) {
        #                 substitute(do.call(example,list(x))
        # (gets unusual behaviour without paste..?)
     ## can also check if it's a function? .. is.function(match.fun(..
@@ -455,9 +389,33 @@ removeIfBlank <- function(filename, blankImageSizes) {
 # print.qcPlotExprResult()
 #
 # --------------------------------------------------------------------
-#print.qcPlotExprResult <- function (obj) {
-#    cat(obj[[1]], "\n")
-#}
+print.qcPlotExprResult <- function (obj) {
+    cat("plotExpr Result:\n")
+    cat("Call:\t", obj[["info"]][["call"]], "\n")
+    cat("R version:\t", obj[["info"]][["Rver"]], "\n")
+    cat("Directory:\t", obj[["info"]][["directory"]], "\n")
+    cat("Filename:\t", obj[["info"]][["logFilename"]], "\n")
+    cat("Formats:\n")
+    for (format in names(obj[["plots"]])) {
+        if (is.null(obj[["plots"]][[format]][["plot"]])) {
+            plots = "none"
+        } else {
+            plots = obj[["plots"]][[format]][["plot"]]
+        }
+        cat(" ", format, ":\tPlots: ")
+        cat(plots, sep = ", ")
+        cat("\n")
+
+        if (!is.null(obj[["plots"]][[format]][["warnings"]])) {
+            cat("\tWarnings: \t")
+            cat(obj[["plots"]][[format]][["warnings"]], sep = "\n\t\t\t")
+            cat("\n")
+        }
+        if (!is.null(obj[["plots"]][[format]][["error"]])) {
+            cat("\tError: ", obj[["plots"]][[format]][["error"]], "\n")
+        }
+    }
+}
 
 
 # --------------------------------------------------------------------

@@ -1,3 +1,21 @@
+2007-09-18  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
+
+Removed all checks for XML. Moved all XML read/writing into log.R	
+
+* makeplots.R
+	(print.qcPlotExprResult): New function.
+
+* compare.R
+	(compareWarnings): New function.
+	(getPairs): Removed warning comparison and fixed bug for completely
+		unpaired filetypes.
+	(compareExpr): Modified to include new comparison of warnings.
+	(readCompareExprLog): Reads new warnings.
+	(writeCompareExprLog): Writes new warnings.
+	(print.qcCompareExprResult): New function (unfinished: requires unpaired
+	 + warnings/errors).
+	(shortenDirectory): New function.
+
 2007-08-27  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
 
 * compare.R

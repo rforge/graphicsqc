@@ -24,8 +24,8 @@ compare(test, control, erase=c("none", "identical", "files", "all"))
   Compares the files using GNU diff and ImageMagick if it is installed. ..
   'erase' of "none" means don't erase any files; "identical" means only erase
   files which were found to be identical; "files" means all the associated
-  plots but not the log files; "all" means erase everything (plots and any
-  diff files or diff plots produced).
+  plots (in the test directory) but not the log files; "all" means erase
+  everything (plots and any diff files or diff plots produced).
   
   When comparing qcPlotFun or qcPlotFile results, the name of the log file will
   be the prefix of the first test log file with "-compareFunLog.xml" appended
