@@ -321,4 +321,17 @@ someday, the report code has to handle qcCompare/compareLog OR
 
 - XSL to generate the report (+ Sxslt ?).
 
+# 18/09/08
+
+- allow compare() to generate its files in separate directory ?
+
+- summary() method for compare* objects.
+  LESS detail than print().
+  i.e., code to CALCULATE overall results (rather than storing 
+  overall results as part of log files).
+
+- XSL to generate the report (+ Sxslt ?).
+
+
+
 
