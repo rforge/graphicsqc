@@ -150,8 +150,8 @@ getValidPath <- function(path) {
             stop("could not create directory ", dQuote(path), call. = FALSE)
         }
     } else {
-        warning("object ", sQuote("path"), " has more than one element: only",
-                " the first used in ", sQuote("path"), call. = FALSE)
+        warning("the given path has more than one element: only",
+                " the first used in ", dQuote(path), call. = FALSE)
         path <- getValidPath(path[1])
     }
     path

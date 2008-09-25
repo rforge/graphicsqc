@@ -1,1 +1,1 @@
-export(plotExpr, plotFunction, plotFile, plotPackage, compare)
+export(plotExpr, plotFunction, plotFile, plotPackage, compare, writeReport)

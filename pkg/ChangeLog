@@ -1,3 +1,32 @@
+2007-09-26  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
+
+* writeReport.Rd: New file.
+
+* inst/xsl/plotExpr.xsl: New file.
+
+* inst/xsl/compareExpr.xsl: New file.
+	
+* report.R
+	(readCompareExprLog): Moved to log.R
+	(readCompareFunLog): Likewise.
+	(writeReport): Has content now (New function) (Still needs to autodetect).
+
+* compare.R
+	(): Accepts logDiffDirectory and checks it.
+	(compareExpr): Accepts logDiffDirectory, includes it in info and passes
+		it on.
+	(compareType): Likewise.
+
+* compare.Rd
+	(): Includes new parameter (logDiffDirectory).
+
+* log.R
+	(writeXmlCompareExprLog): saveXML writes to logDiffDirectory.
+
+* NAMESPACE: Added writeReport.
+
+* DESCRIPTION: Added Sxslt to Depends.
+
 2007-09-18  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
 
 Removed all checks for XML. Moved all XML read/writing into log.R	
@@ -13,8 +42,8 @@ Removed all checks for XML. Moved all XML read/writing into log.R
 	(readCompareExprLog): Reads new warnings.
 	(writeCompareExprLog): Writes new warnings.
 	(print.qcCompareExprResult): New function (unfinished: requires unpaired
-	 + warnings/errors).
-	(shortenDirectory): New function.
+		+ warnings/errors).
+	(shortenDirectory): New function (used for printing).
 
 2007-08-27  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
 

@@ -11,12 +11,15 @@
   differences.
 }
 \usage{
-compare(test, control, erase=c("none", "identical", "files", "all"))
+compare(test, control, logDiffDirectory = test$info$directory, 
+        erase = c("none", "identical", "files", "all"))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{test, control}{An R object of class qcPlotExpr, qcPlotFun, etc. or the
             path to the XML file produced by any of the associated functions.}
+  \item{logDiffDirectory}{character vector; specifies where all the diff
+        output (.diff files, plots, and comparison logs) should be placed.}
   \item{erase}{character vector; one of '"none"', '"identical"', '"files"',
                '"all"'}
 }
@@ -29,20 +32,20 @@ compare(test, control, erase=c("none", "identical", "files", "all"))
   
   When comparing qcPlotFun or qcPlotFile results, the name of the log file will
   be the prefix of the first test log file with "-compareFunLog.xml" appended
-  on the end. It will be placed in the directory of the first test.
+  on the end. It will be placed in the logDiffDirectory.
 }
 \value{
-  A list of class qcCompareExpr or Fun containing the results of the
+  A list of class qcCompareExpr or qcCompareFun containing the results of the
   comparisons.
 }
 \note{
   GNU diff must be installed on the system. ImageMagick will be used if it is
-  installed. The resulting log files, .diff files, and (possibly) images of
-  differences are placed in the same directory as the test files.
+  installed.
   'compareFun' and 'compareFile' use the first test file prefix for the prefix
   of the resulting comparison.
 }
-\seealso{\code{\link{plotExpr}}, \code{\link{plotFun}}, \code{\link{plotFile}}}
+\seealso{\code{\link{plotExpr}}, \code{\link{plotFun}}, \code{\link{plotFile}}
+  , \code{\link{writeReport}}}
 \examples{
 #test1 <- plotExpr(c("plot(1:10)", "plot(4:40)", "x<-3", "plot(2:23)"),
 #                  c("pdf", "ps"), "test", "testdir1", FALSE)

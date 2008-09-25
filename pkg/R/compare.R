@@ -12,12 +12,11 @@
 # once the comparison has been made, and then to retain files if they
 # are different.
 #
-# Note: Plots of diffs and .diff files are placed in the test directory
-#
 # --------------------------------------------------------------------
 
 "compare" <- function(test,
                       control,
+                      logDiffDirectory = test$info$directory,
                       erase = c("none", "identical", "files", "all")
                       ##directory if empty?
                       #clean = c("full", "files", "none") # char length 1
@@ -27,6 +26,9 @@
                                     # AFTER EACH expr
                                     ## diff plots?
                       ) {
+    if (is.null(logDiffDirectory)) {
+        logDiffDirectory <- test[[1]]$info$directory
+    }
     # Start warning handler
     assign("graphicsQCWarnings", character(0), envir = globalenv())
     # Clear warning handler on exit
@@ -43,6 +45,9 @@
     	     dQuote("files"), ", ", dQuote("identical"), ", or ",
     	     dQuote("all"))
     }
+    
+    # Check logDiffDirectory
+    logDiffDirectory <- getValidPath(logDiffDirectory)
 
     test <- getQCResult(test)
     control <- getQCResult(control)
@@ -59,20 +64,22 @@
     if (inherits(test, "qcPlotFunResult") &&
         inherits(control, "qcPlotFunResult")) {
         results <- mapply(compareExpr, test, control,
-                          MoreArgs = list(erase=erase), SIMPLIFY = FALSE)
+                          MoreArgs = list(logDiffDirectory = logDiffDirectory,
+                                          erase = erase), SIMPLIFY = FALSE)
         writeXmlCompareTypeLog(results, "Fun")
         class(results) <- "qcCompareFunResult"
         return(results)
     } else if (inherits(test, "qcPlotFileResult") &&
         inherits(control, "qcPlotFileResult")) {
         results <- mapply(compareExpr, test, control,
-                          MoreArgs = list(erase=erase), SIMPLIFY = FALSE)
+                          MoreArgs = list(logDiffDirectory = logDiffDirectory,
+                                          erase = erase), SIMPLIFY = FALSE)
         writeXmlCompareTypeLog(results, "File")
         class(results) <- "qcCompareFileResult"
         return(results)
     } else if (inherits(test, "qcPlotExprResult") &&
                inherits(control, "qcPlotExprResult")) {
-        results <- compareExpr(test, control, erase)
+        results <- compareExpr(test, control, logDiffDirectory, erase)
         return(results)
     } else {
         ## test and control are not the same classes!
@@ -86,12 +93,13 @@
 # compareExpr()
 #
 # --------------------------------------------------------------------
-"compareExpr" <- function(test, control, erase) {
+"compareExpr" <- function(test, control, logDiffDirectory, erase) {
     filePairs <- getPairs(test, control)
     # names(filepairs) are the filetypes to compare
     results <- lapply(names(filePairs[["test"]]), compareType,
                  filePairs[["control"]], control[["info"]][["directory"]],
-                 filePairs[["test"]], test[["info"]][["directory"]], erase)
+                 filePairs[["test"]], test[["info"]][["directory"]],
+                 logDiffDirectory, erase)
     if (length(filePairs[[1]]) < length(filePairs[[2]])) {
         names(results) <- names(filePairs[[1]])
     } else {
@@ -102,8 +110,10 @@
     info <- list("OS" = .Platform$OS.type, "Rver" =
                  as.character(getRversion()), "date" = date(),
                  "call" = paste(deparse(sys.call(1)), collapse = ""),
-                 "controlDirectory" = control[["info"]][["directory"]],
+                 "logDiffDirectory" =
+                 normalizePath(path.expand(logDiffDirectory)),
                  "testDirectory" = test[["info"]][["directory"]],
+                 "controlDirectory" = control[["info"]][["directory"]],
                  "logFilename" = getCompareExprLogFilename(test, control))
     results <- list("info" = info, "testInfo" = test[["info"]],
                     "controlInfo" = control[["info"]], "results" = results)
@@ -241,7 +251,7 @@
 #
 # --------------------------------------------------------------------
 "compareType" <- function(filetype, control, controlPath, test, testPath,
-                          erase) {
+                          logDiffDirectory, erase) {
     # pastes "compare" and 'filetype' to call the appropriate function;
     # pastes 'path' and 'filename' for control and test groups respectively;
     # passes IM capability if it's supported and a diff plot is required
@@ -252,13 +262,11 @@
            paste(testPath, test[[filetype]], sep = .Platform$file.sep),
            paste(controlPath, control[[filetype]], sep = .Platform$file.sep),
            hasIM() && filetype %in% getSupportedIMFormats() &&
-           any(erase == c("none", "identical")), testPath, SIMPLIFY = FALSE)
+           any(erase == c("none", "identical")), logDiffDirectory,
+           SIMPLIFY = FALSE)
         names(result) <- NULL
         return(result)
-           ##rather than test path, just setwd in case original path was
-           # "testdir" rather than "testdir/"
     }
-    ## currently path is test dir
     ## now remove files?
 }
 

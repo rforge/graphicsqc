@@ -9,89 +9,72 @@
 # writeReport will produce a HTML output of any differences found
 # from the compare function.
 #
-# --------------------------------------------------------------------
-"writeReport" <- function(){}
-
-
-# --------------------------------------------------------------------
+# 'comparison' is either a character vector specifying the path to the log
+# file to report on, or the folder where it will report on all the log files,
+# or an R object to create the report.
+# Reports are made for all log files that the given log file might refer to.
+# A character vector is returned containing paths to the log files (with only
+# the highest classed ones returned when a folder is given).
 #
-# readCompareExprLog()
-#
+# Note: Currently, if the R object is given, the log file and sub-class
+# log files must exist (xsltApplyStyleSheet requires a filename or a string
+# containing the doc)
 # --------------------------------------------------------------------
-"readCompareExprLog" <- function(filename) {
-    ## better error handling on bad files?
-    # Gets the overall tree, then collects sub-parts, then combines them
-    comparisonTree <- xmlRoot(xmlTreeParse(filename))
-    info <- xmlApply(comparisonTree[[1]], xmlValue)
-    testInfo <- mergeList(xmlApply(comparisonTree[[2]], xmlValue))
-    controlInfo <- mergeList(xmlApply(comparisonTree[[3]], xmlValue))
+"writeReport" <- function(qcResult) {
+    #SxsltInitializationFunction()
+    ## Note: There is a call to browser() in addXSLTFunctions...
+    addXSLTFunctions(getLogName = function(...) logNameToHTML(file.path(...)))
+    
+    plotExprStyleSheet <- system.file("xsl", "plotExpr.xsl",
+                                      package = "graphicsqc")
+    compareExprStyleSheet <- system.file("xsl", "compareExpr.xsl",
+                                         package = "graphicsqc")
+    
+    if (is.character(qcResult)) {
+        # Either a folder or a file.
+        fileInfo <- file.info(qcResult)
+        if (is.na(fileInfo$isdir)) {
+            stop("file ", dQuote(qcResult), " not found", call. = FALSE)
+        } else if (!fileInfo$isdir) {
+            # It's a file
+            qcResult <- readLog(qcResult)
+        } else {
+            # It's a PATH (not a file) !
+            # so autodetect log files
+            ## .
+        }
+    }
 
-    topLevelElements <- xmlApply(comparisonTree, xmlAttrs)
+    if (inherits(qcResult, "qcPlotExprResult")) {
+        plotExprPath <- file.path(qcResult[["info"]][["directory"]],
+                                  qcResult[["info"]][["logFilename"]])
+        plotExpr <- xsltApplyStyleSheet(plotExprPath, plotExprStyleSheet)
+        logName <- logNameToHTML(plotExprPath)
+        saveXML(plotExpr$doc, file = logName)
+        return(logName)
+        
+    } else if (inherits(qcResult, "qcCompareExprResult")) {
+        compareExprPath <- file.path(qcResult[["info"]][["logDiffDirectory"]],
+                                     qcResult[["info"]][["logFilename"]])
+        testPath <- file.path(qcResult[["testInfo"]][["directory"]],
+                              qcResult[["testInfo"]][["logFilename"]])
+        controlPath <- file.path(qcResult[["controlInfo"]][["directory"]],
+                                 qcResult[["controlInfo"]][["logFilename"]])
 
-    # Get results for each filetype
-    types <- unlist(topLevelElements[which(names(topLevelElements) ==
-                    "compare")])
-    filetypeResults <- mapply(function(type, i) {
-        controlAndTest <- lapply(xmlApply(comparisonTree[[i]], xmlAttrs),
-                                 as.list, all.names = TRUE)
-        warnsAndErrorIndices <- names(controlAndTest) != "comparison"
-        controlAndTest <- controlAndTest[!warnsAndErrorIndices]
-
-        resultDiffPlot <- xmlApply(comparisonTree[[i]], function(tree) {
-                                   xmlApply(tree, xmlValue) })
-        warnsAndError <- mergeList(resultDiffPlot[warnsAndErrorIndices])
-        resultDiffPlot <- resultDiffPlot[!warnsAndErrorIndices]
-
-        combined <- lapply(seq_len(length(controlAndTest)), function(j)
-                           c(controlAndTest[[j]], resultDiffPlot[[j]]))
-        if (length(combined) == 0) combined <- NULL
-        if (length(warnsAndError) == 0) warnsAndError <- NULL
-        c(combined, warnsAndError)
-       }, mergeList(topLevelElements)$compare,
-          which(names(topLevelElements) == "compare"), SIMPLIFY = FALSE)
-
-    # Get unpaired results
-    testUnpairedTypes <- unlist(xmlApply(comparisonTree[[length(
-                                         topLevelElements)]][["test"]],
-                                         xmlName), use.names = FALSE)
-    testUnpaired <- lapply(testUnpairedTypes, function(type)
-        mergeList(xmlApply(comparisonTree[[length(topLevelElements)]][[
-                                           "test"]][[type]], xmlValue)))
-    names(testUnpaired) <- testUnpairedTypes
-
-    controlUnpairedTypes <- unlist(xmlApply(comparisonTree[[length(
-                                            topLevelElements)]][["control"]],
-                                            xmlName), use.names = FALSE)
-    controlUnpaired <- lapply(controlUnpairedTypes, function(type)
-        mergeList(xmlApply(comparisonTree[[length(topLevelElements)]][[
-                                           "control"]][[type]], xmlValue)))
-    names(controlUnpaired) <- controlUnpairedTypes
-
-    # If the unpaireds are just list() or blank, change them to NULL
-    if (length(testUnpaired) == 0) testUnpaired <- NULL
-    if (length(controlUnpaired) == 0) controlUnpaired <- NULL
-
-    # Combine all the results
-    logQCResult <- list(info = info, testInfo = testInfo,
-                          controlInfo = controlInfo, results =
-                          c(filetypeResults, list(unpaired =
-                          c(list(test = testUnpaired,
-                            control = controlUnpaired)))))
-    class(logQCResult) <- "qcCompareExprResult"
-    return(logQCResult)
+        compareExpr <- xsltApplyStyleSheet(compareExprPath,
+                                           compareExprStyleSheet)
+        testExpr <- xsltApplyStyleSheet(testPath, plotExprStyleSheet)
+        controlExpr <- xsltApplyStyleSheet(controlPath, plotExprStyleSheet)
+        logName <- logNameToHTML(compareExprPath)
+        saveXML(compareExpr$doc, file = logName)
+        saveXML(testExpr$doc, file = logNameToHTML(testPath))
+        saveXML(controlExpr$doc, file = logNameToHTML(controlPath))
+        return(logName)
+        
+    } else {
+        stop("either ", sQuote("qcResult"), " is not a valid qcResult, ",
+             "or that type is not supported yet", call. = FALSE)
+    }
 }
 
-# --------------------------------------------------------------------
-#
-# readCompareFunLog()
-#
-# --------------------------------------------------------------------
-"readCompareFunLog" <- function(logFile, logClass) {
-    exprResults <- unlist(lapply(xmlChildren(xmlRoot(xmlTreeParse(logFile))),
-                                 xmlValue))
-    names(exprResults) <- NULL
-    funResults <- lapply(exprResults, readCompareExprLog)
-    class(funResults) <- logClass
-    funResults
-}
-
+"logNameToHTML" <- function(logName) gsub("[.]xml$", ".html", logName)

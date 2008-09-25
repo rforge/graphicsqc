@@ -70,21 +70,23 @@ identical(testFun, testFunAutoCheck)
 ## --Insert test for readPlotPackageLog when done
 
 # --- Testing compare for plotExpr ---
-blankComp <- compare(blankTest, blankTest2, "none") # no comparisons/no files
+blankComp <- compare(blankTest, blankTest2, erase="none")
+# no comparisons/no files
+
 blankCompCheck <- graphicsqc:::readLog(file.path("blankTest",
                                        "test+blankTest-compareExprLog.xml"))
 identical(blankComp, blankCompCheck)
                                           
-compare(test1, test1, "none") # all identical
+compare(test1, test1, erase="none") # all identical
 
 # Same as test1 but missing the last plot and png
 test1b <- plotExpr(c("plot(1:10)", "plot(4:40)", "plot(2:23)",
                      "warning(\"a\")", "warning(\"b\")", "warning(\"c\")"),
                      c("pdf", "ps"), "test", "testdir1b/", FALSE)
 test1B <- plotExpr(c("plot(1:10)", "plot(4:40)", "warning(\"d\")",
-                     "warning(\"a\")"), c("pdf", "png"), "test2", "testdir1B")
-test1BComp <- compare(test1b, test1B, "none") # Should all be identical but
-                                # with unpaired files (test1b has an extra 
+                     "warning(\"a\")"), c("pdf", "png"), "test2", "testdir1Be")
+test1BComp <- compare(test1b, test1B, erase="none") # Should all be identical
+                                # but with unpaired files (test1b has an extra 
                                 # plot and ps; test1B has png)
 # Test round-trip for compare
 test1BCompCheck <- graphicsqc:::readLog(file.path("testdir1b",
@@ -94,8 +96,8 @@ identical(test1BComp, test1BCompCheck) # Should be True
 # Second plot is different, third plot is still unpaired, test1B will be wiped
 # with clear being TRUE
 test1C <- plotExpr(c("plot(1:10)", "plot(4:41)"), c("pdf", "png"), 
-                         "test2", "testdir1B", TRUE)
-compare(test1, test1C, "none") # This creates (and overwrites!) a compareLog
+                         "test2", "testdir1Be", TRUE)
+compare(test1, test1C, erase="none") # This creates (and overwrites!) a compareLog
                                # in the test dir, i.e.
 list.files("testdir1") #test+test2-compareExprLog.xml is new
 
@@ -113,7 +115,7 @@ testFun2ReadCheck <- graphicsqc:::readLog(file.path("testFun2",
                                                     "barplot-funLog.xml"))
 identical(testFun2, testFun2ReadCheck)
 
-funComparison <- compare(testFun1, testFun2, "none")
+funComparison <- compare(testFun1, testFun2, erase="none")
 funComparisonReadCheck <- graphicsqc:::readLog(file.path("testFun",
                                                "plot-compareFunLog.xml"))
 identical(funComparison, funComparisonReadCheck)
@@ -121,9 +123,9 @@ identical(funComparison, funComparisonReadCheck)
 # --- Testing compare for plotFile ---
 testFile3 <- plotFile(file.path("testFiles", "Rfile.R"), c("pdf", "png"),
                       prefix="file1pref", path="testFile3", clear = FALSE)
-testFile4 <- plotFile(file.path("testFiles", "Rfile2.R"), c("pdf", "png", "ps"),
-                      path="testFile4", clear=FALSE)
-fileComparison <- compare(testFile3, testFile4, "none")
+testFile4 <- plotFile(file.path("testFiles", "Rfile2.R"), c("pdf", "png",
+                      "ps"), path="testFile4", clear=FALSE)
+fileComparison <- compare(testFile3, testFile4, erase="none")
 fileComparisonReadCheck <- graphicsqc:::readLog(file.path("testFile3",
                                                "file1pref-compareFileLog.xml"))
 identical(fileComparison, fileComparisonReadCheck)
@@ -136,6 +138,12 @@ testFun3 <- plotFunction(c("plot", "barplot"), c("pdf", "png"),
                                                   path="testFun3", clear=FALSE)
 list.files("testFun3")
 
+# ------------------- Testing report.R -------------------------
+report1 <- writeReport(test1)
+report2 <- writeReport(test1BComp)
+report3 <- writeReport(blankComp)
+
+
 ## Something to note: Doing something like
 # y <- 1:10
 # x <- rnorm(10)
@@ -143,7 +151,7 @@ list.files("testFun3")
 # plotExpr("plot(myLm)", "png", "testlm", "testlm", FALSE)
 # Will require the user to keep doing "Hit <Return> to see next plot:"
 # if not in batch mode
-# FULL fix requires change to source cope of plot.lm
+# FULL fix requires change to source code of plot.lm
 # WORKAROUND is just use BATCH mode !
 
 
