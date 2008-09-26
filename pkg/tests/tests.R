@@ -82,7 +82,7 @@ compare(test1, test1, erase="none") # all identical
 # Same as test1 but missing the last plot and png
 test1b <- plotExpr(c("plot(1:10)", "plot(4:40)", "plot(2:23)",
                      "warning(\"a\")", "warning(\"b\")", "warning(\"c\")"),
-                     c("pdf", "ps"), "test", "testdir1b/", FALSE)
+                   c("pdf", "ps"), "test", "testdir1b/", FALSE)
 test1B <- plotExpr(c("plot(1:10)", "plot(4:40)", "warning(\"d\")",
                      "warning(\"a\")"), c("pdf", "png"), "test2", "testdir1Be")
 test1BComp <- compare(test1b, test1B, erase="none") # Should all be identical

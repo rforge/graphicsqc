@@ -333,5 +333,53 @@ someday, the report code has to handle qcCompare/compareLog OR
 - XSL to generate the report (+ Sxslt ?).
 
 
+# 26/09/08
+
+- change 'logDiffDirectory' to 'path'
+
+- where should the report (HTML) files go ?
+  'path' arg or something ?
+
+- formatting the call in reports:  use monospace font at least
+  any way to format it nicely ?
+
+- Sxslt moans:
+
+  + custom xsltproc out of date ?
+    - output="html" indent="yes" does NOT produce indented HTML
+
+  + addXSLTFunctions() has call to browser() in it !?
+    (so in interactive session you have to quit the browser)
+
+  + registerXSLTFunction() not working ??
+    (even on Sxslt examples on web site)
+
+  + do we need the r:init test ??
+
+- PAUL TODO:  let Duncan know the Sxslt problems
+
+- any good way to get the report styled via CSS file rather than 
+  inline <style> ?
+  or have user supply a CSS file as well.
+
+- allow user to supply XSL file(s) to writeReport()
+
+- get writeReport() to work with compareFun and compareFile objects
+
+- throw a real test at the report code.
 
 
+
+===========
+What's left:
+===========
+
+- plotPkg()
+- compare(erase)
+- print(<lots>)
+- compare(comparePkg)
+- writeReport(compareFun|compareFile|comparePkg)
+- documentation
+
+- REPORT
+- TALK
