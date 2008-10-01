@@ -369,6 +369,27 @@ someday, the report code has to handle qcCompare/compareLog OR
 - throw a real test at the report code.
 
 
+# 02/10/08
+
+- workaround to the workaround:  use graphicsqc:::logToHTML()
+
+  Ultimately, prefer to get addXSLTFunctions() fixed.
+
+- report for compareFun (at least) has test/control wrong way round
+  in "Different plots" table.
+
+- compareFunLog.xml should have its own <Info>
+  (... and path goes in there)
+
+- compareFun.xsl would be simpler if it could use XInclude to
+  "load" in the child XML docs THEN process
+  (at the moment it xsl:for-each's over child XML docs all over
+   the place)
+
+- get writeReport() to work with compareFun and compareFile objects
+
+- keep the documentation up to date !
+
 
 ===========
 What's left:
@@ -380,6 +401,9 @@ What's left:
 - compare(comparePkg)
 - writeReport(compareFun|compareFile|comparePkg)
 - documentation
+- does it run on Windows ?  (Mac ?)
+- at the compareFun level, there is no recording/reporting
+  if a *fun* is completely unpaired
 
 - REPORT
 - TALK
