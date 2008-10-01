@@ -257,10 +257,10 @@ plotFile <- function(filename, # character vector
     if (length(filename) != length(prefix)) {
         stop(sQuote(prefix), " must be the same length as ", sQuote(filename))
     }
-    path <- getValidPath(path)
     if (length(grep(.Platform$file.sep, prefix)) > 0) {
         stop(sQuote(prefix), " cannot contain the system file separator")
     }
+    path <- getValidPath(path)
     expr <- lapply(filename, readLines)
     fileMapplyResult <- mapply(plotExpr, expr = expr, prefix = prefix,
              path = path, MoreArgs = list(filetype = filetype, clear = clear),
@@ -274,7 +274,7 @@ plotFile <- function(filename, # character vector
     }
     # Note: plotExpr XML file gets written in the call to plotExpr
     writeXmlPlotTypeLog(prefix, paste(normalizePath(path.expand(path)),
-                            .Platform$file.sep, sep = ""), filePrefix, "file")
+                        .Platform$file.sep, sep = ""), filePrefix, "file")
     class(fileMapplyResult) <- c("qcPlotFileResult")
     invisible(fileMapplyResult)
 }
@@ -318,7 +318,7 @@ plotFunction <- function(fun, # character vector
         filePrefix <- prefix
     }
     writeXmlPlotTypeLog(prefix, paste(normalizePath(path.expand(path)),
-                             .Platform$file.sep, sep = ""), filePrefix, "fun")
+                        .Platform$file.sep, sep = ""), filePrefix, "fun")
     class(funMapplyResult) <- c("qcPlotFunResult")
     invisible(funMapplyResult)
 }

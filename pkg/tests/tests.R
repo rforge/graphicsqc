@@ -125,6 +125,8 @@ testFile3 <- plotFile(file.path("testFiles", "Rfile.R"), c("pdf", "png"),
                       prefix="file1pref", path="testFile3", clear = FALSE)
 testFile4 <- plotFile(file.path("testFiles", "Rfile2.R"), c("pdf", "png",
                       "ps"), path="testFile4", clear=FALSE)
+testFile5 <- plotFile(file.path("testFiles", c("Rfile.R", "Rfile2.R")),
+                      c("pdf", "png", "ps"), path="testFile5")
 fileComparison <- compare(testFile3, testFile4, erase="none")
 fileComparisonReadCheck <- graphicsqc:::readLog(file.path("testFile3",
                                                "file1pref-compareFileLog.xml"))
@@ -142,7 +144,11 @@ list.files("testFun3")
 report1 <- writeReport(test1)
 report2 <- writeReport(test1BComp)
 report3 <- writeReport(blankComp)
-
+report4 <- writeReport(funComparison)
+testFun4 <- plotFunction(c("barplot", "barplot"), c("pdf", "ps"),
+                         prefix=c("bplot", "bplot2"),
+                         path="testFun4", clear=FALSE)
+report5 <- writeReport(compare(testFun4, testFun1, "report5", erase="none"))
 
 ## Something to note: Doing something like
 # y <- 1:10

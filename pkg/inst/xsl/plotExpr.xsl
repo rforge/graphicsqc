@@ -8,64 +8,72 @@ xmlns:r="http://www.r-project.org"
 <xsl:output method="html" indent="yes"/>
 
 <xsl:template match="/qcPlotExprResult">
-  <xsl:if test="function-available('r:init')">
-    <xsl:if test="r:init('--silent')" />
-  </xsl:if>
   <html>
   <head>
     <title>Plot Expression Result</title>
     <style type="text/css">
-      table {border: 1px solid #585858; background-color: #D8D8D8;}
-      .tableMain {background-color: #80add6;}
-      .tableData {background-color: #fdfad9;}
-    </style>  
+      table {border: 1px solid #585858;
+             background-color: #D8D8D8;}
+      th {background-color: #80add6;
+          font-weight: bold;
+          text-align: left;
+          padding-left: 5px;
+          padding-right: 5px;
+          padding-top: 3px;
+          padding-bottom: 3px;}
+      td {background-color: #fdfad9;
+          padding-left: 5px;
+          padding-right: 5px;
+          padding-top: 3px;
+          padding-bottom: 3px;}
+    </style>
   </head>
   <body>
     <h2>Plot Expression Result</h2>
     <table>
     <tr>
-      <td class="tableMain"><strong>R Version</strong></td>
-      <td class="tableData"><xsl:value-of select="info/Rver"/></td>
+      <th>R Version</th>
+      <td><xsl:value-of select="info/Rver"/></td>
     </tr>
     <tr>
-      <td class="tableMain"><strong>OS</strong></td>
-      <td class="tableData"><xsl:value-of select="info/OS"/></td>
+      <th>OS</th>
+      <td><xsl:value-of select="info/OS"/></td>
     </tr>
     <tr>
-      <td class="tableMain"><strong>Date</strong></td>
-      <td class="tableData"><xsl:value-of select="info/date"/></td>
+      <th>Date</th>
+      <td><xsl:value-of select="info/date"/></td>
     </tr>
     <tr>
-      <td class="tableMain"><strong>Call</strong></td>
-      <td class="tableData"><xsl:value-of select="info/call"/></td>
+      <th>Call</th>
+      <td style="font-family: monospace"><xsl:value-of select="info/call"/></td>
     </tr>
     <tr>
-      <td class="tableMain"><strong>Directory</strong></td>
-      <td class="tableData"><xsl:value-of select="info/directory"/></td>
+      <th>Directory</th>
+      <td><xsl:value-of select="info/directory"/></td>
     </tr>
     <tr>
-      <td class="tableMain"><strong>Log Filename</strong></td>
-      <td class="tableData"><xsl:value-of select="info/logFilename"/></td>
+      <th>Log Filename</th>
+      <td><xsl:value-of select="info/logFilename"/></td>
     </tr>
     </table>
     <br/>
     <table>
     <tr>
-      <th align="left" class="tableMain"><em>Format</em></th>
-      <th align="left" class="tableMain"><em>Plots</em></th>
+      <th>Format</th>
+      <th>Plots</th>
       <xsl:if test="normalize-space(plots/warnings)">
-        <th align="left" class="tableMain"><em>Warnings</em></th>
+        <th>Warnings</th>
       </xsl:if>
       <xsl:if test="normalize-space(plots/error)">
-        <th align="left" class="tableMain"><em>Error</em></th>
+        <th>Error</th>
       </xsl:if>
     </tr>
     <xsl:for-each select="plots">
     <tr>
-      <td class="tableData" style="vertical-align: top;">
+      <td style="vertical-align: top;">
         <xsl:value-of select="@type"/>
       </td>
-      <td class="tableData">
+      <td>
       <xsl:for-each select="plot">
           <a href="{r:call('file.path', string(../../info/directory), string(.))}">
             <xsl:value-of select="."/>
@@ -76,7 +84,7 @@ xmlns:r="http://www.r-project.org"
       </xsl:for-each>
       </td>
       <xsl:if test="normalize-space(warnings)">
-        <td class="tableData">
+        <td>
           <xsl:for-each select="warnings">
             <xsl:value-of select="."/>
             <xsl:if test="position()!=last()"><br/></xsl:if>
@@ -84,7 +92,7 @@ xmlns:r="http://www.r-project.org"
         </td>
       </xsl:if>
       <xsl:if test="normalize-space(error)">
-        <td class="tableData">
+        <td>
             <xsl:value-of select="error"/>
         </td>
       </xsl:if>

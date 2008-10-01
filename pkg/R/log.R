@@ -132,7 +132,7 @@
             xmlResults$closeTag() # testOrControl
         })
     xmlResults$closeTag() # unpaired
-    saveXML(xmlResults, paste(results[["info"]][["logDiffDirectory"]],
+    saveXML(xmlResults, paste(results[["info"]][["path"]],
                               results[["info"]][["logFilename"]],
                               sep = .Platform$file.sep))
 }
@@ -142,18 +142,16 @@
 # writeXmlCompareTypeLog()
 #
 # --------------------------------------------------------------------
-"writeXmlCompareTypeLog" <- function(results, type) {
-    xmlResults <- xmlOutputDOM(tag=paste("qcCompare", type, "Result",
-                                         sep = ""))
+"writeXmlCompareTypeLog" <- function(results, type, filename) {
+    xmlResults <- xmlOutputDOM(tag = paste("qcCompare", type, "Result",
+                               sep = ""),
+                               attrs = c(path = attr(results, "path")))
      logs <- sapply(seq_along(results), function(i)
-                 paste(results[[i]][["testInfo"]][["directory"]],
+                 paste(results[[i]][["info"]][["path"]],
                        results[[i]][["info"]][["logFilename"]],
                        sep = .Platform$file.sep))
      lapply(logs, xmlResults$addTag, tag="qcCompareExprResult")
-     filename <- paste(unlist(strsplit(results[[1]][["testInfo"]][[
-                       "logFilename"]], "-log.xml")), "-compare", type,
-                       "Log.xml", sep = "")
-    saveXML(xmlResults, paste(results[[1]][["testInfo"]][["directory"]],
+    saveXML(xmlResults, paste(results[[1]][["info"]][["path"]],
                               filename, sep = .Platform$file.sep))
 }
 
@@ -373,10 +371,13 @@
 #
 # --------------------------------------------------------------------
 "readCompareFunLog" <- function(logFile, logClass) {
-    exprResults <- unlist(lapply(xmlChildren(xmlRoot(xmlTreeParse(logFile))),
+    exprResultsRoot <- xmlRoot(xmlTreeParse(logFile))
+    path <- as.character(xmlAttrs(exprResultsRoot))
+    exprResults <- unlist(lapply(xmlChildren(exprResultsRoot),
                                  xmlValue))
     names(exprResults) <- NULL
     funResults <- lapply(exprResults, readCompareExprLog)
+    attr(funResults, "path") <- path
     class(funResults) <- logClass
     funResults
 }

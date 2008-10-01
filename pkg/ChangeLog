@@ -1,3 +1,35 @@
+2007-10-02  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
+
+* compare.R
+	(<misc>): renamed 'logDiffDirectory' to 'path'.
+	(): qcPlotFun result now also has a path attribute.
+	(): qcPlotFun and qcPlotFile results generate their own filename and pass
+		to writeXmlCompareTypeLog().
+
+* writeReport.R
+	(): Renamed 'logDiffDirectory' to 'path'.
+		Unnested 'logToHTML' so don't have to use addXSLTFunctions().
+		^ Doesn't work when in package ..?
+		Added support for qcCompareFunResult files.
+	(getCompareExprName): New function.
+	
+* plotExpr.xsl
+	(): Better use of CSS for tables (now with some cellpadding).
+
+* compareExpr.xsl
+	(): Better use of CSS for tables (now with some cellpadding).
+		Use 'path' instead of 'logDiffDirectory'.
+
+* compareFun.xsl: New file (unfinished).
+	
+* log.R
+	(writeXmlCompareTypeLog): Writes the new path attribute. Also takes new
+		argument of filename. Also changed to read 'path' properly.
+	(readPlotFunLog): Reads in the new path attribute.
+
+* tests.R
+	(): Some updates.
+
 2007-09-26  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
 
 * writeReport.Rd: New file.

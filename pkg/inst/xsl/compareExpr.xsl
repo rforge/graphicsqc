@@ -12,9 +12,20 @@ xmlns:r="http://www.r-project.org"
   <head>
     <title>Compare Expression Result</title>
     <style type="text/css">
-      table {border: 1px solid #585858; background-color: #D8D8D8;}
-      th, .tableMain {background-color: #80add6; font-weight: bold}
-      td, .tableData {background-color: #fdfad9;}
+      table {border: 1px solid #585858;
+             background-color: #D8D8D8;}
+      th {background-color: #80add6;
+          font-weight: bold;
+          text-align: left;
+          padding-left: 5px;
+          padding-right: 5px;
+          padding-top: 3px;
+          padding-bottom: 3px;}
+      td {background-color: #fdfad9;
+          padding-left: 5px;
+          padding-right: 5px;
+          padding-top: 3px;
+          padding-bottom: 3px;}
     </style>  
   </head>
   <body>
@@ -27,62 +38,59 @@ xmlns:r="http://www.r-project.org"
     </ol>
     <h2><a name="info">Info</a></h2>
     <table>
-    <tr>
-      <th></th>
-      <th>Test</th>
-      <th>Control</th>
-      <th>Comparison</th>
-    </tr>
-    <tr>
-      <td class="tableMain">Version</td>
-      <xsl:apply-templates select="testInfo/Rver | controlInfo/Rver"/>
-      <xsl:apply-templates select="info/Rver"/>
-    </tr>
-    <tr>
-      <td class="tableMain">OS</td>
-      <xsl:apply-templates select="testInfo/OS | controlInfo/OS"/>
-      <xsl:apply-templates select="info/OS"/>
-    </tr>
-    <tr>
-      <td class="tableMain">Date</td>
-      <xsl:apply-templates select="testInfo/date | controlInfo/date"/>
-      <xsl:apply-templates select="info/date"/>
-    </tr>
-    <tr>
-      <td class="tableMain">Call</td>
-      <xsl:apply-templates select="testInfo/call | controlInfo/call"/>
-      <xsl:apply-templates select="info/call"/>
-    </tr>
-    <tr>
-      <td class="tableMain">Directory</td>
-      <xsl:apply-templates select="testInfo/directory |
-                                   controlInfo/directory"/>
-      <td>
-        <xsl:value-of select="info/logDiffDirectory"/>
-      </td>
-    </tr>
-    <tr>
-      <td class="tableMain">Log Filename</td>
-      <td>
-        <a href="{r:getLogName(string(testInfo/directory),
-                               string(testInfo/logFilename))}">
-          <xsl:value-of select="testInfo/logFilename"/>
-        </a>
-      </td>
-      <td>
-        <a href="{r:getLogName(string(controlInfo/directory),
-                               string(controlInfo/logFilename))}">
-          <xsl:value-of select="controlInfo/logFilename"/>
-        </a>
-      </td>
-      <td>
-        <!-- or document('') -->
-        <a href="{r:getLogName(string(info/logDiffDirectory),
-                               string(info/logFilename))}">
+      <tr>
+        <th></th>
+        <th style="text-align: center">Test</th>
+        <th style="text-align: center">Control</th>
+        <th style="text-align: center">Comparison</th>
+      </tr>
+      <tr>
+        <th>Version</th>
+        <xsl:apply-templates select="testInfo/Rver | controlInfo/Rver"/>
+        <xsl:apply-templates select="info/Rver"/>
+      </tr>
+      <tr>
+        <th>OS</th>
+        <xsl:apply-templates select="testInfo/OS | controlInfo/OS"/>
+        <xsl:apply-templates select="info/OS"/>
+      </tr>
+      <tr>
+        <th>Date</th>
+        <xsl:apply-templates select="testInfo/date | controlInfo/date"/>
+        <xsl:apply-templates select="info/date"/>
+      </tr>
+      <tr>
+        <th>Call</th>
+        <xsl:apply-templates select="testInfo/call | controlInfo/call"/>
+        <xsl:apply-templates select="info/call"/>
+      </tr>
+      <tr>
+        <th>Directory</th>
+        <xsl:apply-templates select="testInfo/directory |
+                                     controlInfo/directory"/>
+        <td>
+          <xsl:value-of select="info/path"/>
+        </td>
+      </tr>
+      <tr>
+        <th>Log Filename</th>
+        <td>
+          <a href="{r:call('logToHTML', string(testInfo/directory),
+                           string(testInfo/logFilename))}">
+            <xsl:value-of select="testInfo/logFilename"/>
+          </a>
+        </td>
+        <td>
+          <a href="{r:call('logToHTML', string(controlInfo/directory),
+                           string(controlInfo/logFilename))}">
+            <xsl:value-of select="controlInfo/logFilename"/>
+          </a>
+        </td>
+        <td>
+          <!-- or anchor over document('') -->
           <xsl:value-of select="info/logFilename"/>
-        </a>
-      </td>
-    </tr>
+        </td>
+      </tr>
     </table>
     <br/>
     <h2><a name="plotComp">Plot Comparisons</a></h2>
@@ -108,14 +116,14 @@ xmlns:r="http://www.r-project.org"
                   <xsl:apply-templates select="."/>
                   <td>
                     <a href="{r:call('file.path',
-                              string(../../info/logDiffDirectory),
+                              string(../../info/path),
                               string(diffFile))}">
                       <xsl:value-of select="diffFile"/>
                     </a>
                   </td>
                   <td>
                     <a href="{r:call('file.path',
-                              string(../../info/logDiffDirectory),
+                              string(../../info/path),
                               string(diffPlot))}">
                       <xsl:value-of select="diffPlot"/>
                     </a>
@@ -125,14 +133,14 @@ xmlns:r="http://www.r-project.org"
                   <xsl:apply-templates select="."/>
                   <td>
                     <a href="{r:call('file.path',
-                              string(../../info/logDiffDirectory),
+                              string(../../info/path),
                               string(diffFile))}">
                       <xsl:value-of select="diffFile"/>
                     </a>
                   </td>
                   <td>
                     <a href="{r:call('file.path',
-                              string(../../info/logDiffDirectory),
+                              string(../../info/path),
                               string(diffPlot))}">
                       <xsl:value-of select="diffPlot"/>
                     </a>
@@ -195,10 +203,9 @@ xmlns:r="http://www.r-project.org"
                                 compare[testWarnings]">
             <tr>
               <xsl:if test="position()=1">
-                <td class="tableMain" rowspan="{last()}"
-                    style="vertical-align:top">
+                <th rowspan="{last()}" style="vertical-align:top">
                   Warnings
-                </td>
+                </th>
               </xsl:if>
               <td>
                 <xsl:value-of select="@type"/>
@@ -214,10 +221,9 @@ xmlns:r="http://www.r-project.org"
           <xsl:for-each select="compare[controlError]|compare[testError]">
             <tr>
               <xsl:if test="position()=1">
-                <td class="tableMain" rowspan="{last()}"
-                    style="vertical-align:top">
+                <th rowspan="{last()}" style="vertical-align:top">
                   Errors
-                </td>
+                </th>
               </xsl:if>
               <td>
                 <xsl:value-of select="@type"/>
@@ -274,20 +280,22 @@ xmlns:r="http://www.r-project.org"
   </html>
 </xsl:template>
 
-<xsl:template match="Rver | OS | date | call | directory">
+<xsl:template match="Rver | OS | date | directory">
   <td><xsl:value-of select="."/></td>
+</xsl:template>
+
+<xsl:template match="call">
+  <td style="font-family: monospace"><xsl:value-of select="."/></td>
 </xsl:template>
 
 <xsl:template match="comparison">
   <td>
     <a href="{@controlFile}">
-      <!-- Use R for basename -->
       <xsl:value-of select="r:call('basename', string(@controlFile))"/>
     </a>
   </td>
   <td>
     <a href="{@testFile}">
-      <!-- Use R for basename -->
       <xsl:value-of select="r:call('basename', string(@testFile))"/>
     </a>
   </td>
@@ -304,10 +312,9 @@ xmlns:r="http://www.r-project.org"
   <xsl:for-each select="unpaired/*/*[*[name() = $which]]">
     <tr>
       <xsl:if test="position()=1">
-        <td class="tableMain" rowspan="{last()}"
-            style="vertical-align: top">
+        <th rowspan="{last()}" style="vertical-align: top">
           <xsl:value-of select="$title"/>
-        </td>
+        </th>
       </xsl:if>
       <xsl:variable name="format" select="local-name()"/>
       <td>

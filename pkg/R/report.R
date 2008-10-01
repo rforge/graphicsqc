@@ -23,11 +23,13 @@
 "writeReport" <- function(qcResult) {
     #SxsltInitializationFunction()
     ## Note: There is a call to browser() in addXSLTFunctions...
-    addXSLTFunctions(getLogName = function(...) logNameToHTML(file.path(...)))
+    #addXSLTFunctions(getLogName = function(...) logNameToHTML(file.path(...)))
     
     plotExprStyleSheet <- system.file("xsl", "plotExpr.xsl",
                                       package = "graphicsqc")
     compareExprStyleSheet <- system.file("xsl", "compareExpr.xsl",
+                                         package = "graphicsqc")
+    compareFunStyleSheet <- system.file("xsl", "compareFun.xsl",
                                          package = "graphicsqc")
     
     if (is.character(qcResult)) {
@@ -54,7 +56,7 @@
         return(logName)
         
     } else if (inherits(qcResult, "qcCompareExprResult")) {
-        compareExprPath <- file.path(qcResult[["info"]][["logDiffDirectory"]],
+        compareExprPath <- file.path(qcResult[["info"]][["path"]],
                                      qcResult[["info"]][["logFilename"]])
         testPath <- file.path(qcResult[["testInfo"]][["directory"]],
                               qcResult[["testInfo"]][["logFilename"]])
@@ -71,6 +73,13 @@
         saveXML(controlExpr$doc, file = logNameToHTML(controlPath))
         return(logName)
         
+    } else if (inherits(qcResult, "qcCompareFunResult")) {
+        lapply(qcResult, writeReport)
+        compareFunPath <- attr(qcResult, "path")
+        compareFun <- xsltApplyStyleSheet(compareFunPath,
+                                          compareFunStyleSheet)
+        logName <- logNameToHTML(compareFunPath)
+        saveXML(compareFun$doc, file = logName)
     } else {
         stop("either ", sQuote("qcResult"), " is not a valid qcResult, ",
              "or that type is not supported yet", call. = FALSE)
@@ -78,3 +87,8 @@
 }
 
 "logNameToHTML" <- function(logName) gsub("[.]xml$", ".html", logName)
+"logToHTML" <- function(...) logNameToHTML(file.path(...))
+"getCompareExprName" <- function(logWithPath) {
+    strsplit(basename(logWithPath), "-compareExprLog.xml")[[1]]
+}
+
