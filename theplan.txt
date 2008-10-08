@@ -391,6 +391,31 @@ someday, the report code has to handle qcCompare/compareLog OR
 - keep the documentation up to date !
 
 
+# 09/10/08
+
+- include "unpaired" in report
+
+- start report + talk:
+  + section headings plus bullet points for report
+  + slide headings for talk
+  + flesh out Rd files
+
+- real example:
+  svn co -r 44416
+  svn co -r 44417
+  modify /etc/X11/xorg.conf (to change "DisplaySize" in "Monitor" section)
+  example(grid.xspline) or example(grid.curve)
+
+- what happens when do a compareFun() and there are more funs in
+  test than in control ?
+
+- "comparison logs" in report should be in "log filename" cell of "Compare" 
+  column ?
+
+- Change Depends: Sxslt to Suggests: Sxslt ?
+  (and wrap writeReport() code in tests.R in code that checks for Sxslt)
+
+
 ===========
 What's left:
 ===========
@@ -401,6 +426,7 @@ What's left:
 - compare(comparePkg)
 - writeReport(compareFun|compareFile|comparePkg)
 - documentation
+- DTDs for log XML files ?
 - does it run on Windows ?  (Mac ?)
 - at the compareFun level, there is no recording/reporting
   if a *fun* is completely unpaired
