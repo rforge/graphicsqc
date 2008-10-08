@@ -7,7 +7,7 @@
   function.
 }
 \usage{
-  writeReport(qcResult)
+  writeReport(qcResult, xslStyleSheets = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -15,6 +15,11 @@
                   file to report on, or the folder where it will report on
                   all the log files or an R object of class qcPlotExpr,
                   qcCompareExpr, etc. to create the report.}
+  \item{xslStyleSheets}{a named list specifying which XSL style sheets
+                        to override. Can override any of: "plotExprStyleSheet",
+                        "plotFunAndFileStyleSheet", "compareExprStyleSheet",
+                        and "compareFunAndFileStyleSheet". If none are
+                        specified, the default ones are used.}
 }
 \details{
   Reports are made for all log files that the given log file might refer to.

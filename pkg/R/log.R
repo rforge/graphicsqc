@@ -56,13 +56,14 @@
 # writeXmlPlotTypeLog()
 #
 # --------------------------------------------------------------------
-"writeXmlPlotTypeLog" <- function(exprPrefix, path, filePrefix, type) {
-    xmlResults <- xmlOutputDOM(tag=paste("qcPlot", chartr("f", "F", type),
+"writeXmlPlotTypeLog" <- function(exprPrefix, info, type) {
+    xmlResults <- xmlOutputDOM(tag = paste("qcPlot", chartr("f", "F", type),
                                          "Result", sep = ""))
-     lapply(paste(path, exprPrefix, "-log.xml", sep = ""), xmlResults$addTag,
-            tag="qcPlotExprResult")
-    saveXML(xmlResults, paste(path, filePrefix, "-", type, "Log.xml",
-                              sep = ""))
+     writeXmlInfo(xmlResults, list(info = info))
+     lapply(paste(info[["directory"]], .Platform$file.sep, exprPrefix,
+            "-log.xml", sep = ""), xmlResults$addTag, tag = "qcPlotExprResult")
+    saveXML(xmlResults, paste(info[["directory"]], .Platform$file.sep,
+                              info[["logFilename"]], sep = ""))
 }
 
 # --------------------------------------------------------------------
@@ -142,17 +143,18 @@
 # writeXmlCompareTypeLog()
 #
 # --------------------------------------------------------------------
-"writeXmlCompareTypeLog" <- function(results, type, filename) {
+"writeXmlCompareTypeLog" <- function(results, type) {
     xmlResults <- xmlOutputDOM(tag = paste("qcCompare", type, "Result",
-                               sep = ""),
-                               attrs = c(path = attr(results, "path")))
-     logs <- sapply(seq_along(results), function(i)
-                 paste(results[[i]][["info"]][["path"]],
-                       results[[i]][["info"]][["logFilename"]],
+                               sep = ""))
+     writeXmlInfo(xmlResults, results)
+     logs <- sapply(seq_along(results[["results"]]), function(i)
+                 paste(results[["results"]][[i]][["info"]][["path"]],
+                       results[["results"]][[i]][["info"]][["logFilename"]],
                        sep = .Platform$file.sep))
-     lapply(logs, xmlResults$addTag, tag="qcCompareExprResult")
-    saveXML(xmlResults, paste(results[[1]][["info"]][["path"]],
-                              filename, sep = .Platform$file.sep))
+     lapply(logs, xmlResults$addTag, tag = "qcCompareExprResult")
+    saveXML(xmlResults, paste(results[["info"]][["path"]],
+                              results[["info"]][["logFilename"]],
+                              sep = .Platform$file.sep))
 }
 
 # --------------------------------------------------------------------
@@ -212,7 +214,7 @@
 
     # Read plot information
     plots <- lapply(seq(2, length(logTree)), function(i)
-                          mergeList(xmlApply(logTree[[i]], xmlValue)))
+                    mergeList(xmlApply(logTree[[i]], xmlValue)))
     names(plots) <- unlist(xmlApply(logTree, xmlAttrs))
 
     qcLogResult <- list(info = info, plots = plots)
@@ -226,10 +228,18 @@
 #
 # --------------------------------------------------------------------
 "readPlotFunLog" <- function(logFile, logClass) {
-    exprResults <- unlist(lapply(xmlChildren(xmlRoot(xmlTreeParse(logFile))),
-                                 xmlValue))
+    logTree <- xmlRoot(xmlTreeParse(logFile))
+    
+    # Read Info
+    info <- xmlApply(logTree[[1]], xmlValue)
+
+    # Read log paths
+    exprResults <- sapply(logTree[-1], xmlValue)
     names(exprResults) <- NULL
-    funResults <- lapply(exprResults, readPlotExprLog)
+    
+    # Read logs
+    funLapplyResults <- lapply(exprResults, readPlotExprLog)
+    funResults <- list("info" = info, "results" = funLapplyResults)
     class(funResults) <- logClass
     funResults
 }
@@ -323,9 +333,10 @@
 
         resultDiffPlot <- xmlApply(comparisonTree[[i]], function(tree) {
                                    xmlApply(tree, xmlValue) })
-        warnsAndError <- mergeList(resultDiffPlot[warnsAndErrorIndices])
+        warnsAndError <- lapply(mergeList(resultDiffPlot[
+                                warnsAndErrorIndices]), function(warnsAndError)
+                                unlist(as.character(warnsAndError)))
         resultDiffPlot <- resultDiffPlot[!warnsAndErrorIndices]
-
         combined <- lapply(seq_len(length(controlAndTest)), function(j)
                            c(controlAndTest[[j]], resultDiffPlot[[j]]))
         if (length(combined) == 0) combined <- NULL
@@ -371,13 +382,18 @@
 #
 # --------------------------------------------------------------------
 "readCompareFunLog" <- function(logFile, logClass) {
-    exprResultsRoot <- xmlRoot(xmlTreeParse(logFile))
-    path <- as.character(xmlAttrs(exprResultsRoot))
-    exprResults <- unlist(lapply(xmlChildren(exprResultsRoot),
-                                 xmlValue))
-    names(exprResults) <- NULL
-    funResults <- lapply(exprResults, readCompareExprLog)
-    attr(funResults, "path") <- path
+    logTree <- xmlChildren(xmlRoot(xmlTreeParse(logFile)))
+
+    # Read info
+    info <- xmlApply(logTree[[1]], xmlValue)
+    
+    # Read paths of compareExprLogs that this points to
+    compExprResults <- unlist(lapply(logTree[-1], xmlValue))
+    names(compExprResults) <- NULL
+    
+    # Read the compareExprLogs
+    results <- lapply(compExprResults, readCompareExprLog)
+    funResults <- list("info" = info, "results" = results)
     class(funResults) <- logClass
     funResults
 }

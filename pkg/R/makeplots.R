@@ -151,7 +151,7 @@ getValidPath <- function(path) {
         }
     } else {
         warning("the given path has more than one element: only",
-                " the first used in ", dQuote(path), call. = FALSE)
+                " the first used in ", dQuote(path[1]), call. = FALSE)
         path <- getValidPath(path[1])
     }
     path
@@ -263,8 +263,8 @@ plotFile <- function(filename, # character vector
     path <- getValidPath(path)
     expr <- lapply(filename, readLines)
     fileMapplyResult <- mapply(plotExpr, expr = expr, prefix = prefix,
-             path = path, MoreArgs = list(filetype = filetype, clear = clear),
-                                                             SIMPLIFY = FALSE)
+                              MoreArgs = list(filetype = filetype, path = path,
+                              clear = clear), SIMPLIFY = FALSE)
     names(fileMapplyResult) <- NULL
     if (length(prefix) > 1) {
         # No warning - there is a note in the help file
@@ -272,11 +272,19 @@ plotFile <- function(filename, # character vector
     } else {
         filePrefix <- prefix
     }
+    
+    path <- normalizePath(path.expand(path))
+    info <- list("OS" = .Platform$OS.type, "Rver" =
+                 as.character(getRversion()), "date" = date(),
+                 "call" = paste(deparse(sys.call(1)), collapse = ""),
+                 "directory" = path,
+                 "logFilename" = paste(filePrefix, "-fileLog.xml", sep = ""))
+    
     # Note: plotExpr XML file gets written in the call to plotExpr
-    writeXmlPlotTypeLog(prefix, paste(normalizePath(path.expand(path)),
-                        .Platform$file.sep, sep = ""), filePrefix, "file")
-    class(fileMapplyResult) <- c("qcPlotFileResult")
-    invisible(fileMapplyResult)
+    writeXmlPlotTypeLog(prefix, info, "file")
+    fileResult <- list("info" = info, "results" = fileMapplyResult)
+    class(fileResult) <- c("qcPlotFileResult")
+    fileResult
 }
 
 # --------------------------------------------------------------------
@@ -299,12 +307,17 @@ plotFunction <- function(fun, # character vector
        # (gets unusual behaviour without paste..?)
     ## can also check if it's a function? .. is.function(match.fun(..
     if (length(fun) != length(prefix)) {
-        stop(sQuote(prefix), " must be the same length as ", sQuote(fun))
+        stop(sQuote("prefix"), " must be the same length as ", sQuote("fun"))
+    }
+    # Check that the prefixes are unique (otherwise we will die half-way
+    # through because we will try to overwrite)
+    if (any(duplicated(prefix))) {
+        stop("all values for ", sQuote("prefix"), "must be unique")
     }
     path <- getValidPath(path)
     if (!is.character(fun)) {
-      fun <- deparse(substitute(fun))
-      prefix <- fun
+        fun <- deparse(substitute(fun))
+        prefix <- fun
     }
     funs <- paste("example(", fun, ", echo = FALSE, setRNG = TRUE)", sep = "")
     funMapplyResult <- mapply(plotExpr, expr = funs, prefix = prefix,
@@ -317,10 +330,18 @@ plotFunction <- function(fun, # character vector
     } else {
         filePrefix <- prefix
     }
-    writeXmlPlotTypeLog(prefix, paste(normalizePath(path.expand(path)),
-                        .Platform$file.sep, sep = ""), filePrefix, "fun")
-    class(funMapplyResult) <- c("qcPlotFunResult")
-    invisible(funMapplyResult)
+    
+    path <- normalizePath(path.expand(path))
+    info <- list("OS" = .Platform$OS.type, "Rver" =
+                 as.character(getRversion()), "date" = date(),
+                 "call" = paste(deparse(sys.call(1)), collapse = ""),
+                 "directory" = path,
+                 "logFilename" = paste(filePrefix, "-funLog.xml", sep = ""))
+    
+    writeXmlPlotTypeLog(prefix, info, "fun")
+    funResult <- list("info" = info, "results" = funMapplyResult)
+    class(funResult) <- c("qcPlotFunResult")
+    funResult
 }
 
 # --------------------------------------------------------------------
@@ -330,7 +351,7 @@ plotFunction <- function(fun, # character vector
 # --------------------------------------------------------------------
 plotPackage <- function(package) {
     ## take 'best effort' approach? try get tests/demo if can and use them..
-    if(!do.call(require, list(package))) {
+    if (!do.call(require, list(package))) {
         warning("failed to load package ", dQuote(package))
     } # now package is loaded
     notYetImplemented()
@@ -377,7 +398,7 @@ removeIfBlank <- function(filename, blankImageSizes) {
         filesize == blankImageSizes["pdf"] ||
         length(grep(".*[.]ps$", filename)) > 0 && filesize ==
                                                blankImageSizes["ps"]) {
-        if(!file.remove(filename)) {
+        if (!file.remove(filename)) {
             return(FALSE)
         }
     }

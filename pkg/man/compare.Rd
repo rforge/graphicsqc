@@ -11,14 +11,14 @@
   differences.
 }
 \usage{
-compare(test, control, logDiffDirectory = test$info$directory, 
+compare(test, control, path = test$info$directory, 
         erase = c("none", "identical", "files", "all"))
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{test, control}{An R object of class qcPlotExpr, qcPlotFun, etc. or the
             path to the XML file produced by any of the associated functions.}
-  \item{logDiffDirectory}{character vector; specifies where all the diff
+  \item{path}{character vector; specifies where all the diff
         output (.diff files, plots, and comparison logs) should be placed.}
   \item{erase}{character vector; one of '"none"', '"identical"', '"files"',
                '"all"'}

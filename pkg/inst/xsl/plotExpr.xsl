@@ -26,10 +26,12 @@ xmlns:r="http://www.r-project.org"
           padding-right: 5px;
           padding-top: 3px;
           padding-bottom: 3px;}
+      .topAlign {vertical-align: top}
     </style>
   </head>
   <body>
     <h2>Plot Expression Result</h2>
+    <!-- Info Section -->
     <table>
     <tr>
       <th>R Version</th>
@@ -45,7 +47,9 @@ xmlns:r="http://www.r-project.org"
     </tr>
     <tr>
       <th>Call</th>
-      <td style="font-family: monospace"><xsl:value-of select="info/call"/></td>
+      <td style="font-family: monospace">
+        <xsl:value-of select="info/call"/>
+      </td>
     </tr>
     <tr>
       <th>Directory</th>
@@ -57,6 +61,7 @@ xmlns:r="http://www.r-project.org"
     </tr>
     </table>
     <br/>
+    <!-- Plots section -->
     <table>
     <tr>
       <th>Format</th>
@@ -69,34 +74,39 @@ xmlns:r="http://www.r-project.org"
       </xsl:if>
     </tr>
     <xsl:for-each select="plots">
-    <tr>
-      <td style="vertical-align: top;">
-        <xsl:value-of select="@type"/>
-      </td>
-      <td>
+      <xsl:variable name="format" select="@type"/>
       <xsl:for-each select="plot">
-          <a href="{r:call('file.path', string(../../info/directory), string(.))}">
-            <xsl:value-of select="."/>
-          </a>
-          <xsl:if test="position()!=last()">
-            <br/>
+        <tr>
+          <xsl:if test="position()=1">
+            <td rowspan="{last()}" class="topAlign">
+              <xsl:value-of select="$format"/>
+            </td>
           </xsl:if>
+          <td>
+            <a href="{r:call('file.path', string(../../info/directory),
+                      string(.))}">
+              <xsl:value-of select="."/>
+            </a>
+          </td>
+          <xsl:if test="position()=1">
+            <xsl:if test="normalize-space(../warnings)">
+              <td rowspan="{last()}" class="topAlign">
+                <xsl:for-each select="../warnings">
+                  <xsl:value-of select="."/>
+                  <xsl:if test="position()!=last()">
+                    <br/>
+                  </xsl:if>
+                </xsl:for-each>
+              </td>
+            </xsl:if>
+            <xsl:if test="normalize-space(../error)">
+              <td rowspan="{last()}" class="topAlign">
+                <xsl:value-of select="../error"/>
+              </td>
+            </xsl:if>
+          </xsl:if>
+        </tr>
       </xsl:for-each>
-      </td>
-      <xsl:if test="normalize-space(warnings)">
-        <td>
-          <xsl:for-each select="warnings">
-            <xsl:value-of select="."/>
-            <xsl:if test="position()!=last()"><br/></xsl:if>
-          </xsl:for-each>
-        </td>
-      </xsl:if>
-      <xsl:if test="normalize-space(error)">
-        <td>
-            <xsl:value-of select="error"/>
-        </td>
-      </xsl:if>
-    </tr>
     </xsl:for-each>
     </table>
   </body>

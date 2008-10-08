@@ -1,3 +1,51 @@
+2007-10-09  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
+
+* compare.Rd: Updated change of 'logDiffDirectory' to 'path'.
+
+* compare.R
+	(): Comparing qcPlotFunResult and qcPlotFile results include 'info' in the
+		result.
+	(readCompareFunLog): Now also reads 'info' from qcCompareFunResult files.
+	(compareFunOrFile): New function (refactored code from compare()).
+	(compareWarnings): Fixed a bug where if one plotExpr call had 1 warning
+		(or error) and the other didn't, this wouldn't be reported.
+
+* makeplots.R
+	(plotFunction, plotFile): Also include their own info.
+	(plotFunction): Included test to make sure prefixes are unique.
+		
+* log.R
+	(writeXmlCompareTypeLog): Reads path from the result object rather than as
+		an argument. Now writes info.
+	(writeXmlPlotTypeLog): Writes info too.
+	(readPlotFunLog): Also reads info.
+	(readCompareExprLog): Fixed a follow on from the bug listed above (under
+		compare.R (compareWarnings)).
+
+* writeReport.R
+	(): Added new argument "xslStyleSheets" which is a list to let users
+		overwrite a default XSL style sheet if they want.
+
+* writeReport.Rd: Included new argument (xslStyleSheets).
+
+* plotExpr.xsl: Added some comments.
+		Plots now have their own cell in the table.
+
+* compareExpr.xsl: Changed to use addXSLTFunctions solution
+		('graphicsqc:::logToHTML' didn't seem to work).
+		Added some comments.
+		General improvements.
+
+* compareFun.xsl renamed to compareFunAndFile.xsl.
+* compareFunAndFile.xsl: Neatened use of for-each.
+		Included template for qcCompareFileResult.
+
+* plotFunAndFile.xsl: New file.
+
+* plotExpr.xsl: Added some comments.
+
+* tests.R: Some updates to tests and more tests.
+
 2007-10-02  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
 
 * compare.R

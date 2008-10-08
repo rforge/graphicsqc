@@ -24,11 +24,7 @@
                                     # full = delete everything
                                     # files = delete files (but NOT index)
                                     # AFTER EACH expr
-                                    ## diff plots?
                       ) {
-    if (is.null(path)) {
-        path <- test[[1]]$info$directory
-    }
     # Start warning handler
     assign("graphicsQCWarnings", character(0), envir = globalenv())
     # Clear warning handler on exit
@@ -63,34 +59,17 @@
     ## first package, then:
     if (inherits(test, "qcPlotFunResult") &&
         inherits(control, "qcPlotFunResult")) {
-        results <- mapply(compareExpr, test, control,
-                          MoreArgs = list(path = path,
-                                          erase = erase), SIMPLIFY = FALSE)
-        filename <- paste(unlist(strsplit(results[[1]][["testInfo"]][[
-                          "logFilename"]], "-log.xml")), "-compareFunLog.xml",
-                          sep = "")
-        attr(results, "path") <- file.path(path, filename)
-        writeXmlCompareTypeLog(results, "Fun", filename)
-        class(results) <- "qcCompareFunResult"
-        return(results)
+        return(compareFunOrFile(test, control, path, erase, "Fun"))
     } else if (inherits(test, "qcPlotFileResult") &&
-        inherits(control, "qcPlotFileResult")) {
-        results <- mapply(compareExpr, test, control,
-                          MoreArgs = list(path = path,
-                                          erase = erase), SIMPLIFY = FALSE)
-        filename <- paste(unlist(strsplit(results[[1]][["testInfo"]][[
-                          "logFilename"]], "-log.xml")), "-compareFileLog.xml",
-                          sep = "")
-        attr(results, "path") <- file.path(path, filename)
-        writeXmlCompareTypeLog(results, "File", filename)
-        class(results) <- "qcCompareFileResult"
-        return(results)
+               inherits(control, "qcPlotFileResult")) {
+        return(compareFunOrFile(test, control, path, erase, "File"))
     } else if (inherits(test, "qcPlotExprResult") &&
                inherits(control, "qcPlotExprResult")) {
         results <- compareExpr(test, control, path, erase)
         return(results)
     } else {
         ## test and control are not the same classes!
+        warning("test and control are not of the same class")
         notYetImplemented()
     }
     results
@@ -118,8 +97,7 @@
     info <- list("OS" = .Platform$OS.type, "Rver" =
                  as.character(getRversion()), "date" = date(),
                  "call" = paste(deparse(sys.call(1)), collapse = ""),
-                 "path" =
-                 normalizePath(path.expand(path)),
+                 "path" = normalizePath(path.expand(path)),
                  "testDirectory" = test[["info"]][["directory"]],
                  "controlDirectory" = control[["info"]][["directory"]],
                  "logFilename" = getCompareExprLogFilename(test, control))
@@ -131,6 +109,38 @@
     # Compare one plotExpr at a time (using natural order of qcresult
     # OR order specified explicitly by log files OR the natural
     # order of the log files from the autodetect).
+}
+
+# --------------------------------------------------------------------
+#
+# compareFunOrFile()
+#
+# Note: This function isn't to be used by the user. It gets called
+#       from compare().
+# --------------------------------------------------------------------
+"compareFunOrFile" <- function(test, control, path, erase, type) {
+    # test[[-1]] and control[[-1]] take out info before comparing
+    results <- mapply(compareExpr, test[[-1]], control[[-1]], 
+                      MoreArgs = list(path = path, erase = erase),
+                      SIMPLIFY = FALSE)
+    info <- list("OS" = .Platform$OS.type, "Rver" =
+                 as.character(getRversion()), "date" = date(),
+                 "call" = paste(deparse(sys.call(1)), collapse = ""),
+                 "path" = normalizePath(path.expand(path)),
+                 "logFilename" =
+                 paste(unlist(strsplit(results[[1]][["testInfo"]][[
+                       "logFilename"]], "-log.xml")),
+                       "-compare", type, "Log.xml", sep = ""),
+                 "testLog" = paste(test[["info"]][["directory"]],
+                                   test[["info"]][["logFilename"]],
+                                   sep = .Platform$file.sep),
+                 "controlLog" = paste(control[["info"]][["directory"]],
+                                      control[["info"]][["logFilename"]],
+                                      sep = .Platform$file.sep))
+    results <- list("info" = info, "results" = results)
+    writeXmlCompareTypeLog(results, type)
+    class(results) <- paste("qcCompare", type, "Result", sep = "")
+    results
 }
 
 # --------------------------------------------------------------------
@@ -190,7 +200,7 @@
     lapply(filetypesToCompare, function (filetype) {
         testPlotIndices <- seq_along(test[["plots"]][[filetype]][["plot"]])
         controlPlotIndices <- seq_along(control[["plots"]][[
-                                                          filetype]][["plot"]])
+                                        filetype]][["plot"]])
         shortest <- seq_len(min(length(testPlotIndices),
                                 length(controlPlotIndices)))
         unpTestPlots <- test[["plots"]][[filetype]][["plot"]][
@@ -201,9 +211,9 @@
             warningHandler("length of files to compare are different;",
                            " unpaired files ignored")
         }
-        testUnpaired[[filetype]] <<- if(length(unpTestPlots) != 0)
+        testUnpaired[[filetype]] <<- if (length(unpTestPlots) != 0)
                                          list(plot=unpTestPlots)
-        controlUnpaired[[filetype]] <<- if(length(unpControlPlots) != 0)
+        controlUnpaired[[filetype]] <<- if (length(unpControlPlots) != 0)
                                             list(plot=unpControlPlots)
         controlPaired[filetype] <<- list(control[["plots"]][[filetype]][[
                                                   "plot"]][shortest])
@@ -233,7 +243,7 @@
     for (type in names(which(types > 0))) {
         contWarns <- control[["plots"]][[type]][["warnings"]]
         testWarns <- test[["plots"]][[type]][["warnings"]]
-        if ((!is.null(contWarns) && !is.null(testWarns)) &&
+        if ((!is.null(contWarns) || !is.null(testWarns)) &&
             length(contWarns) != length(testWarns) ||
             any(contWarns != testWarns)) {
             results[[type]][["controlWarnings"]] <- contWarns
@@ -241,8 +251,9 @@
         }
         contError <- control[["plots"]][[type]][["error"]]
         testError <- test[["plots"]][[type]][["error"]]
-        if ((!is.null(contError) && !is.null(testError)) &&
-            contError != testError) {
+        if ((!is.null(contError) || !is.null(testError)) &&
+            length(contError) != length(testError) ||
+            any(contError != testError)) {
             results[[type]][["controlError"]] <- contError
             results[[type]][["testError"]] <- testError
         }
@@ -547,7 +558,7 @@ print.qcCompareExprResult <- function (obj) {
     testCol <- controlCol <- resultCol <- character(sum(lengths) + 1)
     testCol[1] <- controlCol[1] <- resultCol[1] <- ""
     i = 2
-    for(type in names(lengths)) {
+    for (type in names(lengths)) {
         for (j in seq_len(lengths[type])) {
             testCol[i] <- shortenPath(obj[["results"]][[type]][[j]][[
                                            "testFile"]])

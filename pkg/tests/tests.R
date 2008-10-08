@@ -8,6 +8,13 @@ test1 <- plotExpr(c("plot(1:10)", "plot(4:40)", "x<-3", "plot(2:23)"),
 # pdf and ps files and test-log.xml, ie
 list.files("testdir1")
 
+test1a <- plotExpr(c("plot(1:10)", "warning(\"warn\")", "x<-3", "plot(2:23)"),
+                  c("pdf", "ps", "png"), "test", "test1a/", FALSE)
+test1b <- plotExpr(c("plot(1:10)", "x<-3", "plot(2:23)"),
+                  c("pdf", "ps", "png"), "test", "test1b/", FALSE)
+testA <- compare(test1a, test1b, erase = "none")
+writeReport(testA)
+
 # No file result
 blankTest <- plotExpr(c("x<-3", "x+2"), c("pdf", "ps", "png"),
                   "test", "blankTest/", FALSE)
@@ -33,9 +40,7 @@ list.files("testdir2")
 
 # Test plotFile
 plotFiletest <- plotFile(file.path("testFiles", c("Rfile.R", "Rfile2.R")),
-                      "png", path="filedir1")
-     # Note: If only 1 path is given, it will re-use it. Is this desired?  YES!
-     # Also note the list of length 2 as the result
+                         "png", path="filedir1")
 list.files("filedir1")
 
 ## --Insert tests for plotPackage when done
@@ -121,10 +126,11 @@ funComparisonReadCheck <- graphicsqc:::readLog(file.path("testFun",
 identical(funComparison, funComparisonReadCheck)
 
 # --- Testing compare for plotFile ---
-testFile3 <- plotFile(file.path("testFiles", "Rfile.R"), c("pdf", "png"),
-                      prefix="file1pref", path="testFile3", clear = FALSE)
-testFile4 <- plotFile(file.path("testFiles", "Rfile2.R"), c("pdf", "png",
-                      "ps"), path="testFile4", clear=FALSE)
+testFile3 <- plotFile(file.path("testFiles", c("Rfile.R", "Rfile3.R")),
+                      c("pdf", "png"), prefix=c("file1pref", "file2pref"),
+                      path="testFile3")
+testFile4 <- plotFile(file.path("testFiles", c("Rfile2.R", "Rfile4.R")),
+                      c("pdf", "png", "ps"), path="testFile4", clear = FALSE)
 testFile5 <- plotFile(file.path("testFiles", c("Rfile.R", "Rfile2.R")),
                       c("pdf", "png", "ps"), path="testFile5")
 fileComparison <- compare(testFile3, testFile4, erase="none")
@@ -135,7 +141,6 @@ identical(fileComparison, fileComparisonReadCheck)
 # Note: Diff plots are being stored in the test directory, so
 list.files("testFun")
 
-# plotFunction with 2 functions and 1 path
 testFun3 <- plotFunction(c("plot", "barplot"), c("pdf", "png"),
                                                   path="testFun3", clear=FALSE)
 list.files("testFun3")
@@ -145,10 +150,11 @@ report1 <- writeReport(test1)
 report2 <- writeReport(test1BComp)
 report3 <- writeReport(blankComp)
 report4 <- writeReport(funComparison)
+report5 <- writeReport(fileComparison)
 testFun4 <- plotFunction(c("barplot", "barplot"), c("pdf", "ps"),
                          prefix=c("bplot", "bplot2"),
                          path="testFun4", clear=FALSE)
-report5 <- writeReport(compare(testFun4, testFun1, "report5", erase="none"))
+report6 <- writeReport(compare(testFun4, testFun1, "report6", erase="none"))
 
 ## Something to note: Doing something like
 # y <- 1:10

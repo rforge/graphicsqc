@@ -26,10 +26,12 @@ xmlns:r="http://www.r-project.org"
           padding-right: 5px;
           padding-top: 3px;
           padding-bottom: 3px;}
+      .topAlign {vertical-align: top}
     </style>  
   </head>
   <body>
     <h1>Compare Expression Result</h1>
+    <!-- Table of contents -->
     <ol>
       <li><a href="#info">Info</a></li>
       <li><a href="#plotComp">Plot Comparisons</a></li>
@@ -37,6 +39,7 @@ xmlns:r="http://www.r-project.org"
       <li><a href="#unpaired">Unpaired</a></li>
     </ol>
     <h2><a name="info">Info</a></h2>
+    <!-- Info -->
     <table>
       <tr>
         <th></th>
@@ -68,20 +71,18 @@ xmlns:r="http://www.r-project.org"
         <th>Directory</th>
         <xsl:apply-templates select="testInfo/directory |
                                      controlInfo/directory"/>
-        <td>
-          <xsl:value-of select="info/path"/>
-        </td>
+        <xsl:apply-templates select="info/path"/>
       </tr>
       <tr>
         <th>Log Filename</th>
         <td>
-          <a href="{r:call('logToHTML', string(testInfo/directory),
+          <a href="{r:logToHTML(string(testInfo/directory),
                            string(testInfo/logFilename))}">
             <xsl:value-of select="testInfo/logFilename"/>
           </a>
         </td>
         <td>
-          <a href="{r:call('logToHTML', string(controlInfo/directory),
+          <a href="{r:logToHTML(string(controlInfo/directory),
                            string(controlInfo/logFilename))}">
             <xsl:value-of select="controlInfo/logFilename"/>
           </a>
@@ -93,6 +94,7 @@ xmlns:r="http://www.r-project.org"
       </tr>
     </table>
     <br/>
+    <!-- Plots -->
     <h2><a name="plotComp">Plot Comparisons</a></h2>
     <h3>Different plots</h3>
     <xsl:choose>
@@ -110,7 +112,7 @@ xmlns:r="http://www.r-project.org"
               <tr>
               <xsl:choose>
                 <xsl:when test="position()=1">
-                  <td rowspan="{last()}">
+                  <td rowspan="{last()}" class="topAlign">
                     <xsl:value-of select="../@type"/>
                   </td>
                   <xsl:apply-templates select="."/>
@@ -171,7 +173,7 @@ xmlns:r="http://www.r-project.org"
               <tr>
               <xsl:choose>
                 <xsl:when test="position()=1">
-                  <td rowspan="{last()}">
+                  <td rowspan="{last()}" class="topAlign">
                     <xsl:value-of select="../@type"/>
                   </td>
                   <xsl:apply-templates select="."/>
@@ -189,9 +191,11 @@ xmlns:r="http://www.r-project.org"
         <p>No identical plots were found.</p>
       </xsl:otherwise>
     </xsl:choose>
+    <!-- Warnings/errors -->
     <h2><a name="warnsErrors">Warnings/Errors Comparisons</a></h2>
     <xsl:choose>
-      <xsl:when test="compare/controlWarnings|compare/testWarnings">
+      <xsl:when test="compare/controlWarnings | compare/testWarnings |
+                      compare/controlError | compare/testError">
         <table>
           <tr>
             <th></th>
@@ -203,7 +207,7 @@ xmlns:r="http://www.r-project.org"
                                 compare[testWarnings]">
             <tr>
               <xsl:if test="position()=1">
-                <th rowspan="{last()}" style="vertical-align:top">
+                <th rowspan="{last()}" class="topAlign">
                   Warnings
                 </th>
               </xsl:if>
@@ -242,6 +246,7 @@ xmlns:r="http://www.r-project.org"
         <p>No differences in warnings/errors were found.</p>
       </xsl:otherwise>
     </xsl:choose>
+    <!-- Unpaired -->
     <h2><a name="unpaired">Unpaired</a></h2>
     <xsl:choose>
       <xsl:when test="unpaired/test/node() | unpaired/control/node()">
@@ -280,7 +285,8 @@ xmlns:r="http://www.r-project.org"
   </html>
 </xsl:template>
 
-<xsl:template match="Rver | OS | date | directory">
+<!-- Templates -->
+<xsl:template match="Rver | OS | date | directory | path">
   <td><xsl:value-of select="."/></td>
 </xsl:template>
 
@@ -290,13 +296,13 @@ xmlns:r="http://www.r-project.org"
 
 <xsl:template match="comparison">
   <td>
-    <a href="{@controlFile}">
-      <xsl:value-of select="r:call('basename', string(@controlFile))"/>
+    <a href="{@testFile}">
+      <xsl:value-of select="r:call('basename', string(@testFile))"/>
     </a>
   </td>
   <td>
-    <a href="{@testFile}">
-      <xsl:value-of select="r:call('basename', string(@testFile))"/>
+    <a href="{@controlFile}">
+      <xsl:value-of select="r:call('basename', string(@controlFile))"/>
     </a>
   </td>
 </xsl:template>
@@ -312,7 +318,7 @@ xmlns:r="http://www.r-project.org"
   <xsl:for-each select="unpaired/*/*[*[name() = $which]]">
     <tr>
       <xsl:if test="position()=1">
-        <th rowspan="{last()}" style="vertical-align: top">
+        <th rowspan="{last()}" class="topAlign">
           <xsl:value-of select="$title"/>
         </th>
       </xsl:if>
