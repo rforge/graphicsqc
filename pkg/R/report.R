@@ -21,6 +21,7 @@
 # containing the doc)
 # --------------------------------------------------------------------
 "writeReport" <- function(qcResult, xslStyleSheets = NULL) {
+    library(Sxslt)
     #SxsltInitializationFunction()
     ## Note: There is a call to browser() in addXSLTFunctions...
     # -- can't just give logToHTML even if it is defined outside - have

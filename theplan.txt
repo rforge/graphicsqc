@@ -416,6 +416,22 @@ someday, the report code has to handle qcCompare/compareLog OR
   (and wrap writeReport() code in tests.R in code that checks for Sxslt)
 
 
+# 16/10/08
+
+- writeReport(), compare(), and readLog() should all be generic!
+
+- fiddles with report format:
+  + do NOT name all plot differences in the TOC (just report how many)
+  + ditto identical plots
+  + Comparison Logs dropped from Info.  Instead have links from
+    individual rows of Different Plots or Identical Plots (plus
+    add new section of No Plots Created)
+
+- allow for "relative" paths in report links and log files ???
+
+- PAUL TODO: why are there differences in the text!?  Why in PDF!!!?
+
+
 ===========
 What's left:
 ===========
