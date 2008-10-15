@@ -304,7 +304,7 @@ xmlns:r="http://www.r-project.org"
       </xsl:otherwise>
     </xsl:choose>
     <!-- Warnings/Errors -->
-    <h2><a name="warnsErrors">Warnings/Errors Comparisons</a></h2>
+    <h2><a name="warnsErrors">Warnings/Errors Comparisons</a></h2>    
     <xsl:choose>
       <xsl:when test="count(document($docs)/qcCompareExprResult/
                             compare[testWarnings|controlWarnings|
@@ -312,18 +312,18 @@ xmlns:r="http://www.r-project.org"
         <table>
           <tr>
             <th></th>
-            <th>Files</th>
+            <th>Functions</th>
             <th>Format</th>
             <th>Test</th>
             <th>Control</th>
           </tr>
-          <xsl:for-each select="$docs">
-            <xsl:variable name="doc" select="."/>
-            <xsl:variable name="comparePosition" select="position()"/>
-            <xsl:for-each select="document(.)/qcCompareExprResult/
+          <xsl:for-each select="document($docs)[qcCompareExprResult/
+                                compare[testWarnings|controlWarnings]]">
+            <xsl:variable name="docPosition" select="position()"/>
+            <xsl:for-each select="./qcCompareExprResult/
                                   compare[testWarnings|controlWarnings]">
               <tr>
-                <xsl:if test="$comparePosition=1 and position()=1">
+                <xsl:if test="position()=1 and $docPosition=1">
                   <th rowspan="{count(document($docs)/qcCompareExprResult/
                                compare[testWarnings|controlWarnings])}"
                       class="topAlign">
@@ -332,7 +332,8 @@ xmlns:r="http://www.r-project.org"
                 </xsl:if>
                 <xsl:if test="position()=1">
                   <td rowspan="{last()}" class="topAlign">
-                    <xsl:value-of select="r:getCompareExprName(string($doc))"/>
+                    <xsl:value-of select="r:getCompareExprName(
+                                          string(../info/logFilename))"/>
                   </td>
                 </xsl:if>
                 <td>
@@ -347,14 +348,13 @@ xmlns:r="http://www.r-project.org"
               </tr>
             </xsl:for-each>
           </xsl:for-each>
-          <xsl:for-each select="$docs">
-            <xsl:variable name="doc" select="."/>
-            <xsl:variable name="comparePosition" select="position()"/>
-            <xsl:for-each select=
-              "document(.)/qcCompareExprResult/compare[controlError] |
-               document(.)/qcCompareExprResult/compare[testError]">
+          <xsl:for-each select="document($docs)[qcCompareExprResult/
+                                compare[testError|controError]]">
+            <xsl:variable name="docPosition" select="position()"/>
+            <xsl:for-each select="./qcCompareExprResult/
+                                  compare[testError|controlError]">
               <tr>
-                <xsl:if test="$comparePosition=1 and position()=1">
+                <xsl:if test="position()=1 and $docPosition=1">
                   <th rowspan="{count(document($docs)/qcCompareExprResult/
                                compare[testError|controlError])}"
                       class="topAlign">
@@ -363,16 +363,17 @@ xmlns:r="http://www.r-project.org"
                 </xsl:if>
                 <xsl:if test="position()=1">
                   <td rowspan="{last()}" class="topAlign">
-                    <xsl:value-of select="r:getCompareExprName(string($doc))"/>
+                    <xsl:value-of select="r:getCompareExprName(
+                                          string(../info/logFilename))"/>
                   </td>
                 </xsl:if>
                 <td>
                   <xsl:value-of select="@type"/>
                 </td>
-                <td style="vertical-align: top">
+                <td class="topAlign">
                   <xsl:value-of select="testError"/>
                 </td>
-                <td style="vertical-align: top">
+                <td class="topAlign">
                   <xsl:value-of select="controlError"/>
                 </td>
               </tr>
@@ -387,37 +388,42 @@ xmlns:r="http://www.r-project.org"
     <!-- Unpaired -->
     <h2><a name="unpaired">Unpaired</a></h2>
     <xsl:choose>
-      <xsl:when test="unpaired/test/node() | unpaired/control/node()">
+      <xsl:when test="document($docs)/qcCompareExprResult/unpaired/test/node()
+               | document($docs)/qcCompareExprResult/unpaired/control/node()">
       <table>
         <tr>
           <th></th>
+          <th>Files</th>
           <th>Format</th>
           <th>Test</th>
           <th>Control</th>
         </tr>
-        <xsl:if test="unpaired/*/*/plot">
+        <xsl:if test="document($docs)/qcCompareExprResult/unpaired/*/*/plot">
           <xsl:call-template name="unpaired">
             <xsl:with-param name="title">Plots</xsl:with-param>
             <xsl:with-param name="which">plot</xsl:with-param>
+            <xsl:with-param name="docs" select="$docs"/>
           </xsl:call-template>
         </xsl:if>
-        <xsl:if test="unpaired/*/*/warnings">
+        <xsl:if test="document($docs)/qcCompareExprResult/unpaired/*/*/
+                      warnings">
           <xsl:call-template name="unpaired">
             <xsl:with-param name="title">Warnings</xsl:with-param>
             <xsl:with-param name="which">warnings</xsl:with-param>
+            <xsl:with-param name="docs" select="$docs"/>
           </xsl:call-template>
         </xsl:if>
-        <xsl:if test="unpaired/*/*/error">
+        <xsl:if test="document($docs)/qcCompareExprResult/unpaired/*/*/error">
           <xsl:call-template name="unpaired">
             <xsl:with-param name="title">Errors</xsl:with-param>
             <xsl:with-param name="which">error</xsl:with-param>
+            <xsl:with-param name="docs" select="$docs"/>
           </xsl:call-template>
         </xsl:if>
       </table>
       </xsl:when>
       <xsl:otherwise>
-        <p>This feature is not yet implemented. (That is, completely
-        unpaired funs are not even close, but normal unpaireds should be)</p>
+        <p>No files were unpaired.</p>
       </xsl:otherwise>
     </xsl:choose>
   </body>
@@ -720,7 +726,7 @@ xmlns:r="http://www.r-project.org"
       </xsl:otherwise>
     </xsl:choose>
     <!-- Warnings/Errors -->
-    <h2><a name="warnsErrors">Warnings/Errors Comparisons</a></h2>
+    <h2><a name="warnsErrors">Warnings/Errors Comparisons</a></h2>    
     <xsl:choose>
       <xsl:when test="count(document($docs)/qcCompareExprResult/
                             compare[testWarnings|controlWarnings|
@@ -733,13 +739,13 @@ xmlns:r="http://www.r-project.org"
             <th>Test</th>
             <th>Control</th>
           </tr>
-          <xsl:for-each select="$docs">
-            <xsl:variable name="doc" select="."/>
-            <xsl:variable name="comparePosition" select="position()"/>
-            <xsl:for-each select="document(.)/qcCompareExprResult/
+          <xsl:for-each select="document($docs)[qcCompareExprResult/
+                                compare[testWarnings|controlWarnings]]">
+            <xsl:variable name="docPosition" select="position()"/>
+            <xsl:for-each select="./qcCompareExprResult/
                                   compare[testWarnings|controlWarnings]">
               <tr>
-                <xsl:if test="$comparePosition=1 and position()=1">
+                <xsl:if test="position()=1 and $docPosition=1">
                   <th rowspan="{count(document($docs)/qcCompareExprResult/
                                compare[testWarnings|controlWarnings])}"
                       class="topAlign">
@@ -748,7 +754,8 @@ xmlns:r="http://www.r-project.org"
                 </xsl:if>
                 <xsl:if test="position()=1">
                   <td rowspan="{last()}" class="topAlign">
-                    <xsl:value-of select="r:getCompareExprName(string($doc))"/>
+                    <xsl:value-of select="r:getCompareExprName(
+                                          string(../info/logFilename))"/>
                   </td>
                 </xsl:if>
                 <td>
@@ -763,14 +770,13 @@ xmlns:r="http://www.r-project.org"
               </tr>
             </xsl:for-each>
           </xsl:for-each>
-          <xsl:for-each select="$docs">
-            <xsl:variable name="doc" select="."/>
-            <xsl:variable name="comparePosition" select="position()"/>
-            <xsl:for-each select=
-              "document(.)/qcCompareExprResult/compare[controlError] |
-               document(.)/qcCompareExprResult/compare[testError]">
+          <xsl:for-each select="document($docs)[qcCompareExprResult/
+                                compare[testError|controError]]">
+            <xsl:variable name="docPosition" select="position()"/>
+            <xsl:for-each select="./qcCompareExprResult/
+                                  compare[testError|controlError]">
               <tr>
-                <xsl:if test="$comparePosition=1 and position()=1">
+                <xsl:if test="position()=1 and $docPosition=1">
                   <th rowspan="{count(document($docs)/qcCompareExprResult/
                                compare[testError|controlError])}"
                       class="topAlign">
@@ -779,16 +785,17 @@ xmlns:r="http://www.r-project.org"
                 </xsl:if>
                 <xsl:if test="position()=1">
                   <td rowspan="{last()}" class="topAlign">
-                    <xsl:value-of select="r:getCompareExprName(string($doc))"/>
+                    <xsl:value-of select="r:getCompareExprName(
+                                          string(../info/logFilename))"/>
                   </td>
                 </xsl:if>
                 <td>
                   <xsl:value-of select="@type"/>
                 </td>
-                <td style="vertical-align: top">
+                <td class="topAlign">
                   <xsl:value-of select="testError"/>
                 </td>
-                <td style="vertical-align: top">
+                <td class="topAlign">
                   <xsl:value-of select="controlError"/>
                 </td>
               </tr>
@@ -803,37 +810,42 @@ xmlns:r="http://www.r-project.org"
     <!-- Unpaired -->
     <h2><a name="unpaired">Unpaired</a></h2>
     <xsl:choose>
-      <xsl:when test="unpaired/test/node() | unpaired/control/node()">
+      <xsl:when test="document($docs)/qcCompareExprResult/unpaired/test/node()
+               | document($docs)/qcCompareExprResult/unpaired/control/node()">
       <table>
         <tr>
           <th></th>
+          <th>Files</th>
           <th>Format</th>
           <th>Test</th>
           <th>Control</th>
         </tr>
-        <xsl:if test="unpaired/*/*/plot">
+        <xsl:if test="document($docs)/qcCompareExprResult/unpaired/*/*/plot">
           <xsl:call-template name="unpaired">
             <xsl:with-param name="title">Plots</xsl:with-param>
             <xsl:with-param name="which">plot</xsl:with-param>
+            <xsl:with-param name="docs" select="$docs"/>
           </xsl:call-template>
         </xsl:if>
-        <xsl:if test="unpaired/*/*/warnings">
+        <xsl:if test="document($docs)/qcCompareExprResult/unpaired/*/*/
+                      warnings">
           <xsl:call-template name="unpaired">
             <xsl:with-param name="title">Warnings</xsl:with-param>
             <xsl:with-param name="which">warnings</xsl:with-param>
+            <xsl:with-param name="docs" select="$docs"/>
           </xsl:call-template>
         </xsl:if>
-        <xsl:if test="unpaired/*/*/error">
+        <xsl:if test="document($docs)/qcCompareExprResult/unpaired/*/*/error">
           <xsl:call-template name="unpaired">
             <xsl:with-param name="title">Errors</xsl:with-param>
             <xsl:with-param name="which">error</xsl:with-param>
+            <xsl:with-param name="docs" select="$docs"/>
           </xsl:call-template>
         </xsl:if>
       </table>
       </xsl:when>
       <xsl:otherwise>
-        <p>This feature is not yet implemented. (That is, completely
-        unpaired files are not even close, but normal unpaireds should be)</p>
+        <p>No files were unpaired.</p>
       </xsl:otherwise>
     </xsl:choose>
   </body>
@@ -871,32 +883,66 @@ xmlns:r="http://www.r-project.org"
 <xsl:template name="unpaired">
   <xsl:param name="title"/>
   <xsl:param name="which"/>
-  <xsl:for-each select="unpaired/*/*[*[name() = $which]]">
-    <tr>
-      <xsl:if test="position()=1">
-        <th rowspan="{last()}" style="vertical-align: top">
-          <xsl:value-of select="$title"/>
-        </th>
-      </xsl:if>
-      <xsl:variable name="format" select="local-name()"/>
-      <td>
-        <xsl:value-of select="$format"/>
-      </td>
-      <td>
-        <xsl:for-each select="../../test/*[name() = $format]/*[name() =
-                              $which]">
-          <xsl:value-of select="."/>
-          <br/>
-        </xsl:for-each>
-      </td>
-      <td>
-        <xsl:for-each select="../../control/*[name() = $format]/*[name() =
-                              $which]">
-          <xsl:value-of select="."/>
-          <br/>
-        </xsl:for-each>
-      </td>
-    </tr>
+  <xsl:param name="docs"/>
+  <xsl:for-each select="document($docs)[qcCompareExprResult/unpaired/*/*/
+                        *[name() = $which]]">
+    <xsl:variable name="docPosition" select="position()"/>
+    <xsl:for-each select="./qcCompareExprResult/unpaired/*/
+                          *[*[name() = $which]]">
+      <tr>
+        <xsl:if test="position()=1 and $docPosition=1">
+          <th rowspan="{count(document($docs)/qcCompareExprResult/unpaired/*
+                        /*[*[name() = $which]])}"
+              class="topAlign">
+            <xsl:value-of select="$title"/>
+          </th>
+        </xsl:if>
+        <xsl:if test="position()=1">
+          <td rowspan="{last()}" class="topAlign">
+            <xsl:value-of select="r:getCompareExprName(
+                                  string(../../../info/logFilename))"/>
+          </td>
+        </xsl:if>
+        <xsl:variable name="format" select="local-name()"/>
+        <td>
+          <xsl:value-of select="$format"/>
+        </td>
+        <td>
+          <xsl:for-each select="../../test/*[name() = $format]/*[name() =
+                                $which]">
+            <xsl:choose>
+              <xsl:when test="'plot'=$which">
+                <a href="{r:call('file.path', string(../../../../info/
+                         testDirectory), string(.))}">
+                  <xsl:value-of select="."/>
+                </a>
+              </xsl:when>
+              <xsl:otherwise>
+                <xsl:value-of select="."/>
+              </xsl:otherwise>
+            </xsl:choose>
+            <br/>
+          </xsl:for-each>
+        </td>
+        <td>
+          <xsl:for-each select="../../control/*[name() = $format]/*[name() =
+                                $which]">
+            <xsl:choose>
+              <xsl:when test="'plot'=$which">
+                <a href="{r:call('file.path', string(../../../../info/
+                         controlDirectory), string(.))}">
+                  <xsl:value-of select="."/>
+                </a>
+              </xsl:when>
+              <xsl:otherwise>
+                <xsl:value-of select="."/>
+              </xsl:otherwise>
+            </xsl:choose>
+            <br/>
+          </xsl:for-each>
+        </td>
+      </tr>
+    </xsl:for-each>
   </xsl:for-each>
 </xsl:template>
 

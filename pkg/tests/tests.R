@@ -13,7 +13,6 @@ test1a <- plotExpr(c("plot(1:10)", "warning(\"warn\")", "x<-3", "plot(2:23)"),
 test1b <- plotExpr(c("plot(1:10)", "x<-3", "plot(2:23)"),
                   c("pdf", "ps", "png"), "test", "test1b/", FALSE)
 testA <- compare(test1a, test1b, erase = "none")
-writeReport(testA)
 
 # No file result
 blankTest <- plotExpr(c("x<-3", "x+2"), c("pdf", "ps", "png"),
@@ -146,15 +145,19 @@ testFun3 <- plotFunction(c("plot", "barplot"), c("pdf", "png"),
 list.files("testFun3")
 
 # ------------------- Testing report.R -------------------------
-report1 <- writeReport(test1)
-report2 <- writeReport(test1BComp)
-report3 <- writeReport(blankComp)
-report4 <- writeReport(funComparison)
-report5 <- writeReport(fileComparison)
-testFun4 <- plotFunction(c("barplot", "barplot"), c("pdf", "ps"),
-                         prefix=c("bplot", "bplot2"),
-                         path="testFun4", clear=FALSE)
-report6 <- writeReport(compare(testFun4, testFun1, "report6", erase="none"))
+if(require("Sxslt")) {
+    report1 <- writeReport(test1)
+    report2 <- writeReport(test1BComp)
+    report3 <- writeReport(blankComp)
+    report4 <- writeReport(funComparison)
+    report5 <- writeReport(fileComparison)
+    testFun4 <- plotFunction(c("barplot", "barplot"), c("pdf", "ps"),
+                             prefix=c("bplot", "bplot2"),
+                             path="testFun4", clear=FALSE)
+    report6 <- writeReport(compare(testFun4, testFun1, "report6",
+                           erase="none"))
+    writeReport(testA)
+}
 
 ## Something to note: Doing something like
 # y <- 1:10

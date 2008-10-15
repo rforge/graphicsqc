@@ -11,7 +11,7 @@
   differences.
 }
 \usage{
-compare(test, control, path = test$info$directory, 
+compare(test, control, path, 
         erase = c("none", "identical", "files", "all"))
 }
 %- maybe also 'usage' for other objects documented here.

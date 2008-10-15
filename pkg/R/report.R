@@ -104,9 +104,9 @@
         
     } else if (inherits(qcResult, "qcCompareFunResult") ||
                inherits(qcResult, "qcCompareFileResult")) {
-        lapply(qcResult[["results"]], writeReport)
-        writeReport(qcResult[["info"]][["testLog"]])
-        writeReport(qcResult[["info"]][["controlLog"]])
+        lapply(qcResult[["results"]], writeReport, xslStyles)
+        writeReport(qcResult[["info"]][["testLog"]], xslStyles)
+        writeReport(qcResult[["info"]][["controlLog"]], xslStyles)
         compareFPath <- paste(qcResult[["info"]][["path"]],
                                 qcResult[["info"]][["logFilename"]],
                                 sep = .Platform$file.sep)

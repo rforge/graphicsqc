@@ -16,7 +16,7 @@
 
 "compare" <- function(test,
                       control,
-                      path = test$info$directory,
+                      path,
                       erase = c("none", "identical", "files", "all")
                       ##directory if empty?
                       #clean = c("full", "files", "none") # char length 1
@@ -31,22 +31,28 @@
     on.exit(rm(graphicsQCWarnings, envir = globalenv()))
 
     if (is.character(test) && is.character(control) && test == control) {
-        ## if they're in the same dir it's just asking for trouble
-        # when trying to get QCResult..
+        ## if they're autodetecting in the same dir it's just asking for
+        # trouble when trying to get QCResult..
         stop(sQuote("test"), " and ", sQuote("control"), " paths cannot be ",
              "the same")
     }
-    if (length(erase) != 1) {
-    	stop(sQuote("erase"), " must be one of ", dQuote("none"), ", ",
-    	     dQuote("files"), ", ", dQuote("identical"), ", or ",
-    	     dQuote("all"))
+    
+    if (!erase[1] %in% c("none", "identical", "files", "all")) {
+        warning(sQuote("erase"), " must be one of ", dQuote("none"), ", ",
+                dQuote("files"), ", ", dQuote("identical"), ", or ",
+                dQuote("all"), " - ", dQuote("none"), " used")
+        erase = "none"
     }
     
-    # Check path
-    path <- getValidPath(path)
-
     test <- getQCResult(test)
     control <- getQCResult(control)
+    
+    # Check path
+    if (missing(path)) {
+        path = test$info$directory
+    }
+    path <- getValidPath(path)
+
     if (inherits(test, "list") || inherits(control, "list")) {
         if (inherits(test, "list") && inherits(control, "list")) {
             notYetImplemented()
@@ -95,7 +101,7 @@
     results <- compareWarnings(test, control, results)
     results[["unpaired"]] <- filePairs[["unpaired"]]
     info <- list("OS" = .Platform$OS.type, "Rver" =
-                 as.character(getRversion()), "date" = date(),
+                 version[["version.string"]], "date" = date(),
                  "call" = paste(deparse(sys.call(1)), collapse = ""),
                  "path" = normalizePath(path.expand(path)),
                  "testDirectory" = test[["info"]][["directory"]],
@@ -124,7 +130,7 @@
                       MoreArgs = list(path = path, erase = erase),
                       SIMPLIFY = FALSE)
     info <- list("OS" = .Platform$OS.type, "Rver" =
-                 as.character(getRversion()), "date" = date(),
+                 version[["version.string"]], "date" = date(),
                  "call" = paste(deparse(sys.call(1)), collapse = ""),
                  "path" = normalizePath(path.expand(path)),
                  "logFilename" =

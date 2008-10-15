@@ -115,7 +115,7 @@
                          evalResult[[type]]["plot"] <<- list(plots[[type]]))
 
     info <- list("OS" = .Platform$OS.type, "Rver" =
-                 as.character(getRversion()), "date" = date(),
+                 version[["version.string"]], "date" = date(),
                  "call" = paste(deparse(sys.call(1)), collapse = ""),
                 ## at some point deparse(width.cutoff) might need to be raised
                  "directory" = getwd(), "logFilename" =
@@ -181,16 +181,14 @@ getValidPath <- function(path) {
     tryCatch(stop(), error = function(e) {})
     tryCatch(withCallingHandlers(eval(if (is.language(expr)) expr else
                                                          parse(text = expr)),
-                    warning = function(w) { warns <<- c(warns,
-                                            paste("Warning in evalPlotCode :",
-                                                  conditionMessage(w)));
-                    invokeRestart("muffleWarning") }), error = function(e) {})
+                    warning = function(w) {
+                      warns <<- c(warns, paste(conditionMessage(w)));
+                      invokeRestart("muffleWarning")
+                    }), error = function(e) {})
     error <- geterrmessage() # There can only be one error as we stop
                              # evaluating when we hit an error
     if (error == "") {
         error <- NULL
-    } else {
-        error <- paste("Error in evalPlotCode :", error)
     }
 
     dev.off()
@@ -275,7 +273,7 @@ plotFile <- function(filename, # character vector
     
     path <- normalizePath(path.expand(path))
     info <- list("OS" = .Platform$OS.type, "Rver" =
-                 as.character(getRversion()), "date" = date(),
+                 version[["version.string"]], "date" = date(),
                  "call" = paste(deparse(sys.call(1)), collapse = ""),
                  "directory" = path,
                  "logFilename" = paste(filePrefix, "-fileLog.xml", sep = ""))
@@ -333,7 +331,7 @@ plotFunction <- function(fun, # character vector
     
     path <- normalizePath(path.expand(path))
     info <- list("OS" = .Platform$OS.type, "Rver" =
-                 as.character(getRversion()), "date" = date(),
+                 version[["version.string"]], "date" = date(),
                  "call" = paste(deparse(sys.call(1)), collapse = ""),
                  "directory" = path,
                  "logFilename" = paste(filePrefix, "-funLog.xml", sep = ""))

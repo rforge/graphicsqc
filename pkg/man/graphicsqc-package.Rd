@@ -20,7 +20,7 @@ License: \tab GPL-2\cr
 Use the convenience 'graphicsQC' function..
 }
 \author{
-Stephen Gardiner and Paul Murrell
+Stephen Gardiner
 
 Maintainer: Paul Murrell <paul@stat.auckland.ac.nz>
 }

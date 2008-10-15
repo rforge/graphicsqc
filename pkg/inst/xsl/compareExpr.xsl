@@ -214,10 +214,10 @@ xmlns:r="http://www.r-project.org"
               <td>
                 <xsl:value-of select="@type"/>
               </td>
-              <td style="vertical-align: top">
+              <td class="topAlign">
                 <xsl:apply-templates select="testWarnings"/>
               </td>
-              <td style="vertical-align: top">
+              <td class="topAlign">
                 <xsl:apply-templates select="controlWarnings"/>
               </td>
             </tr>
@@ -225,17 +225,17 @@ xmlns:r="http://www.r-project.org"
           <xsl:for-each select="compare[controlError]|compare[testError]">
             <tr>
               <xsl:if test="position()=1">
-                <th rowspan="{last()}" style="vertical-align:top">
+                <th rowspan="{last()}" class="topAlign">
                   Errors
                 </th>
               </xsl:if>
               <td>
                 <xsl:value-of select="@type"/>
               </td>
-              <td style="vertical-align: top">
+              <td class="topAlign">
                 <xsl:value-of select="testError"/>
               </td>
-              <td style="vertical-align: top">
+              <td class="topAlign">
                 <xsl:value-of select="controlError"/>
               </td>
             </tr>
@@ -329,14 +329,34 @@ xmlns:r="http://www.r-project.org"
       <td>
         <xsl:for-each select="../../test/*[name() = $format]/*[name() =
                               $which]">
-          <xsl:value-of select="."/>
+          <xsl:choose>
+            <xsl:when test="'plot'=$which">
+            <a href="{r:call('file.path', string(../../../../info/
+                      testDirectory), string(.))}">
+              <xsl:value-of select="."/>
+            </a>
+            </xsl:when>
+            <xsl:otherwise>
+              <xsl:value-of select="."/>
+            </xsl:otherwise>
+          </xsl:choose>
           <br/>
         </xsl:for-each>
       </td>
       <td>
         <xsl:for-each select="../../control/*[name() = $format]/*[name() =
                               $which]">
-          <xsl:value-of select="."/>
+          <xsl:choose>
+            <xsl:when test="'plot'=$which">
+            <a href="{r:call('file.path', string(../../../../info/
+                      controlDirectory), string(.))}">
+              <xsl:value-of select="."/>
+            </a>
+            </xsl:when>
+            <xsl:otherwise>
+              <xsl:value-of select="."/>
+            </xsl:otherwise>
+          </xsl:choose>
           <br/>
         </xsl:for-each>
       </td>

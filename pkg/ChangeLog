@@ -1,3 +1,41 @@
+2007-16-09  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
+
+* makeplots.R
+	(plotExpr, plotFunction, plotFile): Changed R version in info from
+		'getRversion()' to 'version$version.string' (more informative).
+	(evalPlotCode): Removed the text "Warning in evalPlotCode:" from being
+		appended on to every warning.
+		Likewise for "Error in evalPlotCode:".
+
+* compare.R
+	(): Relaxed 'erase' to default to "none" and give a warning if invalid input
+		given.
+		Changed to check for path until AFTER reading the log in as it may
+		have been a character vector.
+	(compareExpr, compareFunOrFile): Changed R version in info from
+		'getRversion()' to 'version$version.string' (more informative).
+
+* compare.Rd
+	(): Changed argument listing to match function (path changed).
+
+* writeReport.R
+	(): Also passes xslStyleSheets when recursing for sub-types.
+	
+* compareFunAndFile.xsl
+	(): Fixed bug where "Warnings" and "Errors" column in Warnings/Errors
+		comparisons	table would not be correctly sized if the warnings/errors
+		didn't occur in the first file.
+		Added unpaired (for unpaireds in the compareExpr Logs).
+
+* compareExpr.xsl
+	(unpaired): Includes links to plots in "Plots" section.
+
+* DESCRIPTION: Changed 'Sxslt' to "Suggests" instead of "Depends"
+
+* tests.R
+	(): Added test to check if Sxslt can be loaded before writeReport is called.
+
+
 2007-10-09  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
 
 * compare.Rd: Updated change of 'logDiffDirectory' to 'path'.
