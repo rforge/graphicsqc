@@ -186,18 +186,18 @@
 # getLogType()
 #
 # --------------------------------------------------------------------
-"getLogType" <- function(result) {
+"getLogType" <- function(logFile) {
     validLogTypes <- c("qcPlotExprResult", "qcPlotFunResult",
                        "qcPlotFileResult", "qcPlotPackageResult",
                        "qcCompareExprResult", "qcCompareFunResult",
                        "qcCompareFileResult")
-    if (length(grep("[Ll]og[.]xml$", result)) > 0) {
-        type <- xmlName(xmlRoot(xmlTreeParse(result)))
+    if (length(grep("[Ll]og[.]xml$", logFile)) > 0) {
+        type <- xmlName(xmlRoot(xmlTreeParse(logFile)))
         if (type %in% validLogTypes) {
             return(type)
         }
     }
-    stop("file given for test/control must be a qc log file")
+    stop("file given must be a qc log file")
 }
 
 # --------------------------------------------------------------------
@@ -262,7 +262,11 @@
 # getQCResult()
 #
 # --------------------------------------------------------------------
-"getQCResult" <- function(result) {
+"getQCResult" <- function(result, which = "plots") {
+    plots <- c("qcPlotExprResult", "qcPlotFunResult", "qcPlotFileResult",
+               "qcPlotPackageResult")
+    comparisons <- c("qcCompareExprResult", "qcCompareFunResult",
+                     "qcCompareFileResult", "qcComparePackageResult")
     if (is.character(result)) {
         fileInfo <- file.info(result)
         if (is.na(fileInfo$isdir)) {
@@ -273,37 +277,57 @@
         } else {
             # It's a PATH (not a file) !
             # so autodetect log files
-
-            ##first autodetect for packages
-            if (length(files <- list.files(result, "-packageLog.xml",
-                                           full.names = TRUE)) > 0) {
-                if (length(files) == 1) {
-                    return(readLog(files))
-                } ## else it's many packageLog files..
-            } else if (length(files <- list.files(result, "-funLog.xml",
-                                                  full.names = TRUE)) > 0) {
-                if (length(files) == 1) {
-                    return(readLog(files))
-                } ## else it's many funLog files..
-            } else if (length(files <- list.files(result, "-fileLog.xml",
-                                                  full.names = TRUE)) > 0) {
-                if (length(files) == 1) {
-                    return(readLog(files))
-                } ## else it's many fileLog files..
-            } else if (length(files <- list.files(result, "-log.xml",
-                                                  full.names = TRUE)) > 0) {
-                if (length(files) == 1) {
-                    return(readPlotExprLog(files))
-                } ##  Else it's many plotExprLog files so return the
-                  #list of them
-                  #return(files)
+            
+            if (which == "all") {
+                # Detect comparison logs
+                if (length(files <- list.files(result,
+                    "-comparePackageLog.xml", full.names = TRUE)) > 0) {
+                    if (length(files) == 1) {
+                        return(readLog(files))
+                    } ## else it's many comparePackageLog files..
+                } else if (length(files <- list.files(result,
+                           "(-compareFunLog.xml|-compareFileLog.xml)",
+                           full.names = TRUE)) > 0) {
+                    if (length(files) == 1) {
+                        return(readLog(files))
+                    } ## else it's many compareFunLog or compareFileLog files..
+                } else if (length(files <- list.files(result,
+                           "-compareExprLog.xml", full.names = TRUE)) > 0) {
+                    if (length(files) == 1) {
+                        return(readLog(files))
+                    } ## else it's many comapreExprLog files..
+                }
             }
+            if (which == "plots" || which == "all") {
+                # Detect plot logs
+                ##first autodetect for packages
+                if (length(files <- list.files(result, "-packageLog.xml",
+                                               full.names = TRUE)) > 0) {
+                    if (length(files) == 1) {
+                        return(readLog(files))
+                    } ## else it's many packageLog files..
+                } else if (length(files <- list.files(result,
+                                  "(-funLog.xml|-fileLog.xml)",
+                                  full.names = TRUE)) > 0) {
+                    if (length(files) == 1) {
+                        return(readLog(files))
+                    } ## else it's many funLog or fileLog files..
+                } else if (length(files <- list.files(result,
+                           "-log.xml", full.names = TRUE)) > 0) {
+                    if (length(files) == 1) {
+                        return(readPlotExprLog(files))
+                    } ##  Else it's many plotExprLog files so return the
+                      #list of them
+                      #return(files)
+                }
+            }
+            stop("No valid log files found in ", sQuote(result), call. = FALSE)
         }
-    } else if (inherits(result, c("qcPlotExprResult", "qcPlotFunResult",
-                        "qcPlotFileResult", "qcPlotPackageResult"))) {
+    } else if (which == "plots" && inherits(result, plots) ||
+               which == "all" && inherits(result, c(plots, comparisons))) {
         return(result)
     } else {
-        stop(sQuote(result), "is not a graphicsQC result", call. = FALSE)
+        stop(sQuote(result), "is not a valid graphicsQC result", call. = FALSE)
     }
 }
 

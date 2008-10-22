@@ -537,19 +537,19 @@ mergeList <- function(x) {
 # print.qcCompareExprResult()
 #
 # --------------------------------------------------------------------
-print.qcCompareExprResult <- function (obj) {
+print.qcCompareExprResult <- function (x, ...) {
     cat("qcCompareExpr Result:\n")
-    cat("Call:\n", obj[["info"]][["call"]], "\n")
+    cat("Call:\n", x[["info"]][["call"]], "\n")
     firstColumn <- format(c("", "R version: ", "Directory: ", "Filename:  "))
-    testColumn <- c("             Test", obj[["testInfo"]][["Rver"]],
-                    shortenPath(obj[["testInfo"]][["directory"]]),
-                    obj[["testInfo"]][["logFilename"]])
+    testColumn <- c("             Test", x[["testInfo"]][["Rver"]],
+                    shortenPath(x[["testInfo"]][["directory"]]),
+                    x[["testInfo"]][["logFilename"]])
     controlColumn <- c("           Control",
-                       obj[["controlInfo"]][["Rver"]],
-                       shortenPath(obj[["controlInfo"]][["directory"]]),
-                       obj[["controlInfo"]][["logFilename"]])
+                       x[["controlInfo"]][["Rver"]],
+                       shortenPath(x[["controlInfo"]][["directory"]]),
+                       x[["controlInfo"]][["logFilename"]])
     resultColumn <- c(" Results", rep("", 3))
-    lengths <- sapply(obj[["results"]],
+    lengths <- sapply(x[["results"]],
         function(x) {
             if (is.null(names(x))) {
                 length(x)
@@ -566,11 +566,11 @@ print.qcCompareExprResult <- function (obj) {
     i = 2
     for (type in names(lengths)) {
         for (j in seq_len(lengths[type])) {
-            testCol[i] <- shortenPath(obj[["results"]][[type]][[j]][[
+            testCol[i] <- shortenPath(x[["results"]][[type]][[j]][[
                                            "testFile"]])
-            controlCol[i] <- shortenPath(obj[["results"]][[type]][[j]][[
+            controlCol[i] <- shortenPath(x[["results"]][[type]][[j]][[
                                               "controlFile"]])
-            resultCol[i] <- shortenPath(obj[["results"]][[type]][[j]][[
+            resultCol[i] <- shortenPath(x[["results"]][[type]][[j]][[
                                               "result"]])
             i <- i + 1
         }

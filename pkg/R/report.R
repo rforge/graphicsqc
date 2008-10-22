@@ -51,78 +51,129 @@
         # Either a folder or a file.
         fileInfo <- file.info(qcResult)
         if (is.na(fileInfo$isdir)) {
-            stop("file ", dQuote(qcResult), " not found", call. = FALSE)
-        } else if (!fileInfo$isdir) {
-            # It's a file
-            qcResult <- readLog(qcResult)
+            warning("file ", dQuote(qcResult), " not found - no log file",
+                    " for this created", call. = FALSE)
+            return(NULL)
         } else {
-            # It's a PATH (not a file) !
-            # so autodetect log files
-            ## .
+            # getQCResult also does auto-detect
+            qcResult <- getQCResult(qcResult, "all")
         }
     }
 
     # Now we have the highest level R object we want to report on.
-
-    if (inherits(qcResult, "qcPlotExprResult")) {
-        plotExprPath <- file.path(qcResult[["info"]][["directory"]],
-                                  qcResult[["info"]][["logFilename"]])
-        plotExpr <- xsltApplyStyleSheet(plotExprPath,
-                                        xslStyles[["plotExprStyleSheet"]])
-        logName <- logNameToHTML(plotExprPath)
-        saveXML(plotExpr$doc, file = logName)
-        return(logName)
-        
-    } else if (inherits(qcResult, "qcPlotFunResult") ||
-               inherits(qcResult, "qcPlotFileResult")) {
-        plotFPath <- file.path(qcResult[["info"]][["directory"]],
-                                 qcResult[["info"]][["logFilename"]])
-        plotF <- xsltApplyStyleSheet(plotFPath,
-                                     xslStyles[["plotFunAndFileStyleSheet"]])
-        logName <- logNameToHTML(plotFPath)
-        saveXML(plotF$doc, file = logName)
-        return(logName)
-
-    } else if (inherits(qcResult, "qcCompareExprResult")) {
-        compareExprPath <- file.path(qcResult[["info"]][["path"]],
-                                     qcResult[["info"]][["logFilename"]])
-        testPath <- file.path(qcResult[["testInfo"]][["directory"]],
-                              qcResult[["testInfo"]][["logFilename"]])
-        controlPath <- file.path(qcResult[["controlInfo"]][["directory"]],
-                                 qcResult[["controlInfo"]][["logFilename"]])
-
-        compareExpr <- xsltApplyStyleSheet(compareExprPath,
-                                          xslStyles[["compareExprStyleSheet"]])
-        testExpr <- xsltApplyStyleSheet(testPath,
-                                        xslStyles[["plotExprStyleSheet"]])
-        controlExpr <- xsltApplyStyleSheet(controlPath,
-                                           xslStyles[["plotExprStyleSheet"]])
-        logName <- logNameToHTML(compareExprPath)
-        saveXML(compareExpr$doc, file = logName)
-        saveXML(testExpr$doc, file = logNameToHTML(testPath))
-        saveXML(controlExpr$doc, file = logNameToHTML(controlPath))
-        return(logName)
-        
-    } else if (inherits(qcResult, "qcCompareFunResult") ||
-               inherits(qcResult, "qcCompareFileResult")) {
-        lapply(qcResult[["results"]], writeReport, xslStyles)
-        writeReport(qcResult[["info"]][["testLog"]], xslStyles)
-        writeReport(qcResult[["info"]][["controlLog"]], xslStyles)
-        compareFPath <- paste(qcResult[["info"]][["path"]],
-                                qcResult[["info"]][["logFilename"]],
-                                sep = .Platform$file.sep)
-        compareF <- xsltApplyStyleSheet(compareFPath,
-                                    xslStyles[["compareFunAndFileStyleSheet"]])
-        logName <- logNameToHTML(compareFPath)
-        saveXML(compareF$doc, file = logName)
-        return(logName)
-        
-    } else {
-        stop("either ", sQuote("qcResult"), " is not a valid qcResult, ",
-             "or that type is not supported yet", call. = FALSE)
-    }
+    report(qcResult, xslStyles)
 }
 
+# --------------------------------------------------------------------
+#
+# report()
+#
+# --------------------------------------------------------------------
+"report" <- function(qcResult, xslStyles) {
+    UseMethod("report")
+}
+
+# --------------------------------------------------------------------
+#
+# report.qcPlotExprResult()
+#
+# --------------------------------------------------------------------
+"report.qcPlotExprResult" <- function(qcResult, xslStyles) {
+    plotExprPath <- file.path(qcResult[["info"]][["directory"]],
+                              qcResult[["info"]][["logFilename"]])
+    plotExpr <- xsltApplyStyleSheet(plotExprPath,
+                                    xslStyles[["plotExprStyleSheet"]])
+    logName <- logNameToHTML(plotExprPath)
+    saveXML(plotExpr$doc, file = logName)
+    logName
+}
+
+# --------------------------------------------------------------------
+#
+# report.qcPlotFileResult() and report.qcPlotFunResult()
+#
+# --------------------------------------------------------------------
+"report.qcPlotFileResult" <- "report.qcPlotFunResult" <- 
+function(qcResult, xslStyles) {
+    plotFPath <- file.path(qcResult[["info"]][["directory"]],
+                            qcResult[["info"]][["logFilename"]])
+    plotF <- xsltApplyStyleSheet(plotFPath,
+                                  xslStyles[["plotFunAndFileStyleSheet"]])
+    logName <- logNameToHTML(plotFPath)
+    saveXML(plotF$doc, file = logName)
+    logName    
+}
+
+# --------------------------------------------------------------------
+#
+# report.qcCompareExprResult()
+#
+# --------------------------------------------------------------------
+"report.qcCompareExprResult" <- function(qcResult, xslStyles) {
+    compareExprPath <- file.path(qcResult[["info"]][["path"]],
+                                 qcResult[["info"]][["logFilename"]])
+    testPath <- file.path(qcResult[["testInfo"]][["directory"]],
+                          qcResult[["testInfo"]][["logFilename"]])
+    controlPath <- file.path(qcResult[["controlInfo"]][["directory"]],
+                             qcResult[["controlInfo"]][["logFilename"]])
+
+    compareExpr <- xsltApplyStyleSheet(compareExprPath,
+                                       xslStyles[["compareExprStyleSheet"]])
+    # No point recursing since we have the info we need and there's
+    # only 2 files.
+    testExpr <- xsltApplyStyleSheet(testPath,
+                                    xslStyles[["plotExprStyleSheet"]])
+    controlExpr <- xsltApplyStyleSheet(controlPath,
+                                       xslStyles[["plotExprStyleSheet"]])
+    logName <- logNameToHTML(compareExprPath)
+    saveXML(compareExpr$doc, file = logName)
+    saveXML(testExpr$doc, file = logNameToHTML(testPath))
+    saveXML(controlExpr$doc, file = logNameToHTML(controlPath))
+    logName
+}
+
+# --------------------------------------------------------------------
+#
+# report.qcCompareFileResult() and report.qcCompareFunResult()
+#
+# --------------------------------------------------------------------
+"report.qcCompareFileResult" <- "report.qcCompareFunResult" <-
+function(qcResult, xslStyles) {
+    ## lapply does not work here??
+    # lapply(qcResult[["results"]], report, xslStyles)
+    for (qcRes in qcResult[["results"]]) {
+        report(qcRes, xslStyles)
+    }
+
+    compareFPath <- paste(qcResult[["info"]][["path"]],
+                          qcResult[["info"]][["logFilename"]],
+                          sep = .Platform$file.sep)
+    testPath <- qcResult[["info"]][["testLog"]]
+    controlPath <- qcResult[["info"]][["controlLog"]]
+    compareF <- xsltApplyStyleSheet(compareFPath,
+                                xslStyles[["compareFunAndFileStyleSheet"]])
+    # No point recursing, we have what we need.
+    testF <- xsltApplyStyleSheet(testPath,
+                                xslStyles[["plotFunAndFileStyleSheet"]])
+    controlF <- xsltApplyStyleSheet(controlPath,
+                                xslStyles[["plotFunAndFileStyleSheet"]])
+    logName <- logNameToHTML(compareFPath)
+    saveXML(compareF$doc, file = logName)
+    saveXML(testF$doc, file = logNameToHTML(testPath))
+    saveXML(controlF$doc, file = logNameToHTML(controlPath))
+    logName
+}
+
+# --------------------------------------------------------------------
+#
+# report.default()
+#
+# --------------------------------------------------------------------
+"report.default" <- function(qcResult, xslStyles) {
+    stop("comparing ", sQuote(class(qcResult)), " not yet implemented")
+}
+
+# Some miscellaneous functions used in this file and by the .xsl files
 "logNameToHTML" <- function(logName) gsub("[.]xml$", ".html", logName)
 "logToHTML" <- function(...) logNameToHTML(file.path(...))
 "getCompareExprName" <- function(logWithPath) {

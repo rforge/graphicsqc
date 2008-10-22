@@ -408,30 +408,30 @@ removeIfBlank <- function(filename, blankImageSizes) {
 # print.qcPlotExprResult()
 #
 # --------------------------------------------------------------------
-print.qcPlotExprResult <- function (obj) {
+print.qcPlotExprResult <- function (x, ...) {
     cat("plotExpr Result:\n")
-    cat("Call:\t", obj[["info"]][["call"]], "\n")
-    cat("R version:\t", obj[["info"]][["Rver"]], "\n")
-    cat("Directory:\t", obj[["info"]][["directory"]], "\n")
-    cat("Filename:\t", obj[["info"]][["logFilename"]], "\n")
+    cat("Call:\t", x[["info"]][["call"]], "\n")
+    cat("R version:\t", x[["info"]][["Rver"]], "\n")
+    cat("Directory:\t", x[["info"]][["directory"]], "\n")
+    cat("Filename:\t", x[["info"]][["logFilename"]], "\n")
     cat("Formats:\n")
-    for (format in names(obj[["plots"]])) {
-        if (is.null(obj[["plots"]][[format]][["plot"]])) {
+    for (format in names(x[["plots"]])) {
+        if (is.null(x[["plots"]][[format]][["plot"]])) {
             plots = "none"
         } else {
-            plots = obj[["plots"]][[format]][["plot"]]
+            plots = x[["plots"]][[format]][["plot"]]
         }
         cat(" ", format, ":\tPlots: ")
         cat(plots, sep = ", ")
         cat("\n")
 
-        if (!is.null(obj[["plots"]][[format]][["warnings"]])) {
+        if (!is.null(x[["plots"]][[format]][["warnings"]])) {
             cat("\tWarnings: \t")
-            cat(obj[["plots"]][[format]][["warnings"]], sep = "\n\t\t\t")
+            cat(x[["plots"]][[format]][["warnings"]], sep = "\n\t\t\t")
             cat("\n")
         }
-        if (!is.null(obj[["plots"]][[format]][["error"]])) {
-            cat("\tError: ", obj[["plots"]][[format]][["error"]], "\n")
+        if (!is.null(x[["plots"]][[format]][["error"]])) {
+            cat("\tError: ", x[["plots"]][[format]][["error"]], "\n")
         }
     }
 }

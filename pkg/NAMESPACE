@@ -1,1 +1,2 @@
-export(plotExpr, plotFunction, plotFile, plotPackage, compare, writeReport)
+export(plotExpr, plotFunction, plotFile, plotPackage, compare, writeReport,
+       print.qcPlotExprResult, print.qcCompareExprResult)

@@ -1,4 +1,31 @@
-2007-16-09  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
+2007-10-23  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
+
+* report.R
+	(): Uses getQCResult so can auto-detect.
+	(report): New generic function
+	(report.qcPlotExprResult, report.qcPlotFileResult, report.qcPlotFunResult,
+	 report.qcCompareExprResult, report.qcCompareFileResult,
+	 report.qcCompareFunResult, report.default): New functions (refactored code).
+	 
+* log.R
+	(getQCResult): Added argument for 'which' so can be used to auto-detect
+		all log files, or just plot ones.
+
+* NAMESPACE: Added print.qcPlotExprResult and print.qcCompareExprResult.
+
+* compareFunAndFile.xsl: TOC only reports numbers of differences.
+		Comparison logs section removed. All 'Files' are listed with links to
+		their respective logs. New 'No plots to compare' section.
+
+* makeplots.R
+	(print.qcPlotExprResult) Changed to match arguments of the print generic.
+
+* compare.R
+	(print.qcCompareExprResult) Changed to match arguments of the print generic.
+	
+* gridExample2.tar.gz: New File.
+
+2007-10-16  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
 
 * makeplots.R
 	(plotExpr, plotFunction, plotFile): Changed R version in info from
@@ -34,7 +61,8 @@
 
 * tests.R
 	(): Added test to check if Sxslt can be loaded before writeReport is called.
-
+	
+* gridExample.tar.gz: New File.
 
 2007-10-09  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
 

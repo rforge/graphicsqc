@@ -145,7 +145,7 @@ testFun3 <- plotFunction(c("plot", "barplot"), c("pdf", "png"),
 list.files("testFun3")
 
 # ------------------- Testing report.R -------------------------
-if(require("Sxslt")) {
+if (require("Sxslt")) {
     report1 <- writeReport(test1)
     report2 <- writeReport(test1BComp)
     report3 <- writeReport(blankComp)

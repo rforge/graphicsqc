@@ -13,9 +13,18 @@ xmlns:r="http://www.r-project.org"
   <xsl:variable name="numDiffFuns"
                 select="count(document($docs)/qcCompareExprResult[compare/
                         comparison[result='different']])"/>
+  <xsl:variable name="numDiffPlots"
+                select="count(document($docs)/qcCompareExprResult/compare/
+                        comparison[result='different'])"/>
   <xsl:variable name="numIdenticalFuns"
                 select="count(document($docs)/qcCompareExprResult[compare/
                         comparison[result='identical']])"/>
+  <xsl:variable name="numIdenticalPlots"
+                select="count(document($docs)/qcCompareExprResult/compare/
+                        comparison[result='identical'])"/>
+  <xsl:variable name="numFunctionsNoPlots"
+                select="count(document($docs)[not(qcCompareExprResult/
+                        compare/node())])"/>
   <html>
   <head>
     <title>Compare Function Result</title>
@@ -51,44 +60,39 @@ xmlns:r="http://www.r-project.org"
         <ul>
           <li>
             <a href="#diffPlots">Different Plots</a>
-            <!-- Want to only show if there are any differences -->
             <xsl:choose>
-              <xsl:when test="$numDiffFuns = 0">
+              <xsl:when test="$numDiffPlots = 0">
                 [none]
               </xsl:when>
               <xsl:otherwise>
-                <ul>
-                  <!-- For each logFilename which has a 'different' result in
-                       it -->
-                  <xsl:for-each select="document($docs)/qcCompareExprResult
-                                        /info/logFilename[../../compare/
-                                        comparison[result='different']]">
-                    <li>
-                      <xsl:value-of select="r:getCompareExprName(string(.))"/>
-                    </li>
-                  </xsl:for-each>
-                </ul>
+                [<xsl:value-of select="$numDiffPlots"/> in
+                 <xsl:value-of select="$numDiffFuns"/>
+                 function<xsl:if test="$numDiffFuns > 1">s</xsl:if>]
               </xsl:otherwise>
             </xsl:choose>
           </li>
           <li>
             <a href="#identicalPlots">Identical Plots</a>
             <xsl:choose>
-              <xsl:when test="$numIdenticalFuns = 0">
+              <xsl:when test="$numIdenticalPlots = 0">
                 [none]
               </xsl:when>
               <xsl:otherwise>
-                <ul>
-                  <!-- For each logFilename which has an 'identical' result in
-                       it -->
-                  <xsl:for-each select="document($docs)/qcCompareExprResult
-                                        /info/logFilename[../../compare/
-                                        comparison[result='identical']]">
-                    <li>
-                      <xsl:value-of select="r:getCompareExprName(string(.))"/>
-                    </li>
-                  </xsl:for-each>
-                </ul>
+                [<xsl:value-of select="$numIdenticalPlots"/> in
+                 <xsl:value-of select="$numIdenticalFuns"/>
+                 function<xsl:if test="$numIdenticalFuns > 1">s</xsl:if>]
+              </xsl:otherwise>
+            </xsl:choose>
+          </li>
+          <li>
+            <a href="#noPlots">No plots to compare</a>
+            <xsl:choose>
+              <xsl:when test="$numFunctionsNoPlots = 0">
+                [none]
+              </xsl:when>
+              <xsl:otherwise>
+                [<xsl:value-of select="$numFunctionsNoPlots"/>
+                function<xsl:if test="$numFunctionsNoPlots > 1">s</xsl:if>]
               </xsl:otherwise>
             </xsl:choose>
           </li>
@@ -167,18 +171,6 @@ xmlns:r="http://www.r-project.org"
           <xsl:value-of select="info/logFilename"/>
         </td>
       </tr>
-      <xsl:for-each select="qcCompareExprResult">
-        <tr>
-          <xsl:if test="position()=1">
-            <th rowspan="{last()}">Comparison Logs</th>
-          </xsl:if>
-          <td colspan="3">
-              <a href="{r:logToHTML(string(.))}">
-                <xsl:value-of select="r:call('basename', string(.))"/>
-              </a>
-          </td>
-        </tr>
-      </xsl:for-each>
     </table>
     <!-- Plots -->
     <h2><a name="plotComp">Plot Comparisons</a></h2>
@@ -203,11 +195,13 @@ xmlns:r="http://www.r-project.org"
               <xsl:for-each select="comparison[result='different']">
                 <tr>
                   <xsl:if test="$comparePosition=1 and position()=1">
-                      <td rowspan="{count(../../compare/
-                                    comparison[result='different'])}">
+                    <td rowspan="{count(../../compare/
+                                 comparison[result='different'])}">
+                      <a href="{r:logToHTML(string($doc))}">
                         <xsl:value-of select="r:getCompareExprName(
                                               string($doc))"/>
-                      </td>
+                      </a>
+                    </td>
                   </xsl:if>
                   <xsl:choose>
                     <xsl:when test="position()=1">
@@ -278,8 +272,11 @@ xmlns:r="http://www.r-project.org"
                 <tr>
                 <xsl:if test="$comparePosition=1 and position()=1">
                   <td rowspan="{count(../../compare/
-                                comparison[result='identical'])}">
-                    <xsl:value-of select="r:getCompareExprName(string($doc))"/>
+                               comparison[result='identical'])}">
+                    <a href="{r:logToHTML(string($doc))}">
+                      <xsl:value-of select="r:getCompareExprName(string(
+                                            $doc))"/>
+                    </a>
                   </td>
                 </xsl:if>
                 <xsl:choose>
@@ -301,6 +298,32 @@ xmlns:r="http://www.r-project.org"
       </xsl:when>
       <xsl:otherwise>
         <p>No identical plots were found.</p>
+      </xsl:otherwise>
+    </xsl:choose>
+    <!-- No plots to compare -->
+    <h3><a name="noPlots">No plots to compare</a></h3>
+    <xsl:choose>
+      <xsl:when test="$numFunctionsNoPlots > 0">
+        <table>
+          <tr>
+            <th>Functions</th>
+          </tr>
+          <xsl:for-each select="$docs">
+            <xsl:if test="count(document(.)[not(qcCompareExprResult/
+                          compare/node())]) > 0">
+              <tr>
+                <td>
+                  <a href="{r:logToHTML(string(.))}">
+                    <xsl:value-of select="r:getCompareExprName(string(.))"/>
+                  </a>
+                </td>
+              </tr>
+            </xsl:if>
+          </xsl:for-each>
+        </table>
+      </xsl:when>
+      <xsl:otherwise>
+      <p>All functions had plots</p>
       </xsl:otherwise>
     </xsl:choose>
     <!-- Warnings/Errors -->
@@ -332,8 +355,10 @@ xmlns:r="http://www.r-project.org"
                 </xsl:if>
                 <xsl:if test="position()=1">
                   <td rowspan="{last()}" class="topAlign">
-                    <xsl:value-of select="r:getCompareExprName(
-                                          string(../info/logFilename))"/>
+                    <a href="{r:logToHTML(string(../info/logFilename))}">
+                      <xsl:value-of select="r:getCompareExprName(
+                                            string(../info/logFilename))"/>
+                    </a>
                   </td>
                 </xsl:if>
                 <td>
@@ -363,8 +388,10 @@ xmlns:r="http://www.r-project.org"
                 </xsl:if>
                 <xsl:if test="position()=1">
                   <td rowspan="{last()}" class="topAlign">
-                    <xsl:value-of select="r:getCompareExprName(
-                                          string(../info/logFilename))"/>
+                    <a href="{r:logToHTML(string(../info/logFilename))}">
+                      <xsl:value-of select="r:getCompareExprName(
+                                            string(../info/logFilename))"/>
+                    </a>
                   </td>
                 </xsl:if>
                 <td>
@@ -436,9 +463,18 @@ xmlns:r="http://www.r-project.org"
   <xsl:variable name="numDiffFiles"
                 select="count(document($docs)/qcCompareExprResult[compare/
                         comparison[result='different']])"/>
+  <xsl:variable name="numDiffPlots"
+                select="count(document($docs)/qcCompareExprResult/compare/
+                        comparison[result='different'])"/>
   <xsl:variable name="numIdenticalFiles"
                 select="count(document($docs)/qcCompareExprResult[compare/
                         comparison[result='identical']])"/>
+  <xsl:variable name="numIdenticalPlots"
+                select="count(document($docs)/qcCompareExprResult/compare/
+                        comparison[result='identical'])"/>
+  <xsl:variable name="numFilesNoPlots"
+                select="count(document($docs)[not(qcCompareExprResult/
+                        compare/node())])"/>
   <html>
   <head>
     <title>Compare File Result</title>
@@ -473,44 +509,39 @@ xmlns:r="http://www.r-project.org"
         <ul>
           <li>
             <a href="#diffPlots">Different Plots</a>
-            <!-- Want to only show if there are any differences -->
             <xsl:choose>
-              <xsl:when test="$numDiffFiles = 0">
+              <xsl:when test="$numDiffPlots = 0">
                 [none]
               </xsl:when>
               <xsl:otherwise>
-                <ul>
-                  <!-- For each logFilename which has a 'different' result in
-                       it -->
-                  <xsl:for-each select="document($docs)/qcCompareExprResult
-                                        /info/logFilename[../../compare/
-                                        comparison[result='different']]">
-                    <li>
-                      <xsl:value-of select="r:getCompareExprName(string(.))"/>
-                    </li>
-                  </xsl:for-each>
-                </ul>
+                [<xsl:value-of select="$numDiffPlots"/> in
+                 <xsl:value-of select="$numDiffFiles"/>
+                 file<xsl:if test="$numDiffFiles > 1">s</xsl:if>]
               </xsl:otherwise>
             </xsl:choose>
           </li>
           <li>
             <a href="#identicalPlots">Identical Plots</a>
             <xsl:choose>
-              <xsl:when test="$numIdenticalFiles = 0">
+              <xsl:when test="$numIdenticalPlots = 0">
                 [none]
               </xsl:when>
               <xsl:otherwise>
-                <ul>
-                  <!-- For each logFilename which has an 'identical' result in
-                       it -->
-                  <xsl:for-each select="document($docs)/qcCompareExprResult
-                                        /info/logFilename[../../compare/
-                                        comparison[result='identical']]">
-                    <li>
-                      <xsl:value-of select="r:getCompareExprName(string(.))"/>
-                    </li>
-                  </xsl:for-each>
-                </ul>
+                [<xsl:value-of select="$numIdenticalPlots"/> in
+                 <xsl:value-of select="$numIdenticalFiles"/>
+                 file<xsl:if test="$numIdenticalFiles > 1">s</xsl:if>]
+              </xsl:otherwise>
+            </xsl:choose>
+          </li>
+          <li>
+            <a href="#noPlots">No plots to compare</a>
+            <xsl:choose>
+              <xsl:when test="$numFilesNoPlots = 0">
+                [none]
+              </xsl:when>
+              <xsl:otherwise>
+                [<xsl:value-of select="$numFilesNoPlots"/>
+                file<xsl:if test="$numFilesNoPlots > 1">s</xsl:if>]
               </xsl:otherwise>
             </xsl:choose>
           </li>
@@ -589,18 +620,6 @@ xmlns:r="http://www.r-project.org"
           <xsl:value-of select="info/logFilename"/>
         </td>
       </tr>
-      <xsl:for-each select="qcCompareExprResult">
-        <tr>
-          <xsl:if test="position()=1">
-            <th rowspan="{last()}">Comparison Logs</th>
-          </xsl:if>
-          <td colspan="3">
-              <a href="{r:logToHTML(string(.))}">
-                <xsl:value-of select="r:call('basename', string(.))"/>
-              </a>
-          </td>
-        </tr>
-      </xsl:for-each>
     </table>
     <!-- Plots -->
     <h2><a name="plotComp">Plot Comparisons</a></h2>
@@ -625,11 +644,13 @@ xmlns:r="http://www.r-project.org"
               <xsl:for-each select="comparison[result='different']">
                 <tr>
                   <xsl:if test="$comparePosition=1 and position()=1">
-                      <td rowspan="{count(../../compare/
-                                    comparison[result='different'])}">
+                    <td rowspan="{count(../../compare/
+                                 comparison[result='different'])}">
+                      <a href="{r:logToHTML(string($doc))}">
                         <xsl:value-of select="r:getCompareExprName(
                                               string($doc))"/>
-                      </td>
+                      </a>
+                    </td>
                   </xsl:if>
                   <xsl:choose>
                     <xsl:when test="position()=1">
@@ -701,7 +722,10 @@ xmlns:r="http://www.r-project.org"
                 <xsl:if test="$comparePosition=1 and position()=1">
                   <td rowspan="{count(../../compare/
                                 comparison[result='identical'])}">
-                    <xsl:value-of select="r:getCompareExprName(string($doc))"/>
+                    <a href="{r:logToHTML(string($doc))}">
+                      <xsl:value-of select="r:getCompareExprName(string(
+                                            $doc))"/>
+                    </a>
                   </td>
                 </xsl:if>
                 <xsl:choose>
@@ -723,6 +747,32 @@ xmlns:r="http://www.r-project.org"
       </xsl:when>
       <xsl:otherwise>
         <p>No identical plots were found.</p>
+      </xsl:otherwise>
+    </xsl:choose>
+    <!-- No plots to compare-->
+    <h3><a name="noPlots">No plots to compare</a></h3>
+    <xsl:choose>
+      <xsl:when test="$numFilesNoPlots > 0">
+        <table>
+          <tr>
+            <th>Files</th>
+          </tr>
+          <xsl:for-each select="$docs">
+            <xsl:if test="count(document(.)[not(qcCompareExprResult/
+                          compare/node())]) > 0">
+              <tr>
+                <td>
+                  <a href="{r:logToHTML(string(.))}">
+                    <xsl:value-of select="r:getCompareExprName(string(.))"/>
+                  </a>
+                </td>
+              </tr>
+            </xsl:if>
+          </xsl:for-each>
+        </table>
+      </xsl:when>
+      <xsl:otherwise>
+      <p>All files had plots</p>
       </xsl:otherwise>
     </xsl:choose>
     <!-- Warnings/Errors -->
@@ -754,8 +804,10 @@ xmlns:r="http://www.r-project.org"
                 </xsl:if>
                 <xsl:if test="position()=1">
                   <td rowspan="{last()}" class="topAlign">
-                    <xsl:value-of select="r:getCompareExprName(
-                                          string(../info/logFilename))"/>
+                    <a href="{r:logToHTML(string(../info/logFilename))}">
+                      <xsl:value-of select="r:getCompareExprName(
+                                            string(../info/logFilename))"/>
+                    </a>
                   </td>
                 </xsl:if>
                 <td>
@@ -785,8 +837,10 @@ xmlns:r="http://www.r-project.org"
                 </xsl:if>
                 <xsl:if test="position()=1">
                   <td rowspan="{last()}" class="topAlign">
-                    <xsl:value-of select="r:getCompareExprName(
-                                          string(../info/logFilename))"/>
+                    <a href="{r:logToHTML(string(../info/logFilename))}">
+                      <xsl:value-of select="r:getCompareExprName(
+                                            string(../info/logFilename))"/>
+                    </a>
                   </td>
                 </xsl:if>
                 <td>
@@ -899,8 +953,10 @@ xmlns:r="http://www.r-project.org"
         </xsl:if>
         <xsl:if test="position()=1">
           <td rowspan="{last()}" class="topAlign">
-            <xsl:value-of select="r:getCompareExprName(
-                                  string(../../../info/logFilename))"/>
+            <a href="{r:logToHTML(string(../../../info/logFilename))}">
+              <xsl:value-of select="r:getCompareExprName(
+                                    string(../../../info/logFilename))"/>
+            </a>
           </td>
         </xsl:if>
         <xsl:variable name="format" select="local-name()"/>
