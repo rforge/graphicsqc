@@ -431,6 +431,14 @@ someday, the report code has to handle qcCompare/compareLog OR
 
 - PAUL TODO: why are there differences in the text!?  Why in PDF!!!?
 
+# 23/10/08
+
+- develop Report structure
+
+- develop Talk structure
+
+- write (complete) Rd files
+
 
 ===========
 What's left:
@@ -440,12 +448,13 @@ What's left:
 - compare(erase)
 - print(<lots>)
 - compare(comparePkg)
-- writeReport(compareFun|compareFile|comparePkg)
+- writeReport(comparePkg)
 - documentation
 - DTDs for log XML files ?
 - does it run on Windows ?  (Mac ?)
 - at the compareFun level, there is no recording/reporting
   if a *fun* is completely unpaired
+  (same problem for compareFile)
 
 - REPORT
 - TALK
