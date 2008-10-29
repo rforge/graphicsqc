@@ -1,3 +1,51 @@
+2007-10-30  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
+
+* makeplots.R, compare.R, report.R, log.R
+	(): All function names have been backquoted and laid out similar to what
+		dump would do. Many of the comments have also been tidied.
+
+* makeplots.R
+	(): Changed from stop() when length(prefix) > 1 to warning().
+	(evalPlotCode): Strips trailing \n from warnings and errors (so XML will
+		read properly). Note: writing/reading using CData also won't read the
+		last \n's.
+	(plotFile): Re-ordered arguments so path comes before prefix because prefix
+		normally has sensible defaults.
+	(plotFunction): Likewise.
+	(plotExpr): Likewise (except prefix has to be chosen by the user).
+
+* tests.R
+	(): Changed calls to plotExpr/plotFile/plotFunction to match change in
+		ordering of arguments.
+
+* log.R
+	(getQCResult): When auto-detecting for the highest classed object, if
+		many are detected, now gives a warning and calls notYetImplemented().
+
+* compareExpr.xsl:
+	(): Changed to "Warnings/Errors Differences" rather than
+		'Warnings/Errors Comparisons'.
+
+* compareFunAndFile.xsl:
+	(): Changed to "Warnings/Errors Differences" rather than
+		'Warnings/Errors Comparisons'.
+
+* NAMESPACE: Changed print.qcPlotExprResult and print.qcCompareExprResult
+		to use S3method().
+		Defined S3method()s for report.* (qcPlotExprResult, qcPlotFileResult,
+		qcPlotFunResult, qcCompareExprResult, qcCompareFileResult,
+		qcCompareFunResult, default).
+
+* plotExpr.Rd: Updated/fleshed out.
+
+* compare.Rd: Updated/fleshed out.
+
+* plotFile.Rd: Removed - merged into plotExpr.Rd.
+
+* plotFunction.Rd: Removed - merged into plotExpr.Rd.
+
+* graphicsqc-package.Rd: Updated/a little fleshed out.
+
 2007-10-23  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
 
 * report.R

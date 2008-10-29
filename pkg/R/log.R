@@ -284,18 +284,32 @@
                     "-comparePackageLog.xml", full.names = TRUE)) > 0) {
                     if (length(files) == 1) {
                         return(readLog(files))
-                    } ## else it's many comparePackageLog files..
+                    } else {
+                        ## else it's many comparePackageLog files..
+                        warning("many comparePackage logs auto-detected")
+                        notYetImplemented()
+                    }
                 } else if (length(files <- list.files(result,
                            "(-compareFunLog.xml|-compareFileLog.xml)",
                            full.names = TRUE)) > 0) {
                     if (length(files) == 1) {
                         return(readLog(files))
-                    } ## else it's many compareFunLog or compareFileLog files..
+                    } else {
+                        ## else it's many compareFunLog or
+                        #compareFileLog files..
+                        warning("many compareFun or compareFile logs",
+                                "auto-detected")
+                        notYetImplemented()
+                    }
                 } else if (length(files <- list.files(result,
                            "-compareExprLog.xml", full.names = TRUE)) > 0) {
                     if (length(files) == 1) {
                         return(readLog(files))
-                    } ## else it's many comapreExprLog files..
+                    } else {
+                        ## else it's many compareExprLog files..
+                        warning("many compareExpr logs auto-detected")
+                        notYetImplemented()
+                    }
                 }
             }
             if (which == "plots" || which == "all") {
@@ -305,20 +319,32 @@
                                                full.names = TRUE)) > 0) {
                     if (length(files) == 1) {
                         return(readLog(files))
-                    } ## else it's many packageLog files..
+                    } else {
+                        ## else it's many packageLog files..
+                        warning("many package logs auto-detected")
+                        notYetImplemented()
+                    }
                 } else if (length(files <- list.files(result,
                                   "(-funLog.xml|-fileLog.xml)",
                                   full.names = TRUE)) > 0) {
                     if (length(files) == 1) {
                         return(readLog(files))
-                    } ## else it's many funLog or fileLog files..
+                    } else {
+                        ## else it's many funLog or fileLog files..
+                        warning("many file or fun logs auto-detected")
+                        notYetImplemented()
+                    }
                 } else if (length(files <- list.files(result,
                            "-log.xml", full.names = TRUE)) > 0) {
                     if (length(files) == 1) {
                         return(readPlotExprLog(files))
-                    } ##  Else it's many plotExprLog files so return the
-                      #list of them
-                      #return(files)
+                    } else {
+                        ##  Else it's many plotExprLog files so return the
+                        #list of them
+                        #return(files)
+                        warning("many plotExpr logs auto-detected")
+                        notYetImplemented()
+                    }
                 }
             }
             stop("No valid log files found in ", sQuote(result), call. = FALSE)

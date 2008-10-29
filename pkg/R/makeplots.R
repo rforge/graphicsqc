@@ -9,29 +9,22 @@
 # plotExpr will take an R expression (or expressions) and produce
 # plots in specific file formats of the intended plot.
 #
-# ALWAYS produce a file containing index of files created
-#
-# MUST always work (=> tryCatch)
-#
-# Return value is record of files created
-#
-#
-#  _______-------======= TODO: FIND ##'s =======-------_______
-#
 # --------------------------------------------------------------------
-"plotExpr" <- function(expr, # character vector
-                             # R expression(s)
-                             # May be a list BUT if it is
-                             # we just flatten it to a vector.
-                       filetype = NULL, # character vector
-                                        # (valid) file formats
-                       prefix = NULL, # char length 1
-                                      # file prefix
-                       path = NULL, # char length 1
-                                   # directory to create files in
-                       clear = FALSE # boolean, clear any files we might make
-                       ) {
-## what about these warnings not in evalPlotCode?
+`plotExpr` <-
+function(expr, # character vector
+               # R expression(s)
+               # May be a list BUT if it is
+               # we just flatten it to a vector.
+         filetype = NULL, # character vector
+                          # (valid) file formats
+         path = NULL, # char length 1
+                      # directory to create files in
+         prefix = NULL, # char length 1
+                       # file prefix
+         clear = FALSE # boolean, clear any files we might make
+        )
+{
+    # These warnings not in evalPlotCode are not recorded in the XML.
     if (is.list(expr))
         expr <- unlist(expr)
 
@@ -44,7 +37,9 @@
     if (length(prefix) == 1) {
         prefix <- as.character(prefix)
     } else {
-        stop(sQuote("prefix"), " must be a character vector of length 1")
+        warning(sQuote("prefix"), " should be a character vector of length 1",
+                ", only the first used (", prefix[1], ")")
+        prefix <- prefix[1]
     }
     wd <- getwd()
     on.exit(setwd(wd))
@@ -122,7 +117,6 @@
                  paste(prefix, "-log.xml", sep = ""))
                  # using getwd() here forces expansion
                  # of directory (ie, expands "./" or "~/")
-    ## Write all errors (i.e. for every filetype), or just one set?
     results <- list("info" = info, "plots" = evalResult)
 
     writeXmlPlotExprLog(results)
@@ -136,7 +130,9 @@
 # getValidPath()
 #
 # --------------------------------------------------------------------
-getValidPath <- function(path) {
+`getValidPath` <-
+function(path)
+{
     if (length(path) == 0) {
         warning("no path given: the path has been set to your current working",
                 " directory", call. = FALSE)
@@ -162,7 +158,9 @@ getValidPath <- function(path) {
 # evalPlotCode()
 #
 # --------------------------------------------------------------------
-"evalPlotCode" <- function(filetype, expr, filenameFormat) {
+`evalPlotCode` <-
+function(filetype, expr, filenameFormat)
+{
     if (filetype == "ps") {
         fileExtension <- ".ps"
         filetype <- "postscript"
@@ -187,10 +185,16 @@ getValidPath <- function(path) {
                     }), error = function(e) {})
     error <- geterrmessage() # There can only be one error as we stop
                              # evaluating when we hit an error
-    if (error == "") {
+    # Strip any trailing newlines as XML won't read them in properly later
+    # (will write them, but won't read the last \n's (as normal or CData))
+    warns <- sub("[\n]*$", "", warns)
+    error <- sub("[\n]*$", "", error)
+    if (length(error) == 0 || error == "") {
         error <- NULL
     }
-
+    if (length(warns) == 0) {
+        warns <- NULL
+    }
     dev.off()
     return(list("warnings" = warns, "error" = error))
 }
@@ -200,7 +204,9 @@ getValidPath <- function(path) {
 # getValidFiletypes()
 #
 # --------------------------------------------------------------------
-"getValidFiletypes" <- function(filetypes) {
+`getValidFiletypes` <-
+function(filetypes)
+{
     filetypes <- tolower(filetypes)
     validFiletypes <- c("pdf", "png", "ps", "bmp")
     if (.Platform$OS.type != "windows") {
@@ -240,18 +246,19 @@ getValidPath <- function(path) {
 # plotFile()
 #
 # --------------------------------------------------------------------
-plotFile <- function(filename, # character vector
-                             # R expression(s)
-                     filetype = NULL, # character vector
-                                        # (valid) file formats
-                     prefix = basename(filename), # char length 1
+`plotFile` <-
+function(filename, # character vector
+                   # R expression(s)
+         filetype = NULL, # character vector
+                          # (valid) file formats
+         path = NULL, # char length 1
+                      # directory to create files in
+         prefix = basename(filename), # char length 1
                                       # file prefix
-                     path = NULL, # char length 1
-                                   # directory to create files in
-                     clear = FALSE
-                     ) {
+         clear = FALSE
+         )
+{
     ## Test if files exist first?
-   ### If filename has .Platform$file.sep in it then the prefix HAS to be diff
     if (length(filename) != length(prefix)) {
         stop(sQuote(prefix), " must be the same length as ", sQuote(filename))
     }
@@ -290,33 +297,38 @@ plotFile <- function(filename, # character vector
 # plotFunction()
 # ## setRNG?
 # --------------------------------------------------------------------
-plotFunction <- function(fun, # character vector
-                             # R expression(s)
-                       filetype = NULL, # character vector
-                                        # (valid) file formats
-                       prefix = fun, # char length 1
-                                      # file prefix
-                       path = NULL, # char length 1
-                                    # directory to create files in
-                       clear = FALSE) {
+`plotFunction` <-
+function(fun, # character vector
+              # R expression(s)
+         filetype = NULL, # character vector
+                          # (valid) file formats
+         path = NULL, # char length 1
+                      # directory to create files in
+         prefix = fun, # char length 1
+                       # file prefix
+         clear = FALSE
+         )
+{
     ## if not paste, then something like...
     # funs<-lapply(fun, function(x) {
        #                 substitute(do.call(example,list(x))
        # (gets unusual behaviour without paste..?)
     ## can also check if it's a function? .. is.function(match.fun(..
-    if (length(fun) != length(prefix)) {
-        stop(sQuote("prefix"), " must be the same length as ", sQuote("fun"))
+    if (!is.character(fun)) {
+        fun <- deparse(substitute(fun))
+        prefix <- fun
     }
+    path <- getValidPath(path)
     # Check that the prefixes are unique (otherwise we will die half-way
     # through because we will try to overwrite)
     if (any(duplicated(prefix))) {
         stop("all values for ", sQuote("prefix"), "must be unique")
     }
-    path <- getValidPath(path)
-    if (!is.character(fun)) {
-        fun <- deparse(substitute(fun))
-        prefix <- fun
+
+    if (length(fun) != length(prefix)) {
+        stop(sQuote("prefix"), " must be the same length as ", sQuote("fun"))
     }
+ 
     funs <- paste("example(", fun, ", echo = FALSE, setRNG = TRUE)", sep = "")
     funMapplyResult <- mapply(plotExpr, expr = funs, prefix = prefix,
                               MoreArgs = list(filetype = filetype, path = path,
@@ -347,7 +359,9 @@ plotFunction <- function(fun, # character vector
 # plotPackage()
 #
 # --------------------------------------------------------------------
-plotPackage <- function(package) {
+`plotPackage` <-
+function(package)
+{
     ## take 'best effort' approach? try get tests/demo if can and use them..
     if (!do.call(require, list(package))) {
         warning("failed to load package ", dQuote(package))
@@ -360,7 +374,9 @@ plotPackage <- function(package) {
 # generateBlankImages()
 #
 # --------------------------------------------------------------------
-generateBlankImages <- function() {
+`generateBlankImages` <-
+function()
+{
     tempDir <- tempdir()
     # Only pdf and ps blank images are made as the filesize for bmp and png
     # blanks are 0
@@ -378,7 +394,9 @@ generateBlankImages <- function() {
 # getBlankImageSizes()
 #
 # --------------------------------------------------------------------
-getBlankImageSizes <- function() {
+`getBlankImageSizes` <-
+function()
+{
     sizes <- file.info(paste(tempdir(), c("blankPDF.pdf", "blankPS.ps"),
                              sep = .Platform$file.sep))[,1]
     names(sizes) <- c("pdf", "ps")
@@ -390,7 +408,9 @@ getBlankImageSizes <- function() {
 # removeIfBlank()
 #
 # --------------------------------------------------------------------
-removeIfBlank <- function(filename, blankImageSizes) {
+`removeIfBlank` <-
+function(filename, blankImageSizes)
+{
     filesize <- file.info(filename)[,1]
     if (filesize == 0 || length(grep(".*[.]pdf$", filename)) > 0 &&
         filesize == blankImageSizes["pdf"] ||
@@ -408,7 +428,9 @@ removeIfBlank <- function(filename, blankImageSizes) {
 # print.qcPlotExprResult()
 #
 # --------------------------------------------------------------------
-print.qcPlotExprResult <- function (x, ...) {
+`print.qcPlotExprResult` <-
+function (x, ...)
+{
     cat("plotExpr Result:\n")
     cat("Call:\t", x[["info"]][["call"]], "\n")
     cat("R version:\t", x[["info"]][["Rver"]], "\n")
@@ -442,6 +464,8 @@ print.qcPlotExprResult <- function (x, ...) {
 # notYetImplemented()
 #
 # --------------------------------------------------------------------
-notYetImplemented <- function() {
+`notYetImplemented` <-
+function()
+{
     stop("sorry, that function is not yet implemented")
 }

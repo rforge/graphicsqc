@@ -1,2 +1,10 @@
-export(plotExpr, plotFunction, plotFile, plotPackage, compare, writeReport,
-       print.qcPlotExprResult, print.qcCompareExprResult)
+export(plotExpr, plotFunction, plotFile, plotPackage, compare, writeReport)
+S3method(print, qcPlotExprResult)
+S3method(print, qcCompareExprResult)
+S3method(report, qcPlotExprResult)
+S3method(report, qcPlotFileResult)
+S3method(report, qcPlotFunResult)
+S3method(report, qcCompareExprResult)
+S3method(report, qcCompareFileResult)
+S3method(report, qcCompareFunResult)
+S3method(report, default)

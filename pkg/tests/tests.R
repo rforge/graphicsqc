@@ -3,31 +3,31 @@ library(graphicsqc)
 # General Tests:
 # plotExpr takes arguments; expr, filetype, prefix, path, clear
 test1 <- plotExpr(c("plot(1:10)", "plot(4:40)", "x<-3", "plot(2:23)"),
-                  c("pdf", "ps", "png"), "test", "testdir1/", FALSE)
+                  c("pdf", "ps", "png"), "testdir1/", "test", FALSE)
 # There should now be a folder "testdir1" in getwd() containing
 # pdf and ps files and test-log.xml, ie
 list.files("testdir1")
 
 test1a <- plotExpr(c("plot(1:10)", "warning(\"warn\")", "x<-3", "plot(2:23)"),
-                  c("pdf", "ps", "png"), "test", "test1a/", FALSE)
+                   c("pdf", "ps", "png"), "test1a/", "test", FALSE)
 test1b <- plotExpr(c("plot(1:10)", "x<-3", "plot(2:23)"),
-                  c("pdf", "ps", "png"), "test", "test1b/", FALSE)
+                   c("pdf", "ps", "png"), "test1b/", "test", FALSE)
 testA <- compare(test1a, test1b, erase = "none")
 
 # No file result
 blankTest <- plotExpr(c("x<-3", "x+2"), c("pdf", "ps", "png"),
-                  "test", "blankTest/", FALSE)
+                      "blankTest/", "test", FALSE)
 blankTest2 <- plotExpr(c("x<-2", "x+3"), c("pdf", "png"),
-                  "blankTest", "blankTest2/", FALSE)
+                       "blankTest2/", "blankTest", FALSE)
 
 # plotExpr() allows expressions as well as text
 expressions <- expression({ plot(1:10); plot(4:40); x<-3; plot(2:23) })
-test1Expr <- plotExpr(expressions, "png", "exprTest", "exprDir", FALSE)
+test1Expr <- plotExpr(expressions, "png", "exprDir", "exprTest", FALSE)
 list.files("exprDir")
 
 # Repeating the same again should give an error as clear is False
 try(plotExpr(c("plot(1:10)", "plot(4:40)", "x<-3", "plot(2:23)"),
-                c("pdf","ps"), "test", "testdir1", FALSE))
+                c("pdf","ps"), "testdir1", "test", FALSE))
 # Error: files of intended filename already exist in ‘path’
 
 # plotFunction takes same arguments but prefix defaults to fun
@@ -86,9 +86,9 @@ compare(test1, test1, erase="none") # all identical
 # Same as test1 but missing the last plot and png
 test1b <- plotExpr(c("plot(1:10)", "plot(4:40)", "plot(2:23)",
                      "warning(\"a\")", "warning(\"b\")", "warning(\"c\")"),
-                   c("pdf", "ps"), "test", "testdir1b/", FALSE)
+                   c("pdf", "ps"), "testdir1b/", "test", FALSE)
 test1B <- plotExpr(c("plot(1:10)", "plot(4:40)", "warning(\"d\")",
-                     "warning(\"a\")"), c("pdf", "png"), "test2", "testdir1Be")
+                     "warning(\"a\")"), c("pdf", "png"), "testdir1Be", "test2")
 test1BComp <- compare(test1b, test1B, erase="none") # Should all be identical
                                 # but with unpaired files (test1b has an extra 
                                 # plot and ps; test1B has png)
@@ -100,9 +100,9 @@ identical(test1BComp, test1BCompCheck) # Should be True
 # Second plot is different, third plot is still unpaired, test1B will be wiped
 # with clear being TRUE
 test1C <- plotExpr(c("plot(1:10)", "plot(4:41)"), c("pdf", "png"), 
-                         "test2", "testdir1Be", TRUE)
-compare(test1, test1C, erase="none") # This creates (and overwrites!) a compareLog
-                               # in the test dir, i.e.
+                   "testdir1Be", "test2", TRUE)
+compare(test1, test1C, erase="none") # This creates (and overwrites!) a
+                                     # compareLog in the test dir, i.e.
 list.files("testdir1") #test+test2-compareExprLog.xml is new
 
 # --- Testing compare for plotFun ---
@@ -141,7 +141,7 @@ identical(fileComparison, fileComparisonReadCheck)
 list.files("testFun")
 
 testFun3 <- plotFunction(c("plot", "barplot"), c("pdf", "png"),
-                                                  path="testFun3", clear=FALSE)
+                         path="testFun3", clear=FALSE)
 list.files("testFun3")
 
 # ------------------- Testing report.R -------------------------

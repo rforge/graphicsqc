@@ -13,26 +13,21 @@
 # are different.
 #
 # --------------------------------------------------------------------
-
-"compare" <- function(test,
-                      control,
-                      path,
-                      erase = c("none", "identical", "files", "all")
-                      ##directory if empty?
-                      #clean = c("full", "files", "none") # char length 1
-                                    # none = don't delete anything
-                                    # full = delete everything
-                                    # files = delete files (but NOT index)
-                                    # AFTER EACH expr
-                      ) {
+`compare` <-
+function(test,
+         control,
+         path = test$info$directory,
+         erase = c("none", "identical", "files", "all")
+         )
+{
     # Start warning handler
     assign("graphicsQCWarnings", character(0), envir = globalenv())
     # Clear warning handler on exit
     on.exit(rm(graphicsQCWarnings, envir = globalenv()))
 
     if (is.character(test) && is.character(control) && test == control) {
-        ## if they're autodetecting in the same dir it's just asking for
-        # trouble when trying to get QCResult..
+        # If auto-detecting in the same dir it's not clear which is test
+        # or which is control (or what to do if 3 are found!)
         stop(sQuote("test"), " and ", sQuote("control"), " paths cannot be ",
              "the same")
     }
@@ -41,16 +36,12 @@
         warning(sQuote("erase"), " must be one of ", dQuote("none"), ", ",
                 dQuote("files"), ", ", dQuote("identical"), ", or ",
                 dQuote("all"), " - ", dQuote("none"), " used")
-        erase = "none"
+        erase <- "none"
     }
     
     test <- getQCResult(test)
     control <- getQCResult(control)
-    
-    # Check path
-    if (missing(path)) {
-        path = test$info$directory
-    }
+
     path <- getValidPath(path)
 
     if (inherits(test, "list") || inherits(control, "list")) {
@@ -58,7 +49,8 @@
             notYetImplemented()
             RESULT <- mapply(compare, test, list, erase) ## return?
         } else {
-            stop("can't have a list of em vs. one") ##
+            # Note: should also check that the list isn't of length 1
+            warning("Cannot have a list compared to one")
             notYetImplemented()
         }
     }
@@ -74,7 +66,7 @@
         results <- compareExpr(test, control, path, erase)
         return(results)
     } else {
-        ## test and control are not the same classes!
+        # Test and Control are not the same classes!
         warning("test and control are not of the same class")
         notYetImplemented()
     }
@@ -86,7 +78,9 @@
 # compareExpr()
 #
 # --------------------------------------------------------------------
-"compareExpr" <- function(test, control, path, erase) {
+`compareExpr` <-
+function(test, control, path, erase)
+{
     filePairs <- getPairs(test, control)
     # names(filepairs) are the filetypes to compare
     results <- lapply(names(filePairs[["test"]]), compareType,
@@ -124,7 +118,9 @@
 # Note: This function isn't to be used by the user. It gets called
 #       from compare().
 # --------------------------------------------------------------------
-"compareFunOrFile" <- function(test, control, path, erase, type) {
+`compareFunOrFile` <-
+function(test, control, path, erase, type)
+{
     # test[[-1]] and control[[-1]] take out info before comparing
     results <- mapply(compareExpr, test[[-1]], control[[-1]], 
                       MoreArgs = list(path = path, erase = erase),
@@ -155,7 +151,9 @@
 #
 # Also sorts unpaired warnings
 # --------------------------------------------------------------------
-"getPairs" <- function(test, control) {
+`getPairs` <-
+function(test, control)
+{
     testFiletypes <- names(test[["plots"]])
     controlFiletypes <- names(control[["plots"]])
 
@@ -242,7 +240,9 @@
 # in completely unpaired filetypes are dealt with by getPairs().
 #
 # --------------------------------------------------------------------
-"compareWarnings" <- function(test, control, results) {
+`compareWarnings` <-
+function(test, control, results)
+{
     types <- lapply(results, length)
     # The types of length 0 are completely unpaired so we don't compare them
     # here.
@@ -275,8 +275,9 @@
 # compareType()
 #
 # --------------------------------------------------------------------
-"compareType" <- function(filetype, control, controlPath, test, testPath,
-                          path, erase) {
+`compareType` <-
+function(filetype, control, controlPath, test, testPath, path, erase)
+{
     # pastes "compare" and 'filetype' to call the appropriate function;
     # pastes 'path' and 'filename' for control and test groups respectively;
     # passes IM capability if it's supported and a diff plot is required
@@ -300,15 +301,15 @@
 # comparePDF()
 #
 # --------------------------------------------------------------------
-"comparePDF" <- function(file1, file2, useIM, diffPlotPath) {
-    ## Just compare and ignore the first 6 lines (creationdate/moddate)?
-    ## or take previous approach and re-write file without header and xref
+`comparePDF` <-
+function(file1, file2, useIM, diffPlotPath)
+{
+    # For PDF just compare and ignore the first 6 lines (creationdate/moddate)
     diffName <- getDiffName(file1, file2)
     diffFileName <- paste(diffName, ".diff", sep = "")
     diffPlotName <- paste(diffName, ".png", sep = "")
     diffFilePath <- paste(diffPlotPath, diffFileName, sep = .Platform$file.sep)
     diffResult <- GNUdiff(file1, file2, diffFilePath)
-    ##diffResult (the actual file) might not even exist.. didn't stop()
     if (diffResult == "different" && length(readLines(diffFilePath, n = 7))
                                                                         > 6) {
         # There is a true difference, not just the dates/times
@@ -332,7 +333,9 @@
 # comparePS()
 #
 # --------------------------------------------------------------------
-"comparePS" <- function(file1, file2, useIM, diffPlotPath) {
+`comparePS` <-
+function(file1, file2, useIM, diffPlotPath)
+{
     diffName <- getDiffName(file1, file2)
     diffFileName <- paste(diffName, ".diff", sep = "")
     diffPlotName <- paste(diffName, ".png", sep = "")
@@ -356,7 +359,9 @@
 # comparePNG()
 #
 # --------------------------------------------------------------------
-"comparePNG" <- function(file1, file2, useIM, diffPlotPath) {
+`comparePNG` <-
+function(file1, file2, useIM, diffPlotPath)
+{
     diffName <- getDiffName(file1, file2)
     diffPlotName <- NULL
     diffResult <- GNUdiff(file1, file2)
@@ -375,7 +380,9 @@
 # compareBMP()
 #
 # --------------------------------------------------------------------
-"compareBMP" <- function(file1, file2, useIM, diffPlotPath) {
+`compareBMP` <-
+function(file1, file2, useIM, diffPlotPath)
+{
     diffName <- getDiffName(file1, file2)
     diffPlotName <- paste(diffName, ".png", sep = "")
     diffResult <- GNUdiff(file1, file2)
@@ -392,7 +399,9 @@
 # getDiffName()
 #
 # --------------------------------------------------------------------
-"getDiffName" <- function(file1, file2) {
+`getDiffName` <-
+function(file1, file2)
+{
     set1 <- basename(file1)
     set2 <- basename(file2)
     paste(gsub("[.]", "-", set1), "+",  gsub("[.]", "-", set2), sep = "")
@@ -403,10 +412,14 @@
 # GNUdiff()
 #
 # --------------------------------------------------------------------
-"GNUdiff" <- function(file1, file2, outDiffFile = NULL) {
-                                            #diffArgs = "-q", intern = FALSE)
+`GNUdiff` <-
+function(file1, file2, outDiffFile = NULL)
+{
+    #diffArgs = "-q", intern = FALSE)
     ## *nix only? system() + exit status
-    ## This requires a bit more work for windows support
+    ## This requires a bit more work for Windows support
+    # However, XML does not appear to be supported on Mac,
+    # and dodgy on Windows (and Sxslt).
     redirectOutput <- ""
     if (!is.null(outDiffFile)) {
         redirectOutput = paste(">", outDiffFile)
@@ -443,7 +456,9 @@
 # makeIMDiffPlot()
 #
 # --------------------------------------------------------------------
-"makeIMDiffPlot" <- function(file1, file2, newFilename) {
+`makeIMDiffPlot` <-
+function(file1, file2, newFilename)
+{
     system(paste("compare", file1, file2, newFilename))
 }
 
@@ -452,7 +467,9 @@
 # hasDiff()
 #
 # --------------------------------------------------------------------
-"hasDiff" <- function() {
+`hasDiff` <-
+function()
+{
     length(grep("GNU diffutils", try(system("diff -v",
                                             intern = TRUE)[1]))) > 0
 }
@@ -462,7 +479,9 @@
 # hasIM()
 #
 # --------------------------------------------------------------------
-"hasIM" <- function() {
+`hasIM` <-
+function()
+{
     length(grep("ImageMagick", try(system("compare -version",
                                           intern = TRUE)[1]))) > 0
 }
@@ -472,10 +491,12 @@
 # getSupportedIMFormats()
 #
 # --------------------------------------------------------------------
-"getSupportedIMFormats" <- function() {
+`getSupportedIMFormats` <-
+function()
+{
     supportedFormats <- character(0)
     formats <- system("identify -list Format", intern = TRUE,
-                      ignore.stderr = TRUE) ##this command has trouble..
+                      ignore.stderr = TRUE) ## This command may have trouble.
     bmpLine <- grep("Microsoft Windows bitmap image$", formats, value = TRUE,
                     perl = TRUE, useBytes = TRUE)
     pdfLine <- grep("Portable Document Format$", formats, value = TRUE,
@@ -505,7 +526,9 @@
 #
 # Merges elements in named lists which have repeated names
 # --------------------------------------------------------------------
-mergeList <- function(x) {
+`mergeList` <-
+function(x)
+{
     if (any(duplicated(names(x)))) {
         tags <- unique(names(x))
         output <- lapply(tags, function (tag)
@@ -522,7 +545,9 @@ mergeList <- function(x) {
 # warningHandler()
 #
 # --------------------------------------------------------------------
-"warningHandler" <- function(...) {
+`warningHandler` <-
+function(...)
+{
     stringWarning <- paste(..., sep = "")
     # Only show warnings we haven't seen before
     if (!stringWarning %in% graphicsQCWarnings) {
@@ -537,7 +562,9 @@ mergeList <- function(x) {
 # print.qcCompareExprResult()
 #
 # --------------------------------------------------------------------
-print.qcCompareExprResult <- function (x, ...) {
+`print.qcCompareExprResult` <-
+function (x, ...)
+{
     cat("qcCompareExpr Result:\n")
     cat("Call:\n", x[["info"]][["call"]], "\n")
     firstColumn <- format(c("", "R version: ", "Directory: ", "Filename:  "))
@@ -596,7 +623,9 @@ print.qcCompareExprResult <- function (x, ...) {
 #
 # Used by print.qcCompareExprResult()
 # --------------------------------------------------------------------
-shortenPath <- function(path) {
+`shortenPath` <-
+function(path)
+{
     lengthPath <- nchar(path)
     if (lengthPath > 29) {
         path <- unlist(strsplit(path, ""))[(lengthPath - 25):lengthPath]

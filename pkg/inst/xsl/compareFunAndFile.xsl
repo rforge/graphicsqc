@@ -98,7 +98,7 @@ xmlns:r="http://www.r-project.org"
           </li>
         </ul>
       </li>
-      <li><a href="#warnsErrors">Warnings/Errors Comparisons</a></li>
+      <li><a href="#warnsErrors">Warnings/Errors Differences</a></li>
       <li><a href="#unpaired">Unpaired</a></li>
     </ol>
     <!-- Info -->
@@ -327,7 +327,7 @@ xmlns:r="http://www.r-project.org"
       </xsl:otherwise>
     </xsl:choose>
     <!-- Warnings/Errors -->
-    <h2><a name="warnsErrors">Warnings/Errors Comparisons</a></h2>    
+    <h2><a name="warnsErrors">Warnings/Errors Differences</a></h2>
     <xsl:choose>
       <xsl:when test="count(document($docs)/qcCompareExprResult/
                             compare[testWarnings|controlWarnings|
@@ -547,7 +547,7 @@ xmlns:r="http://www.r-project.org"
           </li>
         </ul>
       </li>
-      <li><a href="#warnsErrors">Warnings/Errors Comparisons</a></li>
+      <li><a href="#warnsErrors">Warnings/Errors Differences</a></li>
       <li><a href="#unpaired">Unpaired</a></li>
     </ol>
     <!-- Info -->
@@ -776,7 +776,7 @@ xmlns:r="http://www.r-project.org"
       </xsl:otherwise>
     </xsl:choose>
     <!-- Warnings/Errors -->
-    <h2><a name="warnsErrors">Warnings/Errors Comparisons</a></h2>    
+    <h2><a name="warnsErrors">Warnings/Errors Differences</a></h2>
     <xsl:choose>
       <xsl:when test="count(document($docs)/qcCompareExprResult/
                             compare[testWarnings|controlWarnings|

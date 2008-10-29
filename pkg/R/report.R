@@ -20,7 +20,9 @@
 # log files must exist (xsltApplyStyleSheet requires a filename or a string
 # containing the doc)
 # --------------------------------------------------------------------
-"writeReport" <- function(qcResult, xslStyleSheets = NULL) {
+`writeReport` <-
+function(qcResult, xslStyleSheets = NULL)
+{
     library(Sxslt)
     #SxsltInitializationFunction()
     ## Note: There is a call to browser() in addXSLTFunctions...
@@ -51,9 +53,8 @@
         # Either a folder or a file.
         fileInfo <- file.info(qcResult)
         if (is.na(fileInfo$isdir)) {
-            warning("file ", dQuote(qcResult), " not found - no log file",
+            stop("file ", dQuote(qcResult), " not found - no log file",
                     " for this created", call. = FALSE)
-            return(NULL)
         } else {
             # getQCResult also does auto-detect
             qcResult <- getQCResult(qcResult, "all")
@@ -69,7 +70,9 @@
 # report()
 #
 # --------------------------------------------------------------------
-"report" <- function(qcResult, xslStyles) {
+`report` <-
+function(qcResult, xslStyles)
+{
     UseMethod("report")
 }
 
@@ -78,7 +81,9 @@
 # report.qcPlotExprResult()
 #
 # --------------------------------------------------------------------
-"report.qcPlotExprResult" <- function(qcResult, xslStyles) {
+`report.qcPlotExprResult` <-
+function(qcResult, xslStyles)
+{
     plotExprPath <- file.path(qcResult[["info"]][["directory"]],
                               qcResult[["info"]][["logFilename"]])
     plotExpr <- xsltApplyStyleSheet(plotExprPath,
@@ -93,8 +98,9 @@
 # report.qcPlotFileResult() and report.qcPlotFunResult()
 #
 # --------------------------------------------------------------------
-"report.qcPlotFileResult" <- "report.qcPlotFunResult" <- 
-function(qcResult, xslStyles) {
+`report.qcPlotFileResult` <- `report.qcPlotFunResult` <- 
+function(qcResult, xslStyles)
+{
     plotFPath <- file.path(qcResult[["info"]][["directory"]],
                             qcResult[["info"]][["logFilename"]])
     plotF <- xsltApplyStyleSheet(plotFPath,
@@ -109,7 +115,9 @@ function(qcResult, xslStyles) {
 # report.qcCompareExprResult()
 #
 # --------------------------------------------------------------------
-"report.qcCompareExprResult" <- function(qcResult, xslStyles) {
+`report.qcCompareExprResult` <-
+function(qcResult, xslStyles)
+{
     compareExprPath <- file.path(qcResult[["info"]][["path"]],
                                  qcResult[["info"]][["logFilename"]])
     testPath <- file.path(qcResult[["testInfo"]][["directory"]],
@@ -137,13 +145,10 @@ function(qcResult, xslStyles) {
 # report.qcCompareFileResult() and report.qcCompareFunResult()
 #
 # --------------------------------------------------------------------
-"report.qcCompareFileResult" <- "report.qcCompareFunResult" <-
-function(qcResult, xslStyles) {
-    ## lapply does not work here??
-    # lapply(qcResult[["results"]], report, xslStyles)
-    for (qcRes in qcResult[["results"]]) {
-        report(qcRes, xslStyles)
-    }
+`report.qcCompareFileResult` <- `report.qcCompareFunResult` <-
+function(qcResult, xslStyles)
+{
+    lapply(qcResult[["results"]], report, xslStyles)
 
     compareFPath <- paste(qcResult[["info"]][["path"]],
                           qcResult[["info"]][["logFilename"]],
@@ -169,14 +174,16 @@ function(qcResult, xslStyles) {
 # report.default()
 #
 # --------------------------------------------------------------------
-"report.default" <- function(qcResult, xslStyles) {
+`report.default` <-
+function(qcResult, xslStyles)
+{
     stop("comparing ", sQuote(class(qcResult)), " not yet implemented")
 }
 
 # Some miscellaneous functions used in this file and by the .xsl files
-"logNameToHTML" <- function(logName) gsub("[.]xml$", ".html", logName)
-"logToHTML" <- function(...) logNameToHTML(file.path(...))
-"getCompareExprName" <- function(logWithPath) {
+`logNameToHTML` <- function(logName) gsub("[.]xml$", ".html", logName)
+`logToHTML` <- function(...) logNameToHTML(file.path(...))
+`getCompareExprName` <- function(logWithPath) {
     strsplit(basename(logWithPath), "-compareExprLog.xml")[[1]]
 }
 

@@ -35,7 +35,7 @@ xmlns:r="http://www.r-project.org"
     <ol>
       <li><a href="#info">Info</a></li>
       <li><a href="#plotComp">Plot Comparisons</a></li>
-      <li><a href="#warnsErrors">Warnings/Errors Comparisons</a></li>
+      <li><a href="#warnsErrors">Warnings/Errors Differences</a></li>
       <li><a href="#unpaired">Unpaired</a></li>
     </ol>
     <h2><a name="info">Info</a></h2>
@@ -192,7 +192,7 @@ xmlns:r="http://www.r-project.org"
       </xsl:otherwise>
     </xsl:choose>
     <!-- Warnings/errors -->
-    <h2><a name="warnsErrors">Warnings/Errors Comparisons</a></h2>
+    <h2><a name="warnsErrors">Warnings/Errors Differences</a></h2>
     <xsl:choose>
       <xsl:when test="compare/controlWarnings | compare/testWarnings |
                       compare/controlError | compare/testError">

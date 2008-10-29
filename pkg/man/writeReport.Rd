@@ -1,51 +1,59 @@
 \name{writeReport}
 \alias{writeReport}
-%- Also NEED an '\alias' for EACH other topic documented here.
-\title{ writeReport }
+\title{ Generate a HTML report based on plots or comparisons }
 \description{
-  Will produce a HTML report of any differences found from the compare
-  function.
+  Will produce a HTML report of the results from any of the
+  \code{qcPlot*}, or \code{qcCompare*} results.
 }
 \usage{
   writeReport(qcResult, xslStyleSheets = NULL)
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{qcResult}{either a character vector specifying the path to the log
-                  file to report on, or the folder where it will report on
-                  all the log files or an R object of class qcPlotExpr,
-                  qcCompareExpr, etc. to create the report.}
+  \item{qcResult}{one of:
+    \itemize{
+      \item an R object of class \code{qcPlot*}, or \code{qcCompare*}.
+      \item the path to the log file to report on
+      \item a path to the directory, where the highest classed log file
+        will be auto-detected and then reported on (note that first
+        comparison logs are searched for, then plot logs).
+    }
+  }
   \item{xslStyleSheets}{a named list specifying which XSL style sheets
-                        to override. Can override any of: "plotExprStyleSheet",
-                        "plotFunAndFileStyleSheet", "compareExprStyleSheet",
-                        and "compareFunAndFileStyleSheet". If none are
-                        specified, the default ones are used.}
+    to override by giving the name of the style sheet to override, and
+    the location of the xsl file. Can override any of:
+    "plotExprStyleSheet", "plotFunAndFileStyleSheet",
+    "compareExprStyleSheet", and "compareFunAndFileStyleSheet". If none
+    are specified, the default (system) ones are used.
+  }
 }
 \details{
-  Reports are made for all log files that the given log file might refer to.
-  A character vector is returned containing paths to the log files (with only
-  the highest classed ones returned when a folder is given).  
+  When reporting on an object, all further qcPlot or qcCompare files
+  which the current object refers to are also reported on. This is so
+  that full information reports can be given, along with individual
+  breakdowns. In order for this to happen, all log files that
+  the object currently being reported on refers to must exist, as well
+  as any subsequent log files that they refer to.
+
+  All reports are placed in the same directory as the XML file they
+  refer to, with the same name, except with the extension changed from
+  \sQuote{.xml} to \sQuote{.html}.
 }
 \value{
-  A character vector giving the location to the highest classed object(s)
-  which were reported on (See the note).
+  A character vector giving the (absolute) path of the highest classed
+  object reported on. Comparison logs are considered higher classed than
+  plot logs.
 }
-\note{
-  Currently, if the R object is given, the log file and sub-class
-  log files must exist (xsltApplyStyleSheet requires a filename or a string
-  containing the doc)
-}
-\seealso{\code{\link{plotExpr}}, \code{\link{plotFun}}, \code{\link{plotFile}}
-, \code{\link{compare}},
+\seealso{
+  \code{\link{plotExpr}}, \code{\link{plotFile}},
+  \code{\link{plotFunction}}, \code{\link{compare}}.
 }
 \examples{
-#test1 <- plotExpr(c("plot(1:10)", "plot(4:40)", "x<-3", "plot(2:23)"),
-#                  c("pdf", "ps"), "test", "testdir1", FALSE)
-# compare..
-# There should now be a folder "testdir1" in getwd() containing
-# pdf and ps files and test-log.xml, ie
-#list.files("testdir1")
+\dontrun{
+  # After running the `?compare' example
+  writeReport(compExpr)
+
+  # Showing how to overwrite stylesheets
+  # writeReport(compExpr, list(compareExprStyleSheet="~/myCompareExpr.xsl"))
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
+}
 \keyword{ utilities }
