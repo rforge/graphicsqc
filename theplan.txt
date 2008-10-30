@@ -440,6 +440,32 @@ someday, the report code has to handle qcCompare/compareLog OR
 - write (complete) Rd files
 
 
+# 31/10/08
+
+- mention existing QC facilities for R
+  + core regression tests
+    - including plot regression test (including diff of PostScript)
+  + R CMD check
+    - examples
+    - tests/ directory
+    - vignettes
+  + nightly CRAN checks
+  + R-forge nightly checks
+
+- sectio in Intro that describes overall idea and structure of 
+  graphicsqc package
+
+- repeat expr/function/file structure in Compare and Report sections too ?
+
+- have XSL as subsection of Transforming Logs to HTML ?
+
+- simple example on the way through and shift grid example to separate 
+  chapter ?
+
+- next meeting 2:00 Monday 10th Nov
+  + email me what you've got by midnight Sunday 9th
+
+
 ===========
 What's left:
 ===========
