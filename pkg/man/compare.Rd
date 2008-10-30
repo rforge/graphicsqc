@@ -62,8 +62,7 @@ compare(test, control, path = test$info$directory,
   to compare with so are separated into an unpaired section. It is also
   possible for entire filetypes to be unpaired. Currently if there is a
   completely unpaired function or file when trying to compare, recycling
-  will be used, with a warning. This is intended to change in the
-  future.
+  will be used. This is intended to change in the future.
 
   In many instances, it is also useful to know whether there is any
   change in warnings or errors. If any difference is detected in the
