@@ -1,5 +1,6 @@
-\name{graphicsqc-package}
-\alias{graphicsqc-package}
+\name{graphicsQC-package}
+\alias{graphicsQC-package}
+\alias{graphicsQC}
 \alias{graphicsqc}
 \docType{package}
 \title{
@@ -11,7 +12,7 @@
 }
 \details{
   \tabular{ll}{
-    Package: \tab graphicsqc\cr
+    Package: \tab graphicsQC\cr
     Type: \tab Package\cr
     Version: \tab 0.9\cr
     Date: \tab 2008-10-30\cr
@@ -36,9 +37,7 @@
   auto-detect will not work if the same directory is given twice.  
 }
 \author{
-  Stephen Gardiner \email{sgar060@aucklanduni.ac.nz}
-
-  Maintainer: Paul Murrell \email{paul@stat.auckland.ac.nz}
+  Stephen Gardiner
 }
 \references{
   Free Software Foundation, Inc. 2008 \emph{Diffutils}.

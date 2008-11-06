@@ -37,16 +37,16 @@ function(qcResult, xslStyleSheets = NULL)
                     )
     xslStyles <- list("plotExprStyleSheet" =
                       system.file("xsl", "plotExpr.xsl",
-                                  package = "graphicsqc"),
+                                  package = "graphicsQC"),
                       "plotFunAndFileStyleSheet" =
                       system.file("xsl", "plotFunAndFile.xsl",
-                                  package = "graphicsqc"),
+                                  package = "graphicsQC"),
                       "compareExprStyleSheet" =
                       system.file("xsl", "compareExpr.xsl",
-                                  package = "graphicsqc"),
+                                  package = "graphicsQC"),
                       "compareFunAndFileStyleSheet" =
                       system.file("xsl", "compareFunAndFile.xsl",
-                                  package = "graphicsqc"))
+                                  package = "graphicsQC"))
     xslStyles[names(xslStyleSheets)] <- xslStyleSheets
 
     if (is.character(qcResult)) {

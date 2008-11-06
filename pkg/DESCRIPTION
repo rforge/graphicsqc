@@ -1,4 +1,4 @@
-Package: graphicsqc
+Package: graphicsQC
 Type: Package
 Title: Quality Control for Graphics in R
 Version: 0.9

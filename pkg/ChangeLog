@@ -1,3 +1,12 @@
+2007-11-10  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
+
+* DESCRIPTION: Changed the name of the package to ``graphicsQC''.
+
+* tests.R
+	(): Replaced ``graphicsqc'' with ``graphicsQC''.
+
+* graphicsqc-package.Rd: Renamed to graphicsQC-package.Rd
+
 2007-10-31  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
 
 * report.Rnw: Updated. Includes bullet points and some content written.

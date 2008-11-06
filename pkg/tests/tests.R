@@ -1,5 +1,5 @@
 # ------------------- Testing makeplots.R -------------------------
-library(graphicsqc)
+library(graphicsQC)
 # General Tests:
 # plotExpr takes arguments; expr, filetype, prefix, path, clear
 test1 <- plotExpr(c("plot(1:10)", "plot(4:40)", "x<-3", "plot(2:23)"),
@@ -48,27 +48,27 @@ list.files("filedir1")
 badExpression <- c("x<-3", "plot(x:8)", "warning(\"firstWarning\")",
           "warning(\"secondWarning\")", "stop(\"end error\")",
           "warning(\"NOTCALLED\")")
-lapply(c("pdf", "ps"), graphicsqc:::evalPlotCode, badExpression, "prefix-%d")
+lapply(c("pdf", "ps"), graphicsQC:::evalPlotCode, badExpression, "prefix-%d")
 
 # ------------------- Testing compare.R -------------------------
 # --- Testing reading of XML log files ---
-test1Check <- graphicsqc:::readLog(file.path("testdir1",
+test1Check <- graphicsQC:::readLog(file.path("testdir1",
                                              "test-log.xml"))
 identical(test1, test1Check) # Should be True
 
-testBlankCheck <- graphicsqc:::readLog(file.path("blankTest",
+testBlankCheck <- graphicsQC:::readLog(file.path("blankTest",
                                              "test-log.xml"))
 identical(blankTest, testBlankCheck) # Should be True
 
-testFunCheck <- graphicsqc:::readLog(file.path("testdir2",
+testFunCheck <- graphicsQC:::readLog(file.path("testdir2",
                                                "plot-funLog.xml"))
 identical(testFun, testFunCheck) # Should be True
 
-plotFileCheck <- graphicsqc:::readLog(file.path("filedir1",
+plotFileCheck <- graphicsQC:::readLog(file.path("filedir1",
                                                 "Rfile.R-fileLog.xml"))
 identical(plotFiletest, plotFileCheck) # Should be True
 
-testFunAutoCheck <- graphicsqc:::getQCResult("testdir2") # Testing auto-detect
+testFunAutoCheck <- graphicsQC:::getQCResult("testdir2") # Testing auto-detect
 identical(testFun, testFunAutoCheck)
 
 ## --Insert test for readPlotPackageLog when done
@@ -77,7 +77,7 @@ identical(testFun, testFunAutoCheck)
 blankComp <- compare(blankTest, blankTest2, erase="none")
 # no comparisons/no files
 
-blankCompCheck <- graphicsqc:::readLog(file.path("blankTest",
+blankCompCheck <- graphicsQC:::readLog(file.path("blankTest",
                                        "test+blankTest-compareExprLog.xml"))
 identical(blankComp, blankCompCheck)
                                           
@@ -93,7 +93,7 @@ test1BComp <- compare(test1b, test1B, erase="none") # Should all be identical
                                 # but with unpaired files (test1b has an extra 
                                 # plot and ps; test1B has png)
 # Test round-trip for compare
-test1BCompCheck <- graphicsqc:::readLog(file.path("testdir1b",
+test1BCompCheck <- graphicsQC:::readLog(file.path("testdir1b",
                                         "test+test2-compareExprLog.xml"))
 identical(test1BComp, test1BCompCheck) # Should be True
 
@@ -109,18 +109,18 @@ list.files("testdir1") #test+test2-compareExprLog.xml is new
 # All plots from plot are different to barplot
 testFun1 <- plotFunction(c("plot", "plot"), c("pdf", "ps"), prefix=c("plot",
                          "plot2"), path="testFun", clear=FALSE)
-testFun1ReadCheck <- graphicsqc:::readLog(file.path("testFun",
+testFun1ReadCheck <- graphicsQC:::readLog(file.path("testFun",
                                                     "plot-funLog.xml"))
 identical(testFun1, testFun1ReadCheck)
 
 testFun2 <- plotFunction(c("barplot", "plot"), c("pdf", "ps"), path="testFun2",
                          clear=FALSE)
-testFun2ReadCheck <- graphicsqc:::readLog(file.path("testFun2",
+testFun2ReadCheck <- graphicsQC:::readLog(file.path("testFun2",
                                                     "barplot-funLog.xml"))
 identical(testFun2, testFun2ReadCheck)
 
 funComparison <- compare(testFun1, testFun2, erase="none")
-funComparisonReadCheck <- graphicsqc:::readLog(file.path("testFun",
+funComparisonReadCheck <- graphicsQC:::readLog(file.path("testFun",
                                                "plot-compareFunLog.xml"))
 identical(funComparison, funComparisonReadCheck)
 
@@ -133,7 +133,7 @@ testFile4 <- plotFile(file.path("testFiles", c("Rfile2.R", "Rfile4.R")),
 testFile5 <- plotFile(file.path("testFiles", c("Rfile.R", "Rfile2.R")),
                       c("pdf", "png", "ps"), path="testFile5")
 fileComparison <- compare(testFile3, testFile4, erase="none")
-fileComparisonReadCheck <- graphicsqc:::readLog(file.path("testFile3",
+fileComparisonReadCheck <- graphicsQC:::readLog(file.path("testFile3",
                                                "file1pref-compareFileLog.xml"))
 identical(fileComparison, fileComparisonReadCheck)
 
