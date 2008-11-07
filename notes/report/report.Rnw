@@ -30,8 +30,8 @@
 \tableofcontents
 
 <<echo=FALSE, results=hide>>=
-library(graphicsqc)
-library(Sxslt)
+require(graphicsQC)
+require(Sxslt)
 options(width=60, continue="  ")
 @
 \chapter{Introduction}
@@ -127,33 +127,91 @@ plots, and only when using a source distribution of \R{}.
 
 
 \section{An early attempt at QC for graphics in \R{}}
-An early attempt at graphics testing for \R{} is a package similarly named
-\graphicsqc{} written by Paul Murrell \citeyearpar{murhor03}. It is very
-limited in usability and functionality. It can only do regression
-testing on the example code in given functions in \R{}, and only
-identifies which plots had differences with no further information
-about the differences.
+An early attempt at graphics testing for \R{} is a package similarly
+named \graphicsqc{} written by Paul Murrell \citeyearpar{murhor03}. It
+was essentially a proof-of-concept package, and is very limited in
+usability and functionality. It is limited to only running regression
+tests on the example code in given functions in \R{}. It does not
+record or return any information pertaining to the plots (such as
+which directory the plots are being stored), and names plots according
+to the function that created them, so if users wish to compare two
+similar functions with different names, they must be careful in their
+naming of directory (with no error checking if files get
+overwritten). For most of the supported file formats, if any
+differences were detected, a vector naming the test files with
+differences were returned, with no other information. For the files in
+the \texttt{pbm} format, an \texttt{xor} operation was perfomed on the
+plots and a difference plot produced which gives a visual
+representation of the differences between the plots.
 
-Further research is therefore required in order
-to extend the package to be platform independent, and to identify new
-ways to test \R{} code such that any arbitrary code can be tested, and
-more information about the differences to be reported.
+Due to these limitations, the package required a complete re-write to
+become more useful. Some features necessitating this are the ability
+to record information relating to the plots, such as which plots were
+created in which directory, which call created the plots, and so
+on. Another necessary feature is the ability to plot any arbitrary
+expressions, which can then be extended to plotting files and also
+examples from functions. As this occurs, it would also be useful to
+appropriately record any warnings which occur, and then possibly
+difference these as they may be useful for discovering why plots
+differ. The current \graphicsqc{} package is a complete re-write of
+this previous implementation.
 
-\section{Outline of the structure of \textbf{graphicsqc}}
-The design of the package mainly consists of three elements. First,
-expressions which may (or may not) produce plots need to be
-evaluated. Secondly, there The main processes involved in the
-\graphicsqc{} package are; evaluating sets of expressions which may
-(or may not) produce graphical output, comparing the plots produced by
-the expressions
+\section{Outline of \textbf{graphicsqc}}
+The nature of what's required of the package reflects well with its
+design. The first component of regression testing involves creating
+model output. This is accomplished by one of the three functions
+\texttt{plotExpr()}, \texttt{plotFile()} and
+\texttt{plotFunction()}. These evaluate and plot arbitrary
+expressions, code within files, and example code from functions
+respectively. They also record information about the plots they
+produce, including any warnings or errors which may have
+occurred. These functions are used for creation of both the model and
+test output and are further described in Chapter~\ref{chap:plot}.
 
+Once the model and test output have been created, we need to compare
+them for differences. For this, there is the \texttt{compare()}
+function. The \texttt{compare()} function will compare two sets of
+plots, for example two sets produced by \texttt{plotFunction()}. It
+can compare using the \R{} objects of the logs, or paths to the
+resulting logs, or a mixture of these. It uses the GNU \texttt{diff}
+utility to do the comparisons, which can be assumed on all of \R{}'s
+supported platforms[cite RF?]. It compares the plots and any warnings
+or errors for differences and then records the result of the
+comparison. The \texttt{compare()} function is further described in
+Chapter~\ref{chap:compare}.
+
+Lastly, we may wish to report about the plots and the comparisons. The
+function \texttt{writeReport()} is used for
+this. \texttt{writeReport()} generates a HTML page of the results of
+any plotting or comparison result. It is further discussed in
+Chapter~\ref{compare}.
 
 \chapter{Plotting Arbitrary Expressions}
 \label{chap:plot}
 \section{Plotting expressions}
 In order to test the correctness of output, it follows that output
 must have initially been produced. For this task, the function
-\texttt{plotExpr} was created. Using error handling functions in \R{},
+\texttt{plotExpr()} was created. The main concept behind
+\texttt{plotExpr()} is to evaluate plotting code and record which
+plots were produced and related information. It does this by initially
+error checking it's arguments, and then making a call to a function
+within the namespace, \texttt{evalPlotCode()}.
+
+\texttt{evalPlotCode()} is reponsible for evaluating code after
+opening an appropriate graphics device. It uses the \texttt{tryCatch}
+mechanism in \R{} to ensure that the function can continue evaluation
+if there is an error in the code being evaluated. With the use of
+calling handlers, it is also able to `catch' warnings and store
+them. If an error is encountered, this is also recorded and evaluation
+of the current set of expressions is stopped. This is intentional
+because an error in the code is likely to be something serious which
+will affect future expressions in the current set and possibly
+plots. Warnings however are not considered to be stop-worthy, so
+evaluation will continue after recording the warning.
+
+The creation of XML logs is further discussed in section~\ref{sec:logs}
+
+Using error handling functions in \R{},
 \texttt{plotExpr} was designed to be able to produce the output from
 any arbitrary code passed to it as an argument, with the ability to
 note and safely recover from any warnings and to also correctly stop
@@ -163,6 +221,7 @@ on any errors.
 blocks stop at the correct time. This leads on to how the log is
 written).
 
+-- blank images.
 =====unedited old stuff====
 As arbitrary code is accepted by the function it can be
 easily seen that plotting the code from files, functions, or even
@@ -199,6 +258,7 @@ the XML files is described in the next section.
 \section{Plotting files and functions}
 - multiple calls to plotExpr.
 \section{Logs of plots created}
+\label{section:logs}
 - logs had to be made, hooks don't guarantee a (new) plot?, have to search
 for plots after they're made
 \subsection{The XML Language}
@@ -265,13 +325,13 @@ comparison later.
 - GNU diff/ImageMagick are used. Diff plots only made when a diff is
 detected, however not made when they are going to be erased afterwards
 (although erase doesn't fully work yet)?
-\section{Text Based vs. Bitmap Formats}
+\section{Comparing sets of expressions}
+\subsection{Text Based vs. Bitmap Formats}
 
 - explanation. 3 file formats currently supported (mention this
 earlier?). can use xor to create plots for bitmaps? .diff files only
 make sense for text based. advantages and disadvantages for both?
 
-\section{Comparing sets of expressions}
 \subsection{Pairing plots}
 - how logs are paired? unpaired.
 
@@ -348,7 +408,9 @@ provided, but are easily overwritten!
 \section{Example: Reporting on the differences in \texttt{grid}}
 - print screen from firefox? any better way? link to example on
 http://graphicsqc.r-forge.r-project.org?
-\chapter{Conclusions}
+\chapter{Summary and conclusions}
+something about summary...
+
 - what's been done?
   + new package
   + plots stuff, compares stuff, pretty neat report
