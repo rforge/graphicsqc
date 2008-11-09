@@ -21,13 +21,13 @@
   \item{xslStyleSheets}{a named list specifying which XSL style sheets
     to override by giving the name of the style sheet to override, and
     the location of the xsl file. Can override any of:
-    "plotExprStyleSheet", "plotFunAndFileStyleSheet",
-    "compareExprStyleSheet", and "compareFunAndFileStyleSheet". If none
-    are specified, the default (system) ones are used.
+    \dQuote{plotExprStyleSheet}, \dQuote{plotFunAndFileStyleSheet},
+    \dQuote{compareExprStyleSheet}, and \dQuote{compareFunAndFileStyleSheet}.
+    If none are specified, the default (system) ones are used.
   }
 }
 \details{
-  When reporting on an object, all further qcPlot or qcCompare files
+  When reporting on an object, all further qcPlot* or qcCompare* files
   which the current object refers to are also reported on. This is so
   that full information reports can be given, along with individual
   breakdowns. In order for this to happen, all log files that

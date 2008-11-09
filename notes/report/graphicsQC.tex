@@ -1,0 +1,392 @@
+\nonstopmode{}
+\documentclass[a4paper,oneside]{book}
+\usepackage[ae]{Rd}
+\usepackage{makeidx}
+\makeindex{}
+\begin{document}
+\chapter*{}
+\begin{center}
+{\textbf{\huge The `graphicsQC' Package}}
+\par\bigskip{\large \today}
+\end{center}
+\begin{description}
+\raggedright{}
+\item[Type] \AsIs{Package }
+\item[Title] \AsIs{Quality Control for Graphics in \R{}}
+\item[Version] \AsIs{0.9 }
+\item[Date] \AsIs{2008-07-24 }
+\item[Author] \AsIs{Stephen Gardiner }
+\item[Maintainer] \AsIs{Stephen Gardiner <sgar060@aucklanduni.ac.nz> }
+\item[Depends] \AsIs{XML }
+\item[Suggests] \AsIs{Sxslt }
+\item[Description] \AsIs{The package provides functions to generate graphics files, compare them with ``model'' files, and report the results. }
+\item[License] \AsIs{GPL-2 }
+\item[URL] \AsIs{http://graphicsqc.r-forge.r-project.org }
+\end{description}
+\Rdcontents{\R{} topics documented:}
+\HeaderA{graphicsQC-package}{Quality Control for Graphics}{graphicsQC.Rdash.package}
+\aliasA{graphicsQC}{graphicsQC-package}{graphicsQC}
+\aliasA{graphicsqc}{graphicsQC-package}{graphicsqc}
+\keyword{utilities}{graphicsQC-package}
+\begin{Description}\relax
+Generates graphics files, compares them with ``model'' files,
+and reports the results.
+\end{Description}
+\newpage % I put this here because otherwise the following table goes over the page numbering
+\begin{Details}%\relax
+\Tabular{ll}{
+Package: & graphicsQC\\
+Type: & Package\\
+Version: & 0.9\\
+Date: & 2008-10-30\\
+License: & GPL-2\\
+}
+To generate files, use \code{\LinkA{plotExpr}{plotExpr}},
+\code{\LinkA{plotFile}{plotFile}}, or \code{\LinkA{plotFunction}{plotFunction}}.
+To compare sets of these, use \code{\LinkA{compare}{compare}}.
+To generate a report based on the comparison, use
+\code{\LinkA{writeReport}{writeReport}}.
+
+One possible way of using these functions is to create a set of plots in
+a directory in an old version of R (say, the control group) using one
+of the plotting functions. Then to load a new version of R and create
+the same plots in a different directory (say, the test group). A
+comparison can then be done by specifying the control and test
+directories. Then a report can be made on the comparison object.
+
+It is highly recommended to use separate directories for the test and
+control. If the same directory is used for both, all the prefixes in
+the test and all the prefixes in the control must be unique, and
+auto-detect will not work if the same directory is given twice.
+\end{Details}
+\begin{Author}\relax
+Stephen Gardiner
+\end{Author}
+\begin{References}\relax
+Free Software Foundation, Inc. 2008 \emph{Diffutils}.
+\url{http://www.gnu.org/software/diffutils/diffutils.html}
+
+ImageMagick Studio LLC. 2008 \emph{ImageMagick}.
+\url{http://www.imagemagick.org/}
+
+Murrell, P. \& Hornik, K. 2003 \emph{Quality Assurance for Graphics in \R}
+\url{http://www.ci.tuwien.ac.at/Conferences/DSC-2003/Proceedings/MurrellHornik.pdf}.
+\end{References}
+\begin{SeeAlso}\relax
+\code{\LinkA{plotExpr}{plotExpr}}, \code{\LinkA{plotFile}{plotFile}},
+\code{\LinkA{plotFunction}{plotFunction}}, \code{\LinkA{compare}{compare}},
+\code{\LinkA{writeReport}{writeReport}}
+\end{SeeAlso}
+\begin{Examples}
+\begin{ExampleCode}
+## Not run: 
+  # Create some plots to compare (1st and 3rd plots have differences)
+  comp1 <- plotExpr(c("plot(1:10)", "plot(4:40)", "x<-3", "plot(2:23)"),
+                    c("pdf", "ps"), "myPrefix", "comp1")
+  comp2 <- plotExpr(c("plot(1:11)", "plot(4:40)", "x<-3", "plot(5:15)"),
+                    c("pdf", "ps"), "myPrefix", "comp2")
+
+  # Compare them
+  compExpr <- compare(comp1, comp2)
+
+  # Write a HTML report
+  writeReport(compExpr)
+## End(Not run)
+\end{ExampleCode}
+\end{Examples}
+
+\HeaderA{plotExpr}{Plot arbitrary code}{plotExpr}
+\aliasA{plotFile}{plotExpr}{plotFile}
+\aliasA{plotFunction}{plotExpr}{plotFunction}
+\aliasA{plotPackage}{plotExpr}{plotPackage}
+\keyword{utilities}{plotExpr}
+\begin{Description}\relax
+Produce plots from R expression(s), function(s), or file(s) in
+specified file formats. An XML file is also created which contains
+information about the plots produced.
+\end{Description}
+\begin{Usage}
+\begin{verbatim}
+  plotExpr(expr, filetype = NULL, path = NULL, prefix = NULL,
+           clear = FALSE)
+
+  plotFile(filename, filetype = NULL, path = NULL, prefix = basename(filename),
+           clear = FALSE)
+
+  plotFunction(fun, filetype = NULL, path = NULL, prefix = fun,
+               clear = FALSE)
+\end{verbatim}
+\end{Usage}
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{expr}] character vector of R expressions which may or may not
+produce graphical output.
+\item[\code{filename}] the name of the file which the expressions are to be
+read from. The path is assumed to be relative to the
+current working directory unless an absolute path is given.
+\item[\code{fun}] character vector naming the function(s) to plot or just the
+(named) function.
+\item[\code{filetype}] character vector specifying file formats to produce the
+plots in (see details for currently supported formats).
+\item[\code{path}] character vector; path to produce output in. If not given, the
+current working directory will be used.
+\item[\code{prefix}] character vector; prefix for files produced. If multiple
+functions or files are given, the resulting plotFile or plotFunction
+XML file will use the first prefix.
+\item[\code{clear}] logical (not NA); remove files with names we might use
+first. If \code{clear} is \code{FALSE} and files exist
+with names we might use, an error is given.
+\end{ldescription}
+\end{Arguments}
+\begin{Details}\relax
+All functions evaluate the code they are given, capturing and recording any
+warnings and errors. The code run for plotFunction is extracted from
+any example code (see \code{\LinkA{example}{example}}).
+
+If an error is encountered when running a block of code, that
+particular block (say, a file or function) will stop being executed
+for that filetype but the error will be recorded. If a warning is
+encountered, the code will continue being evaluated.
+
+The name for the log file is based on the first prefix and the type of
+function producing the plots. For \code{plotExpr} XML logs, 1 log file
+will be produced with a name like \sQuote{prefix-log.xml}.
+\code{plotFile} and \code{plotFunction} work by making multiple calls
+to \code{plotExpr}, so will produce \code{plotExpr} logs (one for each
+file or function respectively), as well as their own log, which will
+be named (using the first prefix) like \sQuote{prefix-fileLog.xml} and
+\sQuote{prefix-funLog.xml} respectively.
+
+Currently supported file formats are \sQuote{pdf}, \sQuote{png}, and
+\sQuote{ps}.
+\end{Details}
+\begin{Value}
+A list of class \code{qcPlotExprResult}, \code{qcPlotFileResult}, or
+\code{qcPlotFunctionResult} respectively. The list contains
+information about the environment creating the plots (Operating
+System, R version, date, call), the names of the plots produced and
+any warnings/errors produced.
+\end{Value}
+\begin{Section}{Warning}
+Do not give any code that will open a graphics device (especially if
+that device is not closed).
+\end{Section}
+\begin{SeeAlso}\relax
+\code{\LinkA{compare}{compare}}, \code{\LinkA{writeReport}{writeReport}}.
+\end{SeeAlso}
+\begin{Examples}
+\begin{ExampleCode}
+## Not run: 
+  # plotExpr example:
+  example1 <- plotExpr(c("plot(1:10)", "plot(4:40)", "x<-3", "plot(2:23)"),
+                       c("pdf", "ps"), "example1", "myPrefix")
+  # There should now be a folder "example1" in the current
+  # working directory containing pdf and ps files and myPrefix-log.xml, ie
+  list.files("example1")
+
+  # plotFunction example:
+  example2 <- plotFunction(c("plot", "barplot", "hist"), c("pdf", "ps"),
+                           path = "example2")
+  list.files("example2")
+
+  # A bigger example:
+  # require(grid)
+  # gridExample <- plotFunction(ls("package:grid"), c("pdf", "png", "ps"),
+  #                             path = "gridExample")
+## End(Not run)
+\end{ExampleCode}
+\end{Examples}
+
+\HeaderA{compare}{Compare graphics output}{compare}
+\aliasA{compareExpr}{compare}{compareExpr}
+\aliasA{compareFile}{compare}{compareFile}
+\aliasA{compareFun}{compare}{compareFun}
+\keyword{utilities}{compare}
+\begin{Description}\relax
+Compares plots/warnings/errors from \code{\LinkA{plotExpr}{plotExpr}},
+\code{\LinkA{plotFile}{plotFile}}, or \code{\LinkA{plotFunction}{plotFunction}}.
+For the text-based formats (i.e. pdf or ps), a .diff file is created.
+If ImageMagick is installed, plots of the differences will also be
+produced.
+\end{Description}
+\begin{Usage}
+\begin{verbatim}
+compare(test, control, path = test$info$directory, 
+        erase = c("none", "identical", "files", "all"))
+\end{verbatim}
+\end{Usage}
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{test, control}] either:
+\Itemize{
+\item R objects of class \code{qcPlotExpression},
+\code{qcPlotFile}, or \code{qcPlotFunction}.
+\item Character vectors of the paths to the respective files,
+where relative paths are assumed unless an absolute path is given.
+\item Character vectors of the directories which contain the log
+files to compare. The highest classed object in the folder will
+be chosen for comparison (i.e. if a plotFunction log is in the
+directory and many plotExpr logs, all of the plotExpr logs will
+be assumed to belong to the plotFunction log).
+}
+The specification for \code{test} and \code{control} can be mixed and
+matched, as long as the resulting objects are of the same class.      
+
+\item[\code{path}] character vector; specifies where all the diff
+output (.diff files, plots of differences, and comparison logs)
+should be placed.
+
+\item[\code{erase}] character vector; one of \code{"none"},
+\code{"identical"}, \code{"files"}, or \code{"all"}.
+\describe{
+\item[\code{"none"}] do not delete anything.
+\item[\code{"identical"}] delete plots in the \code{test}
+directory which were identical.
+\item[\code{"files"}] delete all plots (and .diff files) in the
+\code{test} directory (leaving only the log files).
+\item[\code{"all"}] delete all files created in the
+\code{test} directory and then the directory if it is empty
+}
+Currently only \code{"none"} is fully supported.
+
+\end{ldescription}
+\end{Arguments}
+\begin{Details}\relax
+Plots are compared using \acronym{GNU} diff. If a difference is
+detected and the current filetype being compared is a text-based
+format, a .diff file will be produced. If ImageMagick is installed,
+plots of differences will also be created.
+
+It is possible for some plots to appear say, in the test group, but
+not in the control group (i.e. the function \code{plot} has an extra
+example plot in a new version of R). These such plots are classified
+as \sQuote{unpaired}. Unpaired files do not have a corresponding plot
+to compare with so are separated into an unpaired section. It is also
+possible for entire filetypes to be unpaired. Currently if there is a
+completely unpaired function or file when trying to compare, recycling
+will be used. This is intended to change in the future.
+
+In many instances, it is also useful to know whether there is any
+change in warnings or errors. If any difference is detected in the
+warnings/errors for a filetype, all of the warnings or errors
+(whichever had the difference detected) for that filetype are
+given. It is then up to the user to decide what the difference is
+(i.e. whether the ordering has changed or if one group has an extra
+warning etc.).
+
+For each set of plot-logs being compared, a comparison log will be
+produced. So for each pair of qcPlotExprResult logs being compared, a
+comparison log will be produced with a name like
+\sQuote{testPrefix+controlPrefix-compareExprLog.xml}. When comparing
+qcPlotFileResults or qcPlotFunctionResults there will also be a
+compareFileLog or compareFunLog produced which will take a name like
+\sQuote{testPrefix+controlPrefix-compareFunLog.xml}, where the
+testPrefix and controlPrefix are chosen from the first prefixes in the
+set of compareExprLogs being compared (which in turn come from the first
+plotExpr logs). These logs are placed in \code{path}.
+\end{Details}
+\begin{Value}
+A list of class \code{qcCompareExprResult}, \code{qcCompareFileResult} or
+\code{qcCompareFunResult} containing the results of the comparisons.
+
+\code{qcCompareExprResult} files contain a list of info about the Operating
+System, R version, date, call, the info from the test, info from the
+control, and then information about the results of the comparisons
+(results by filetype giving the result, names of diff files and plots of
+differences if produced), including any unpaired plots or filetypes
+(with corresponding warnings/errors).
+
+For \code{qcCompareFile} or \code{qcCompareFun} an initial info
+section is included, followed by a list containing each individual
+\code{qcCompareExprResult}.
+\end{Value}
+\begin{Note}\relax
+\acronym{GNU} diff must be installed on the system. ImageMagick is not
+necessary, but greatly extends functionality.
+\end{Note}
+\begin{SeeAlso}\relax
+\code{\LinkA{plotExpr}{plotExpr}}, \code{\LinkA{plotFile}{plotFile}},
+\code{\LinkA{plotFunction}{plotFunction}}, \code{\LinkA{writeReport}{writeReport}}
+\end{SeeAlso}
+\begin{Examples}
+\begin{ExampleCode}
+## Not run: 
+  # Create sets to compare (1st and 3rd are different)
+  comp1 <- plotExpr(c("plot(1:10)", "plot(4:40)", "x<-3", "plot(2:23)"),
+                    c("pdf", "ps"), "myPrefix", "comp1")
+  comp2 <- plotExpr(c("plot(1:11)", "plot(4:40)", "x<-3", "plot(5:15)"),
+                    c("pdf", "ps"), "myPrefix", "comp2")
+  compExpr <- compare(comp1, comp2)
+  # All the diff output has been placed in "comp1" (the test directory)
+  compExpr
+  # For a better way of viewing this, see ?writeReport
+## End(Not run)
+\end{ExampleCode}
+\end{Examples}
+
+\HeaderA{writeReport}{Generate a HTML report based on plots or comparisons}{writeReport}
+\keyword{utilities}{writeReport}
+\begin{Description}\relax
+Will produce a HTML report of the results from any of the
+\code{qcPlot*}, or \code{qcCompare*} results.
+\end{Description}
+\begin{Usage}
+\begin{verbatim}
+  writeReport(qcResult, xslStyleSheets = NULL)
+\end{verbatim}
+\end{Usage}
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{qcResult}] one of:
+\Itemize{
+\item an R object of class \code{qcPlot*}, or \code{qcCompare*}.
+\item the path to the log file to report on
+\item a path to the directory, where the highest classed log file
+will be auto-detected and then reported on (note that first
+comparison logs are searched for, then plot logs).
+}
+
+\item[\code{xslStyleSheets}] a named list specifying which XSL style sheets
+to override by giving the name of the style sheet to override, and
+the location of the xsl file. Can override any of:
+\dQuote{plotExprStyleSheet}, \dQuote{plotFunAndFileStyleSheet},
+\dQuote{compareExprStyleSheet}, and \dQuote{compareFunAndFileStyleSheet}.
+If none are specified, the default (system) ones are used.
+
+\end{ldescription}
+\end{Arguments}
+\begin{Details}\relax
+When reporting on an object, all further qcPlot* or qcCompare* files
+which the current object refers to are also reported on. This is so
+that full information reports can be given, along with individual
+breakdowns. In order for this to happen, all log files that
+the object currently being reported on refers to must exist, as well
+as any subsequent log files that they refer to.
+
+All reports are placed in the same directory as the XML file they
+refer to, with the same name, except with the extension changed from
+\sQuote{.xml} to \sQuote{.html}.
+\end{Details}
+\begin{Value}
+A character vector giving the (absolute) path of the highest classed
+object reported on. Comparison logs are considered higher classed than
+plot logs.
+\end{Value}
+\begin{SeeAlso}\relax
+\code{\LinkA{plotExpr}{plotExpr}}, \code{\LinkA{plotFile}{plotFile}},
+\code{\LinkA{plotFunction}{plotFunction}}, \code{\LinkA{compare}{compare}}.
+\end{SeeAlso}
+\begin{Examples}
+\begin{ExampleCode}
+## Not run: 
+  # After running the `?compare' example
+  writeReport(compExpr)
+
+  # Showing how to overwrite stylesheets
+  # writeReport(compExpr, list(compareExprStyleSheet="~/myCompareExpr.xsl"))
+## End(Not run)
+\end{ExampleCode}
+\end{Examples}
+
+\printindex{}
+\end{document}
