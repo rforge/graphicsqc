@@ -2,7 +2,7 @@ Package: graphicsQC
 Type: Package
 Title: Quality Control for Graphics in R
 Version: 0.9
-Date: 2008-07-24
+Date: 2008-11-13
 Author: Stephen Gardiner
 Maintainer: Stephen Gardiner <sgar060@aucklanduni.ac.nz>
 Depends: XML

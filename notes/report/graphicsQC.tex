@@ -1,20 +1,21 @@
 \nonstopmode{}
-\documentclass[a4paper,oneside]{book}
+\documentclass[a4paper,oneside]{report}
 \usepackage[ae]{Rd}
 \usepackage{makeidx}
 \makeindex{}
 \begin{document}
+\setcounter{page}{27}
 \chapter*{}
 \begin{center}
-{\textbf{\huge The `graphicsQC' Package}}
+{\textbf{\huge Package `graphicsQC' documentation}}
 \par\bigskip{\large \today}
 \end{center}
 \begin{description}
 \raggedright{}
 \item[Type] \AsIs{Package }
-\item[Title] \AsIs{Quality Control for Graphics in \R{}}
+\item[Title] \AsIs{Quality Control for Graphics in R }
 \item[Version] \AsIs{0.9 }
-\item[Date] \AsIs{2008-07-24 }
+\item[Date] \AsIs{2008-11-13 }
 \item[Author] \AsIs{Stephen Gardiner }
 \item[Maintainer] \AsIs{Stephen Gardiner <sgar060@aucklanduni.ac.nz> }
 \item[Depends] \AsIs{XML }
@@ -29,16 +30,15 @@
 \aliasA{graphicsqc}{graphicsQC-package}{graphicsqc}
 \keyword{utilities}{graphicsQC-package}
 \begin{Description}\relax
-Generates graphics files, compares them with ``model'' files,
+Generates graphics files, compares them with "model" files,
 and reports the results.
 \end{Description}
-\newpage % I put this here because otherwise the following table goes over the page numbering
-\begin{Details}%\relax
+\begin{Details}\relax
 \Tabular{ll}{
 Package: & graphicsQC\\
 Type: & Package\\
 Version: & 0.9\\
-Date: & 2008-10-30\\
+Date: & 2008-11-13\\
 License: & GPL-2\\
 }
 To generate files, use \code{\LinkA{plotExpr}{plotExpr}},

@@ -19,13 +19,13 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-  The \textbf{graphicsqc} package is a new \R{} package developed for
+  The \graphicsqc{} package is a new \R{} package developed for
   extending Quality Control for Graphics in \R{}. It is capable of
   evaluating arbitrary code to produce plots in different file
   formats, while recording information about them. Sets of these plots
   are then able to be compared, with plots of differences produced
   (when available). Lastly, information about these comparisons are
-  produced in a HTML report.
+  produced in an HTML report.
 \end{abstract}
 \tableofcontents
 
@@ -36,7 +36,7 @@ options(width=60, continue="  ")
 @
 \chapter{Introduction}
 There has been much work into the concept of Quality Control for
-software[cite SWEBOK (ch11) -- how?]. There are currently tools in
+software \citep{boudup04}. There are currently tools in
 \R{} which ensure that \R{} code will run without catastrophic
 failure, but fewer tools to check that the output from the code is
 correct, especially graphics output. Thus, the aim of this research
@@ -52,7 +52,8 @@ described.
 Chapter~\ref{chap:compare} describes how the comparison between sets
 of plots is performed and some extra features the package provides for this.
 
-Chapter~\ref{chap:report} explains the transformation from log file to report.
+Chapter~\ref{chap:report} explains how reports are generated based on
+the comparisons.
 
 \section{Measuring software quality: QC and Regression testing}
 Quality Control (QC), or \emph{testing}, is used to ensure quality of
@@ -69,39 +70,38 @@ will be referred to as \emph{validation}.
 Once initial, correct output, has been produced one can test future
 outputs against this initial output. This type of testing is known as
 \emph{regression testing}. The initial output is referred to as
-\emph{control output}. As graphics output is being compared, this
-control output has to be initially verified as being correct, so for
-the rest of this report it will be referred to as \emph{model output}.
-After this model output has been created, changes to the source code
-of the software can be made, and the output produced again. This
-second set of output is referred to as \emph{test output}. By
-comparing this test output against the control output, any changes in
-the output can be identified. If there are no differences between the
-two, the test output can be validated  as being correct. If a change is
-expected, then an expert observer is required to assess whether only
-the changes which were expected occurred, and are correct. If this is
-the case, the test output now becomes the control output for future
-testing.  \citep{ihagen96} and \citep{Rext08} and \citep{murhor03}.
+\emph{control output}. In the case where this control output is known
+to be correct, that is if the graphics output has been validated, then
+this control output will be referred to as \emph{model output}.  After
+this model output has been created, changes to the source code of the
+software can be made, and the output produced again. This second set
+of output is referred to as \emph{test output}. By comparing this test
+output against the control output, any changes in the output can be
+identified. If there are no differences between the two, the test
+output can be validated as being correct. If a change is expected,
+then an expert observer is required to assess whether only the changes
+which were expected occurred, and are correct. If this is the case,
+the test output now becomes the control output for future testing.
 
 \section{Existing QC functions in \R{}}
 % Can't find Hornik article?
 There are currently a variety of methods used for quality control in
 \R{} \citep{hor02}. When writing packages, there is a \texttt{R CMD
   check} command which will perform a multitude of quality control
-tests on a package \citep{Rext08}. Among these tests are checks of the output
-produced by the code. Any example code contained in the
-documentation of the package is run to ensure that it does not crash
-or produce any errors. If a ``tests'' directory exists within the
-package, it will evaluate the code in any \texttt{.R} files in the
+tests on a package \citep{Rext08}. Among these tests are checks of the
+output produced by the code. Any example code contained in the
+documentation of the package is evaluated to ensure that it does not
+crash or produce any errors. If a ``tests'' directory exists within
+the package, it will evaluate the code in any \texttt{.R} files in the
 directory, making sure that they do not produce any errors or crash,
 and then compare the output to corresponding \texttt{.Rout.save} files
-if they exist. Lastly, it will run code in any package vignettes if
+if they exist. Lastly, it will evaluate code in any package vignettes if
 they exist, to test that the code will not crash or produce any
 errors. This testing can be manually performed on any package at any
 time, however this process is also commonly automated. Examples of
-this exist on both the CRAN (The Comprehensive \R{} Archive Network) and
-R-Forge websites, which both offer nightly checks and builds of the
-packages they host.
+this exist on both the CRAN (The Comprehensive \R{} Archive Network)
+and R-Forge websites, which both offer nightly checks and builds of
+the packages they host.
 
 % I assume a lot here...
 At \R{}'s core, there are also some hard-coded regression tests which
@@ -117,14 +117,9 @@ and then use the GNU \texttt{diff} utility to compare the plots to
 some supplied model \texttt{.ps.save} plots. This facility is
 hard-coded into \texttt{make check} and is not performed by \texttt{R
   CMD check}. Thus the current level of quality control for graphics
-in \R{} is very limited and is available only for a few pre-defined
+in \R{} is very limited and is available only for a few predefined
 plots, and only when using a source distribution of \R{}.
 % Cran also does nightly `make checks' of R?
-
-% Hmm: Diff is assumed to be available on supported platforms,
-% when R gets built does it need diff to compare the .ps.save files?
-% Does it actually compare them? I tried a test for a package and
-% R CMD check doesn't do it.
 
 % Kurt Hornik will eventually summarise QC in R (at 2003)?
 % https://stat.ethz.ch/pipermail/r-sig-qa/2003-May/000005.html?
@@ -132,8 +127,8 @@ plots, and only when using a source distribution of \R{}.
 
 \section{An early attempt at QC for graphics in \R{}}
 An early attempt at graphics testing for \R{} is a package similarly
-named \graphicsqc{} written by Paul Murrell \citeyearpar{murhor03}. It
-was essentially a proof-of-concept package, and is very limited in
+named \graphicsqc{} written by \citet{murhor03}. It
+is essentially a proof-of-concept package, and is very limited in
 usability and functionality. It is limited to only running regression
 tests on the example code in given functions in \R{}. It does not
 record or return any information pertaining to the plots (such as
@@ -141,77 +136,98 @@ which directory the plots are being stored), and had very little error
 checking. For most of the supported file formats, if any differences
 were detected, a vector naming the test files with differences were
 returned, with no other information. For the files in the \texttt{pbm}
-format, an \texttt{xor} operation is perfomed on the plots and a
+format, an \texttt{xor} operation is performed on the plots and a
 difference plot produced which gives a visual representation of the
-differences between the plots, however this is not supported on any
+difference between the plots, however this is not supported for any
 other file format. % should I be more harsh?
 
 Due to these limitations, the package required a complete re-write to
 become more useful. Some features necessitating this are the ability
-to record information relating to the plots, such as which plots were
-created in which directory, which call created the plots, and so
-on. Another necessary feature is the ability to plot any arbitrary
-expressions, which can then be extended to plotting files and also
-examples from functions. As this occurs, it would also be useful to
-appropriately record any warnings which occur, and then possibly
-difference these as they may be useful for discovering why plots
-differ. The current \graphicsqc{} package is a complete re-write of
-this previous implementation.
+to plot any arbitrary expressions, which can then be extended to
+plotting files and also examples from functions.  As this occurs, it
+would also be useful to appropriately record any warnings which occur,
+and then possibly difference these as they may be useful for
+discovering why plots differ. It is also necessary to be able to
+produce plots highlighting the differences between two plots for all
+of the available file formats. This is slightly in contrast with the
+previous implementation where the plots were only of the
+\emph{differences} between the plots, whereas it would be more
+desirable to see the original plot, but with the differences
+highlighted. Another necessary feature is the ability to record
+information relating to the plots, such as which plots were created in
+which directory, which call created the plots, and so on. The current
+\graphicsqc{} package is a complete re-write of the previous
+implementation.
+
 
 \section{Outline of \textbf{graphicsQC}}
 The nature of what's required of the package reflects well with its
 design. The first component of regression testing involves creating
-model output. This is accomplished by one of the three functions
+control output. This is accomplished by one of the three functions
 \texttt{plotExpr()}, \texttt{plotFile()} and
 \texttt{plotFunction()}. These evaluate and plot arbitrary
 expressions, code within files, and example code from functions
 respectively. They also record information about the plots they
-produce, including any warnings or errors which may have
-occurred. These functions are used for creation of both the model and
+produce in `logs', including any warnings or errors that may have
+occurred. These functions are used for creation of both the control and
 test output and are further described in Chapter~\ref{chap:plot}.
 
-Once the model and test output have been created, they need to be
+Once the control and test output have been created, they need to be
 compared for differences. For this, there is the \texttt{compare()}
 function. The \texttt{compare()} function will compare two sets of
 plots, for example two sets produced by \texttt{plotFunction()}. It
 can compare using the \R{} objects of the logs, or paths to the
 resulting logs, or a mixture of these. It uses the GNU \texttt{diff}
 utility to do the comparisons, which can be assumed on all of \R{}'s
-supported platforms \citep{Rext08}[change cite to R extensions?]. It
-compares the plots and any warnings or errors for differences and then
-records the result of the comparison. The \texttt{compare()} function
-is further described in Chapter~\ref{chap:compare}.
+supported platforms \citep{Rext08}. It compares the plots and any
+warnings or errors for differences and then records the result of the
+comparison. The \texttt{compare()} function is further described in
+Chapter~\ref{chap:compare}.
 
 Lastly, it may be desirable to report about the plots and the
-comparisons. The function \texttt{writeReport()} is used for
-this. \texttt{writeReport()} generates a HTML page of the results of
+comparisons. The function \texttt{writeReport()} accomplishes this by
+generating a HyperText Markup Language (HTML) page of the results of
 any plotting or comparison result. It is further discussed in
 Chapter~\ref{chap:report}.
 
 \chapter{Plotting Arbitrary Expressions}
 \label{chap:plot}
+For graphical output to be produced, expressions, or code, must first
+be evaluated. The ability to plot and test arbitrary code is a
+necessary feature in testing graphical output, for example if a
+`user'\footnote{The term `user' here is used very loosely as it is
+  likely to only be developers of \R{} who would make changes to the
+  way graphical output is produced.} wishes to test graphical output
+after adding a new feature.  It is imperative to store information
+related to plots that are produced for aiding the ability to perform
+comparisons. When dealing with code which produces graphical output,
+it is generally impossible to produce every possible output. Within
+\R{} there are large amounts of example code exhibiting how a function
+works and how to use it. This example code is used to produce a sample
+of plots that can be produced by a given function.
+
 \section{Plotting expressions}
 \label{sec:plotExpr}
-In order to test the correctness of output, it follows that output
-must have initially been produced. For this task, the function
-\texttt{plotExpr()} was created. The main concept behind
+For the task of evaluating arbitrary code to produce graphical output,
+the function \texttt{plotExpr()} was created. The main concept behind
 \texttt{plotExpr()} is to evaluate plotting code under chosen graphics
-devices, and record which plots were produced and related information
-(such as operating system, date, directory, \R{} version and so on). It
-does this by initially error checking it's arguments, and then making
-a call to a function within the namespace, \texttt{evalPlotCode()}.
+devices and record which plots were produced and other related
+information such as operating system, date, directory, \R{} version
+and so on. It does this by initially error checking its arguments,
+and then making a call to a function within the namespace,
+\texttt{evalPlotCode()}.
 
-\texttt{evalPlotCode()} is reponsible for evaluating code after
-opening an appropriate graphics device. It uses the \texttt{tryCatch}
-mechanism in \R{} to ensure that the function can continue evaluation
-if there is an error in the code being evaluated. With the use of
-calling handlers, it is also able to `catch' warnings and store
-them. If an error is encountered, this is also recorded and evaluation
-of the current set of expressions is stopped. This is intentional
-because an error in the code is likely to be something serious which
-will affect future expressions in the current set and possibly
-plots. Warnings however are not considered to be stop-worthy, so
-evaluation will continue after recording the warning. How this
+The \texttt{evalPlotCode()} function is responsible for evaluating code
+after opening an appropriate graphics device. It uses the
+\texttt{tryCatch} mechanism in \R{} to ensure that the function can
+continue evaluation if there is an error in the code being
+evaluated. With the use of calling handlers, it is also able to
+`catch' warnings and store them. If an error is encountered, this is
+also recorded and evaluation of the current set of expressions is
+stopped. This is intentional because an error in the code is likely to
+be something serious which will affect future expressions in the
+current set and possibly plots. However, if a warning is encountered,
+the warning will be recorded and evaluation will continue. How this
 information is recorded is discussed in section~\ref{sec:logs}.
 
 The call to \texttt{evalPlotCode()} is made within \texttt{plotExpr()}
@@ -221,14 +237,14 @@ optimised for. Secondly, it ensures that \texttt{evalPlotCode()} gets
 called once for each file format for the expression, so any warnings
 or errors are captured separately by filetype. This is because some
 warnings may only occur on a certain graphics device and this ensures
-that the devices are treated separately to each other.Using many file
+that the devices are treated separately to each other. Using many file
 formats is a distinct advantage in that all graphics formats can be
 tested against themselves to help identify whether changes in graphics
-output are due to the underlying code used to produce the respective
-graphics, or whether there is a problem or change with a specific
-graphics driver.
+output are simply due to changes in the code being evaluated, or
+whether there is a problem or change with a specific graphics device.
 
-% hooks?
+% hooks?  - I'm sticking with unfeasible. Cambridge dictionary suggests
+% it is the UK version.
 A special case to consider when evaluating plotting code is any code
 which will not actually produce any plots. Due the large variety of
 functions in \R{}, and the ability to create your own on the fly, it
@@ -244,7 +260,7 @@ do not represent a plot produced by \R{}. To deal with this,
 \texttt{plotExpr()} calls \texttt{generateBlankImages()} which
 generates `blank' images in a temporary directory for the (supported)
 file formats which produce `blank' files of non-zero size. The plots
-which are produced are then compared to these model `blank' images,
+that are produced are then compared to these model `blank' images,
 and removed if they are the same size, that is, completely
 blank. However, warnings and errors are still recorded in these
 situations.
@@ -257,29 +273,52 @@ named with a prefix according to what is specified as the
 each plot. That is, plots are created and then detected via the chosen
 prefix. As a consequence, care must be taken when choosing a
 \texttt{prefix} for the plots which is unique within a directory so
-that the plots which are created can be distinguished from other files
+that the plots that are created can be distinguished from other files
 in the directory. The chosen directory to produce plots in is checked
-prior to evaluating the code for any currently existing files which
+prior to evaluating the code for any currently existing files that
 might be created by the function. A \texttt{clear} argument to the
 function is available which first clears the directory of any files
-with a name the same as any which might be created.
+with a name the same as any that might be created.
 
 Thus, the arguments to \texttt{plotExpr} are of the order,
 \texttt{expr}, which is a character vector (or an expression object)
 of the expressions to evaluate which may produce graphical
 output. Next is \texttt{filetype}, which is used to specify which file
-formats the expressions should be evaluated in. \texttt{path} is the
-path to place the plots and log in. \texttt{prefix} is the prefix to
-use for the files, and \texttt{clear} specifies whether to first
-remove files which already exist with a name like any which might be
-created. The resulting object is given the class \texttt{qcPlotExprResult}.
+formats the expressions should be evaluated in. The argument
+\texttt{path} is the path to place the plots and log file in. The
+\texttt{prefix} argument specifies the prefix to use when naming the
+files, with the prefix being followed by a numbered suffix. If files
+already exist in the chosen path and include names similar to those
+which might be created, the \texttt{clear} argument specifies whether
+these files should be removed before evaluating any code or not. The
+resulting object is given the class \texttt{qcPlotExprResult}.
 
-An example is given below. % might manually do this one.. doesn't print well..
-<<first>>=
-first <- plotExpr(c("y <- 10", "x <- 1", "plot(x:y)", "z <- 5"),
-           c("pdf", "png"), "exampleDir", "firstExample")
-first
+An example is given below.
+<<first, echo=FALSE>>=
+first <- plotExpr(expr = c("y <- 10", "x <- 1", "plot(x:y)"),
+                    filetype = c("pdf", "png"),
+                    path = "exampleDir",
+                    prefix = "firstExample", clear = TRUE)
 @
+%\begin{Schunk}
+\begin{verbatim}
+> first <- plotExpr(expr = c("y <- 10", "x <- 1", "plot(x:y)"),
+                    filetype = c("pdf", "png"),
+                    path = "exampleDir",
+                    prefix = "firstExample")
+> first
+plotExpr Result:
+Call:    plotExpr(expr = c("y <- 10", "x <- 1", "plot(x:y)"),
+filetype = c("pdf", "png"), path = "exampleDir", prefix =
+"firstExample")
+R version:    R version 2.6.2 (2008-02-08)
+Directory:    /home/stephen/graphicsqc/notes/report/exampleDir
+Filename:     firstExample-log.xml
+Formats:
+  pdf :	Plots: firstExample-1.pdf
+  png :	Plots: firstExample-1.png
+\end{verbatim}
+%\end{Schunk}
 
 \section{Plotting files and functions}
 \label{sec:plotF}
@@ -288,10 +327,10 @@ defined. It can be seen that plotting files or functions is simply an
 extension of this, where multiple files may each correspond to a
 different `expression', and likewise for functions where each function
 corresponds to a different expression. This is particularly true for
-functions, where the plots for each function a generated by a single
+functions, where the plots for each function are generated by a single
 call to \texttt{example()} of each function.
 
-The two functions which provide these facilities are
+The two functions that provide these facilities are
 \texttt{plotFile()} and \texttt{plotFunction()}. They both essentially
 consist of checking their arguments, then generating multiple calls to
 \texttt{plotExpr()} for each file or function they are called with
@@ -304,22 +343,17 @@ to those stored in \texttt{qcPlotExprResult} objects. These results
 are classed as \texttt{qcPlotFileResult} and \texttt{qcPlotFunResult}
 respectively.
 
-There is now some intrinsic classing hierachy as
-\texttt{qcPlotFileResult} objects and \texttt{qcPlotFunResult} objects
-both contain \texttt{qcPlotExprResult} objects, plus some extra
-information, so these objects can be considered as super-classes to
-\texttt{qcPlotExprResult}. Conceptually, this is easily extended to
-the ability to plot entire packages, as they would consist of multiple
+Conceptually, this is easily extended to the ability to plot entire
+packages as \texttt{qcPlotPackageResult} would consist of multiple
 sets of \texttt{qcPlotFileResult} and \texttt{qcPlotFunResult}
-objects, and thus \texttt{qcPlotPackageResult} would be a super-class
-of these. The ability to plot entire packages, for example
+objects. The ability to plot entire packages, for example
 \texttt{plotPackage()}, is not yet entirely implemented, but a close
-approximation can be made as shown in Chapter~\ref{chap:grid}. This
-classing structure is shown in Figure~\ref{fig:plotClass}
+approximation can be made as shown in Chapter~\ref{chap:grid}.The
+resulting classing structure is shown in Figure~\ref{fig:plotClass}
 
-\begin{figure}
+\begin{figure} % unpaired?
   \centering
-    \includegraphics[height=7cm,keepaspectratio=true]{plotClass}
+    \includegraphics[height=8cm,keepaspectratio=true]{plotClass}
   \caption{Classing structure for `plot' objects}
   \label{fig:plotClass}
 \end{figure}
@@ -327,8 +361,15 @@ classing structure is shown in Figure~\ref{fig:plotClass}
 How these are recorded as logs is described in the next section.
 
 An example of plotting the \texttt{barplot()} function is given below.
-<<barplot>>=
-bplot <- plotFunction(barplot, c("pdf", "ps", "png"), "barplot")
+<<realBarplot, echo=FALSE>>=
+bplot <- plotFunction(barplot,
+                      filetype = c("pdf", "ps", "png"),
+                      path = "barplot", clear = TRUE)
+@
+<<barplot, eval=FALSE>>=
+bplot <- plotFunction(barplot,
+                      filetype = c("pdf", "ps", "png"),
+                      path = "barplot")
 @
 
 \section{Logs of plots created}
@@ -342,11 +383,11 @@ operating system, date, \R{} version, and which call was used to create
 the plots is also useful. All of this information cannot be stored as
 a part of each plot, so a separate log file must be created.
 
-As it is only text which needs to be stored, it makes sense to store
+As it is only text that needs to be stored, it makes sense to store
 this information in a text-based format, especially as it will be
 easier to read log files in the future. The logs were chosen to be
 stored using XML which is described in the next section. In order to
-create XML documents in \R{}, the \textbf{XML} package has been used
+work with XML documents in \R{}, the \textbf{XML} package has been used
 \citep{lan01}.
 
 \subsection{The XML Language}
@@ -354,7 +395,7 @@ The e\textbf{X}tensible \textbf{M}arkup \textbf{L}anguage (XML) is a
 markup language for documents containing structured information. It is
 extensible due to the ability for users to define their own
 elements. It is an `open standard' which agrees with the open nature
-of \R{}. Some of the main advantages for using XML are it's
+of \R{}. Some of the main advantages for using XML are its
 extensibility for user-defined elements, it is self-documenting,
 platform independent, relatively human-legible, and internationally
 recognised. This allows for great flexibility to store structured
@@ -362,8 +403,8 @@ logs, as well as ease of reading in stored logs. A disadvantage of XML
 is that it is very verbose, and so can take up more disk space than if
 the log was stored using a binary format. This effect is considered to
 be negligible however, since the disk space required for plots will
-far outweigh the disk space required to store lists of the names of
-them in XML.
+far outweigh the disk space required to store lists of their names in
+XML.
 
 \subsection{\texttt{plotExpr()} XML logs}
 The logs produced by \texttt{plotExpr()} consist of two parts. The
@@ -378,13 +419,15 @@ is given below.
 
 <<firstXML, echo=FALSE>>=
 plotExprLog <- system("cat exampleDir/firstExample-log.xml", intern = TRUE)
+plotExprLog[9] <- "plotExpr(expr = c(\"y <- 10\", \"x <- 1\", \"plot(x:y)\"), filetype = \nc(\"pdf\",     \"png\"), path = \"exampleDir\", prefix = \n\"firstExample\")   ]]>"
+plotExprLog[11] <- "  <directory>/home/stephen/graphicsqc/notes/report/\nexampleDir</directory>"
 cat(plotExprLog, sep = "\n")
 @
 
 The XML markup being used is fairly self-explanatory. Only 2 plots
 were created; one in PDF and one in PostScript, with neither having
 any warnings or errors. It is worth pointing out that the log includes
-it's own \texttt{logFilename}. This is so the object in \R{} knows
+its own \texttt{logFilename}. This is so the object in \R{} knows
 where the file exists on disk.
 
 Due to this completely open and platform independent way of storing
@@ -399,7 +442,7 @@ accessible format for them.
 \subsection{\texttt{plotFile()} and \texttt{plotFunction()} XML logs}
 As \texttt{qcPlotFileResult} and \texttt{qcPlotFunResult} objects are
 simply lists of \texttt{qcPlotExprResult} objects with some extra
-information, the type of log files they create represent this
+information, the type of log files they create reflect this
 structure. Both \texttt{qcPlotFileResult} and \texttt{qcPlotFunResult}
 files contain an information section, followed by the paths to all of
 the \texttt{qcPlotExprResult} files that they made. This is a more
@@ -417,11 +460,17 @@ objects as well.
 The log file produced from the \texttt{barplot()} example in
 section~\ref{sec:plotF} is given below.
 
-% goes off the page
 <<barplotXML, echo=FALSE>>=
 plotFunLog <- system("cat barplot/barplot-funLog.xml", intern = TRUE)
+plotFunLog[9] <- "   plotFunction(barplot, filetype = c(\"pdf\", \"ps\", \n\"png\"), path = \"barplot\",     clear = TRUE)   ]]>"
+plotFunLog[11] <- "  <directory>/home/stephen/graphicsqc/notes/report/barplot\n</directory>"
+plotFunLog[14] <- " <qcPlotExprResult>/home/stephen/graphicsqc/notes/report/\nbarplot/barplot-log.xml</qcPlotExprResult>"
 cat(plotFunLog, sep = "\n")
 @
+
+Note that the \texttt{qcPlotExprResult} element consists only of the
+path to the corresponding log file that contains information about
+the plots produced.
 
 The naming of these \texttt{qcPlotFileResult} and
 \texttt{qcPlotFunResult} files requires extra care when more than one
@@ -434,134 +483,597 @@ for the system.
 
 \chapter{Comparing plots}
 \label{chap:compare}
-- GNU diff/ImageMagick are used. Diff plots only made when a diff is
-detected, however not made when they are going to be erased afterwards
-(although erase doesn't fully work yet)?
+In the case of quality control for graphics, it is not the code used
+to create the graphics that is of importance, but rather whether the
+final output has changed. Due to the nature of different file formats
+used for graphical output, comparisons can only be made within the
+same file formats. The major differences between some file formats are
+discussed in section~\ref{sec:textvsbitmap}. There is also an issue of
+pairing plots to be compared, for example if one function in a set of
+many includes a new plot in the test group, the functions should still
+be pairwise compared, but with the extra plot left out. How this is
+managed is described in section~\ref{sec:pairing}. Changes in warnings
+and errors can also provide clues as to why graphics output has
+changed, so these are compared along with the appropriate plots as
+described in section~\ref{sec:compWarns}.
+
 \section{Comparing sets of expressions}
-\subsection{Text Based vs. Bitmap Formats}
+Once two sets of plots have been produced, it is desirable to compare
+them for differences. The na\"ive approach is to display two plots
+side-by-side and visually compare them for differences, repeating this
+for the entire set. This is both ineffective and inefficient. It is
+very difficult for the human eye to discern small differences in
+images, especially when there are large amounts of detail in both
+images. It would also take a very long time if there were many plots.
 
-- explanation. 3 file formats currently supported (mention this
-earlier?). can use xor to create plots for bitmaps? .diff files only
-make sense for text based. advantages and disadvantages for both?
+A better solution involves using the GNU \texttt{diff} utility, which
+is assumed to be supported on all of \R{}'s supported platforms
+according to the \R{} Coding Standards \citep{Rext08}. GNU
+\texttt{diff} compares files to test if they are \emph{exactly} the
+same. So once plots are appropriately paired, they can be `diffed', to
+identify which plots are identical or different and narrow down which
+plots the user needs to examine. These differences may however still
+be extremely difficult for the user to detect, or take a long time
+until the user notices them. Because of this, ImageMagick software is
+also used. ImageMagick provides a \texttt{compare} utility that is
+used to produce a plot highlighting the differences between two
+plots. An example of this is given in
+section~\ref{sec:gridCompare}. This software is free (as in speech) so
+the source code is available for download, and is distributed as
+standard on some GNU/Linux distributions. It is however not necessary
+for \texttt{compare()} to work as primarily the differences are
+detected using \texttt{diff}.
 
+The \texttt{compare()} function handles comparisons between all
+supported sets of expressions, for example between two
+\texttt{qcPlotFileResult} objects. The images that highlight
+differences are created by default if ImageMagick is installed and the
+plots are different. The \texttt{erase} argument to \texttt{compare()}
+specifies options for removing test output after performing the
+comparison. If \texttt{erase} is set to ``files'' or ``all'', that is,
+delete all the plots in the test group (leaving the log files), or
+delete all the files in the test group, then the plots highlighting
+the differences will not be produced. This is currently the only
+effect of the \texttt{erase} option as it does not yet remove any
+files.
+
+Comparing the example from section~\ref{sec:plotExpr} to itself should
+produce a result indicating the plots are identical.
+
+\begin{footnotesize}
+<<firstCompare, echo=FALSE>>=
+firstComparison <- compare(first, first)
+@
+\begin{verbatim}
+> firstComparison <- compare(first, first)
+> firstComparison
+qcCompareExpr Result:
+Call:
+ compare(first, first)
+                        Test                        Control             Results
+R version: R version 2.6.2 (2008-02-08)  R version 2.6.2 (2008-02-08)
+Directory: ...qc/notes/report/exampleDir ...qc/notes/report/exampleDir
+Filename:  firstExample-log.xml          firstExample-log.xml
+Format:
+pdf        ...mpleDir/firstExample-1.pdf ...mpleDir/firstExample-1.pdf identical
+png        ...mpleDir/firstExample-1.png ...mpleDir/firstExample-1.png identical
+\end{verbatim}
+\end{footnotesize}
+Note that this is not a particularly appealing way of presenting these
+results, especially if there were many files compared. A more
+effective report can be generated and is described in
+Chapter~\ref{chap:report}.
+
+The results of comparing expressions are stored in XML logs in a
+similar structure to the \texttt{qcPlotExprResult} objects. Each
+\texttt{qcCompareExprResult} log contains its own information about
+what occurred, as well as information from the test and control
+groups. The log file created from the `\texttt{firstComparison}'
+example above is given below, with the information sections omitted
+for brevity's sake.
+%<<compFirst, echo=FALSE>>=
+%compFirst <- system("cat exampleDir/firstExample+firstExample-compareExprLog.xml", intern = TRUE)
+%compFirst <- compFirst[38:55]
+%cat(compFirst, sep="\n")
+%@
+\begin{verbatim}
+ <compare type="pdf">
+  <comparison controlFile="/home/stephen/graphicsqc/notes/
+                           report/exampleDir/firstExample-1.pdf"
+              testFile="/home/stephen/graphicsqc/notes/
+                        report/exampleDir/firstExample-1.pdf">
+   <result>identical</result>
+   <diffFile></diffFile>
+   <diffPlot></diffPlot>
+  </comparison>
+ </compare>
+ <compare type="png">
+  <comparison controlFile="/home/stephen/graphicsqc/notes/
+                           report/exampleDir/firstExample-1.png"
+              testFile="/home/stephen/graphicsqc/notes/
+                        report/exampleDir/firstExample-1.png">
+   <result>identical</result>
+   <diffFile></diffFile>
+   <diffPlot></diffPlot>
+  </comparison>
+ </compare>
+ <unpaired>
+  <test/>
+  <control/>
+ </unpaired>
+\end{verbatim}
+As there was only one set of files to compare for each filetype, there
+is only one \texttt{comparison} element within each \texttt{compare}
+element. There were no unpaired files and no differences in warnings
+or errors --- these are further discussed in section~\ref{sec:pairing}
+and section~\ref{sec:compWarns} respectively.
+
+The default placement of the log files and images highlighting the
+differences are in the \texttt{test} directory, however this can be
+changed by specifying a different \texttt{path} to the
+\texttt{compare()} function.
+% placement of log files deafults to test dir?
+%- Diff plots only made when a diff is
+%detected, however not made when they are going to be erased afterwards
+%(although erase doesn't fully work yet)?
+
+%- need different for each filetype, pdf has header info..
+
+\subsection{Bitmap vs. Text-based Formats}
+\label{sec:textvsbitmap}
+Bitmap formats are most commonly what the user sees, for example after
+generating a standard plot. When stored, they are relatively large
+files and limited to the resolution used at the time of
+saving. \citet{murhor03} also pointed out that the version of the
+third-party software used to create the image can produce slightly
+different output, and even differences in hardware setup (for example
+the platform being used). Currently the only supported Bitmap format
+is \texttt{png} (Portable Network Graphics).
+
+Text-based formats tend to produce relatively small files at very high
+resolutions, and are generally more platform-independent. These
+however suffer a similar drawback to bitmap formats in that
+differences in the version of the third-party software used to create
+the image can result in different files produced. With these formats
+it is possible for these changes to have no visible result on the
+final image, for example a change in the internal structure of the
+file. The currently supported text-based formats are \texttt{ps}
+(PostScript) and \texttt{pdf} (Portable Document Format).
+
+The GNU \texttt{diff} utility provides a textual output of the
+differences between files if they are different. For text-based
+formats, this information is useful and is possible for someone with
+knowledge of the format to interpret. Due to nature of bitmap formats,
+this is generally meaningless to humans. As such, when a difference
+between two files is detected, if the files are a text-based format, a
+\texttt{.diff} file is created giving the \texttt{diff} output of the
+differences, but this is not created for bitmap formats.
+
+There is a special case when comparing two files in the \texttt{pdf}
+format. Files created in the \texttt{pdf} format contain some header
+information including the date and time the file was created. When
+creating two separate plots, the time each plot was created will
+inevitably be different from each other. As a result, when files are
+compared for differences, this header section is ignored, and the rest
+of the file is compared. If a difference is detected in the rest of
+the file, the differences in headers are included in the resulting
+\texttt{.diff} file. Due to this format dependent comparison, each
+format has its own function defined for how to perform the
+comparison. This is further discussed in
+section~\ref{sec:extensibility}.
+
+%- explanation. 3 file formats currently supported (mention this
+%earlier?). can use xor to create plots for bitmaps? .diff files only
+%make sense for text based. advantages and disadvantages for both?
 \subsection{Pairing plots}
-- how logs are paired? unpaired.
+\label{sec:pairing}
+When comparing plots produced by a set of expressions, it is important
+that each of the plots in the test group is appropriately paired with
+its corresponding plot in the control group. These pairings need to be
+done by file format as the number of plots may be different depending
+on the format, for example if an error prevented one format from
+producing some plots. It is also possible for all filetypes to have
+unpaired files if for example an extra plot was included in the test
+group and not in the control group. If the length of plots in a given
+filetype in one group is greater than the other, the last plots that
+do not match up are grouped into an `unpaired' section that lists the
+plots that were unpaired by filetype.
 
-% The next step in the process is to compare a set of plots to another;
-% typically between two different versions of \R{} to establish if the
-% graphics outputs have changed, but could also be used to detect
-% whether changes made to the graphics system or to specific functions
-% are different to previously known correct control group outputs.
+It is also possible for entire file formats to be unpaired, for
+example if the control group consisted of plots only in the
+\texttt{png} format, whereas the test consisted of \texttt{png} and
+\texttt{pdf} plots. When this occurs, these plots are included in the
+`unpaired' section as well as any warnings or errors that occurred
+because it is unknown whether these would have occurred under the same
+conditions as the control group. These are also reported on separately
+when the report is generated.
+%  - how logs are paired?
+%unpaired.
 
-% GNU diff is used.
-
-% To detect the differences, the utility \texttt{diff} is used, which is
-% assumed on all supported platforms according to the \R{} Coding
-% Standards (Writing \R{} Extensions). An extension to this has been to use
-% the ImageMagick software to also create plots of the differences when
-% available. A drawback to this is that the ImageMagick software must
-% first be installed, but it is open-source, free, and is readily
-% available for many operating systems or even from source. While it is
-% a distinct advantage to use the ImageMagick software, it is also not a
-% requirement as the differences will still be detected by
-% \texttt{diff}, but plots of the differences will not be created.
-
-% \noindent For example, to create two plots which will be different
-% from each other:
-% \begin{verbatim}
-% > control <- plotExpr("hist(rep(1:10,1:10), breaks=6)", "png", "histControl")
-% > test <- plotExpr("hist(rep(10:1,1:10), breaks=6)", "png", "histTest")
-% > compare(test, control, erase="none")
-% \end{verbatim}
-
-% \noindent Which informs us that the plots are indeed different:
-% \begin{verbatim}
-% /home/stephen/histControl-1.png
-%                     "different"
-% \end{verbatim}
-
-% \noindent And an appropriate plot of the differences is also produced,
-% with the differences highlighted in red:
-
-%\begin{center}
-%\includegraphics[width=9cm]{diffplot.png}
-%\end{center}
-
-% While this was a trivial example of a single expression, the ability
-% to compare example code from entire functions has also been
-% implemented, with lists of the identical and different files and
-% corresponding plots of the differences produced and also the ability
-% to handle extreme cases such as when new plots have been added in the
-% test group which don't have a corresponding pair in the control group.
+\subsection{Comparing Warnings and Errors}
+\label{sec:compWarns}
+When there are differences in the plots, differences in the warnings
+or errors often provide clues as to why this may be. It has already
+been discussed in section~\ref{sec:plotExpr} that warnings and errors
+are recorded when code is evaluated. When the comparison between plots
+occurs, the warnings and errors for each filetype are also
+compared. If the warnings or errors are not identical to each other,
+all of the warnings or all of the errors (whichever had the
+difference) are reported for both the test and control groups for the
+filetype being compared. It is then up to the user to establish what
+the difference is. This is because ordering in the warnings or errors
+could also prove significant in why plots differ. If no differences
+between the warnings or errors are detected, then they are not
+reported in the comparison.
 
 \section{Comparing sets of files and functions}
-\section{Auto-detection of logs} % plot AND compare logs
-- One of the features.. easier for users (especially when comparing in
-separate versions of \R{} and having to find the exact file name).
-\section{Extensibility for new file formats}
+Comparing sets of files and functions work in a similar to way to
+plotting files and functions. The process is broken down into simpler,
+easier to manage chunks. This results in sets of
+\texttt{qcPlotExprResult} objects being compared. Each file or
+function corresponds to a single \texttt{qcPlotExprResult}, so these
+are just pairwise compared. As in the case of comparing expressions,
+there is an issue of unpaired files or functions. Currently, if one
+group contains more objects than the other, the group with less
+objects will `recycle' the elements until the groups have the same
+number of objects to compare. A better option is to group these as
+`unpaired', but this is not yet implemented.
 
-- use of mapply in compareType nested in lapply in compareExpr (give
-some gory details!?) - allows for compareNEWTYPE where the function
-will get automatically called with the new filetype (plus would need
-to include the filetype in the `valid filetypes' list).
+When files and functions are compared, the comparison log file
+contains paths to the individual \texttt{qcCompareExprResult} files
+much the same as occurred for when files and functions were plotted.
+An example of a log file after comparing the `\texttt{bplot}' example
+to itself is given below.
+<<bplotCompare>>=
+compareBplot <- compare(bplot, bplot)
+@
+<<echo=FALSE>>=
+bplotLog <- system("cat barplot/barplot-compareFunLog.xml", intern = TRUE)
+bplotLog[9] <- "   compare(bplot, bplot)   ]]>"
+bplotLog[13] <- "  <testLog>/home/stephen/graphicsqc/notes/report/barplot/\n           barplot-funLog.xml</testLog>"
+bplotLog[14] <- "  <controlLog>/home/stephen/graphicsqc/notes/report/barplot/\n              barplot-funLog.xml</controlLog>"
+bplotLog[16] <- " <qcCompareExprResult>/home/stephen/graphicsqc/notes/report/\n    barplot/barplot+barplot-compareExprLog.xml\n </qcCompareExprResult>"
+cat(bplotLog, sep = "\n")
+@
+As there was only one function compared, there is only one
+\texttt{qcCompareExprResult} listed. As for when files and functions
+are plotted, the \R{} representation of this contains complete
+information, so it will contain all of the information from the listed
+\texttt{qcCompareExprResult}.
+%-unpaired files or funs
+%-logs example
+
+\section{Auto-detection of logs} % plot AND compare logs
+One of the features the package provides when comparing (and even
+reporting) sets is the ability to auto-detect log files. An example of
+this is if two \texttt{qcPlotFunResult} objects needed to be compared,
+there are a couple of ways of specifying the groups. If the objects
+were created in the current \R{} session, these can be given for the
+\texttt{test} and \texttt{control} arguments to \texttt{compare()}. If
+they were not, one can specify the path of the directory that contains
+the log file to compare to. The `most important' log file will then be
+searched for in the directory and read as an \R{} object and returned,
+where \texttt{qcPlotFunResult} and \texttt{qcPlotFileResult} objects
+are considered more important than \texttt{qcPlotExprResult} objects
+as they will contain them. Objects of class
+\texttt{qcPlotPackageResult} would be considered most important. The
+way for specifying these can be mixed-and-matched, for example the
+\texttt{test} group could be an \R{} object while the \texttt{control}
+group could be specified as the path to the file to compare. This
+works as long as the resulting classes for \texttt{test} and
+\texttt{control} are the same. If they are not, an error is given. In
+the case where the log file is an ambiguous choice, an error is also
+given, for example if the same folder was given for the \texttt{test}
+group and for the \texttt{control} group, even if two separate files
+are detected, it is unclear which should be the test group and which
+should be the control.
+An example of this in use is given in section~\ref{sec:gridCompare}.
+
+%- One of the features.. easier for users (especially when comparing in
+%separate versions of \R{} and having to find the exact file name).
+\section{Extensibility for new file formats}
+\label{sec:extensibility}
+In section~\ref{sec:textvsbitmap} it was briefly discussed why it is
+necessary to have format dependent comparisons. As a result, each
+supported format has its own function defined for how to carry out the
+comparison. Due to how this has been coded, it is easily extensible
+for developers to add new formats. The function called to compare two
+plots is dependent on what the current format being compared is. For
+example if the current format was \texttt{png}, then the function that
+gets called to perform the comparison is \texttt{comparePNG()}. That
+is, the word \texttt{compare} with the format being compared in
+uppercase appended on, \texttt{PNG}. So if a new format were to be
+supported by \graphicsqc{}, the only change necessary for comparing
+the format would be a new, appropriately named function.
+%- use of mapply in compareType nested in lapply in compareExpr (give
+%some gory details!?) - allows for compareNEWTYPE where the function
+%will get automatically called with the new filetype (plus would need
+%to include the filetype in the `valid filetypes' list for plotting..).
 
 \chapter{Generating Reports}
 \label{chap:report}
+Once comparisons have been performed, the results are stored in XML
+files. At this point, users of the package may wish to take the
+process entirely out of \R{} or do anything they like with them. One
+option is to dynamically generate a report based on the
+comparisons. As the data are stored in XML files, there is a language
+defined that is useful for transforming XML documents into other
+types of documents. This language, XSL, and how it is used to
+transform the log files into HTML reports are described in the
+following sections.
 
-\section{The XSL Language}
-- stylesheet language for xml. Define templates of how to display elements.
+\section{HTML Reports}
+Depending on the comparison performed, there is generally a large
+amount of information to report on. The nature of how the log files
+are stored reflects well with the natural nature of HTML where
+different pages are connected to each other via links. For example
+\texttt{qcPlotFunResult} logs typically refer to other
+\texttt{qcCompareExprResult} logs. They also refer to different plots,
+which can be linked to and displayed within an HTML page. There is
+also a very natural way of transforming the log files from XML into
+HTML which is described in section~\ref{sec:xml2html}. Web browsers
+are very widespread, so most users will be able to view HTML pages.
 
-\section{Transforming XML logs into HTML reports}
-- logs are in xml, xslt seems the perfect choice (remember, this
-option is left open for other users). some default style sheets are
-provided, but are easily overwritten!
+\subsection{The XSL Language}
+The e\textbf{X}tensible \textbf{S}tylesheet \textbf{L}anguage (XSL) is
+a functional language used to define transformations of XML files into
+other formats. This is also sometimes referred to as XSLT. In XSL,
+styles, or templates, are created defining how to display
+elements. The XML document is traversed, with the appropriate
+templates applied to each element. It also makes use of the XPath
+language to address separate parts of the XML document, which is
+particularly useful when selecting nodes out of the order they are
+stored. The XSL language provides the efficiency and tools necessary
+to transform the XML logs into HTML reports.
+% Citation needed?
+%- stylesheet language for xml. Define templates of how to display elements.
 
-.. uses \cite{sxslt}.
+\subsection{Transforming XML logs into HTML reports}
+\label{sec:xml2html}
+In order for the XML logs to be transformed into HTML reports, XSL
+stylesheets must be provided to define the transformation. Stylesheets
+for all of the objects produced by the \graphicsqc{} package are
+distributed with the package. These can be seen as being examples of a
+set of possible stylesheets, as the user of the package is able to
+specify their own stylesheets to use for the transformation.
+
+In order to use XSLT from within \R{}, the \textbf{Sxslt} package is
+required \citep{lan07}. The package provides an interface to the
+libxslt translator, and also allows XSLT to use \R{}
+functions. Currently, the \textbf{Sxslt} package is \emph{not}
+supported on the Windows platform.
+
+The function \texttt{writeReport()} generates an HTML report from its
+first argument, \texttt{qcResult}. If the function is given a `more
+important' object, for example a \texttt{qcPlotFunResult} object, it
+will produce an HTML report for the current object, as well as all
+objects that the the current object refers to. This is because the
+page that is generated links to the sub-objects that are referred to
+in case the user wishes to see more detail. That is, for every XML log
+file that is referred to, a corresponding HTML file will be created
+with the same name, but with the \texttt{.html} extension. The
+\texttt{writeReport()} function is flexible in specifying which object
+to report on. It can accept either the \R{} object, the path to the
+log file, or even auto-detect from a directory. If a directory is
+given, first any comparison log files are searched for, followed by
+log files created by plots, in decreasing order of `importance'. Each
+object that is reported on has the appropriate stylesheet applied,
+however the default stylesheets can be overwritten by specifying the
+path to the desired stylesheets by the \texttt{xslStyleSheets}
+argument. An example of the report generated from the
+`\texttt{firstExample}' is given in
+figure~\ref{fig:firstExample}. Note that there was only one plot
+produced for two file formats, with no warnings or errors. The table
+is sized appropriately for the number of plots and includes warnings
+or errors if there are any. An example of a report generated from a
+function comparison result is given in section~\ref{sec:gridReport}.
+<<firstReport, echo=FALSE, results=hide>>=
+writeReport(first)
+@
+<<firstReport2, eval=FALSE>>=
+writeReport(first)
+@
+\begin{figure}
+  \centering
+    \includegraphics{firstPlotExpr}
+  \caption{Report on a \texttt{qcPlotExprResult} object.}
+  \label{fig:firstExample}
+\end{figure}
+%-running down plotFun -> plotExpr producing reports
+%- sxslt not yet ported to windows.
+%- logs are in xml, xslt seems the perfect choice (remember, this
+%option is left open for other users). some default style sheets are
+%provided, but are easily overwritten! defined for plots* and
+%comparisons
+%.. uses \citep{lan07}.
+
 \chapter{A real example: \textbf{grid}}
 \label{chap:grid}
+ % too much detail in first sentence?
+In revision 44417 of \R{} an anisotropy correction was added to how
+xsplines are drawn. It was expected that this would only affect the
+bitmap formats (PNG), but not the text-based formats (PostScript and
+PDF). The magnitude of the effects were also not known. The
+\graphicsqc{} package was used to compare revision 44417 of \R{}
+against the previous, 44416, to establish what effects this change
+might have had on the \textbf{grid} package.
 
+%- comparing revision 44416... anisotropy change.
 \section{Plotting functions in the \textbf{grid} package}
-- ls("package:grid") (of course, don't show everything)
+As a \texttt{plotPackage()} function has not been implemented, the
+\textbf{grid} package cannot be directly plotted. A close
+approximation is to simply plot all of the functions exported by the
+package. This would have to be done under both revisions of \R{} as
+outputs from both will need to be compared. An example used under
+revision 44417 is given below.
+<<plotGrid, eval=FALSE>>=
+grid44417 <- plotFunction(ls("package:grid"),
+                          filetype = c("pdf", "ps", "png"),
+                          path="~/tests/R44417")
+@
+%  - ls("package:grid") (of course, don't show everything)
+With a similar command used in revision 44416.
 
 \section{Comparing the \textbf{grid} functions}
-- maybe show the print.qcCompareExpr result for one of the functions
-(even though it doesn't fully work..)?
+\label{sec:gridCompare}
+Once both the test and control groups have been created, they can be
+tested for differences. Revision 44416 is considered to be the control
+group, prior to the change, and 44417 to be the test group. The
+comparison will be performed under revision 44417, however the
+revision under which the comparison is performed will not make a
+difference. As the \R{} object for the control group is in a different
+\R{} session, the directory containing the control group can be given
+for the \texttt{control} argument and auto-detect will find the
+correct log. Thus, to do the comparison one could use a command such
+as that given below.
+<<compareGrid, eval=FALSE>>=
+gridCompare <- compare(test = grid44417,
+                       control = "~/tests/R44416")
+@
 
 \section{Reporting on the differences in \textbf{grid}}
-- print screen from firefox? any better way? link to example on
-http://graphicsqc.r-forge.r-project.org?
+\label{sec:gridReport}
+As the comparison is complete, \texttt{writeReport()} can be used on
+the resulting comparison object to generate an HTML report of the
+comparison. For example:
+\begin{verbatim}
+> writeReport(gridCompare)
+[1] "/home/stephen/tests/R44417/absolute.size-compareFunLog.html"
+\end{verbatim}
+which gives the path to the HTML report. Note that it has the
+prefix ``absolute.size'' because that is the first function in the list
+of functions which were compared.
+
+Some of the output from the report can be seen in figures
+\ref{fig:reportGrid1}, \ref{fig:reportGrid2}, \ref{fig:reportGrid3},
+\ref{fig:reportGrid4} and \ref{fig:reportGrid5}. It is worth noting
+that all of the links are active, so the user can view reports from
+individual comparisons and the plots produced.
+
+It was previously mentioned that some changes were expected. Some
+plots of functions did exhibit some change in the \texttt{png} format
+as shown in figure~\ref{fig:reportGrid2}, but not in other formats, as
+shown in the break-down of the \texttt{arcCurvature()} comparison in
+figure~\ref{fig:reportGrid6}. The \texttt{seekViewport()} function
+however had differences in all three formats being tested.
+
+In figure~\ref{fig:compGrid}, the test and control group plots for the
+\texttt{grid.xspline()} function are both shown side-by-side. They
+were reported as having a difference, but this might not be
+immediately obvious. The image highlighting the differences is given
+in figure~\ref{fig:xsplineDiff}. The image shows that all of the
+curves have been `nudged' down slightly. It has been discovered this
+effect is connected with the users' setup for their \texttt{X}
+windowing system. When \texttt{X} is set up properly, there is no
+effect, but depending on on the \texttt{X} set up, the effect can be
+much more noticeable. As to why \texttt{seekViewport()} had changes in
+formats other than \texttt{png} is still being investigated.
+
+\begin{figure}
+  \centering
+    \includegraphics[width=12cm, keepaspectratio=TRUE]{reportGrid1}
+  \caption{Report of \textbf{grid} comparison.}
+  \label{fig:reportGrid1}
+\end{figure}
+
+\begin{figure}
+  \centering
+    \includegraphics[width=12cm, keepaspectratio=TRUE]{reportGrid2}
+  \caption{Report of \textbf{grid} comparison.}
+  \label{fig:reportGrid2}
+\end{figure}
+
+\begin{figure}
+  \centering
+    \includegraphics[width=12cm, keepaspectratio=TRUE]{reportGrid3}
+  \caption{Report of \textbf{grid} comparison.}
+  \label{fig:reportGrid3}
+\end{figure}
+
+\begin{figure}
+  \centering
+    \includegraphics[width=12cm, keepaspectratio=TRUE]{reportGrid4}
+  \caption{Report of \textbf{grid} comparison.}
+  \label{fig:reportGrid4}
+\end{figure}
+
+\begin{figure}
+  \centering
+    \includegraphics[width=12cm, keepaspectratio=TRUE]{reportGrid5}
+  \caption{Report of \textbf{grid} comparison.}
+  \label{fig:reportGrid5}
+\end{figure}
+
+\begin{figure}
+  \centering
+    \includegraphics[width=12cm, keepaspectratio=TRUE]{reportGrid6}
+  \caption{Report of \texttt{arcCurvature()} comparison.}
+  \label{fig:reportGrid6}
+\end{figure}
+
+\begin{figure}
+ \centerline{
+   \fbox{\includegraphics[width=3.00in,keepaspectratio=TRUE]{grid-xspline-1-test}}
+   \fbox{\includegraphics[width=3.00in,keepaspectratio=TRUE]{grid-xspline-1-control}}
+ }
+ \caption{Respective test and control plots from \texttt{grid.xspline()}.}
+ \label{fig:compGrid}
+\end{figure}
+
+\begin{figure}
+  \centering
+    \includegraphics[width=10cm, keepaspectratio=TRUE]{grid-xspline-diff}
+  \caption{Differences in \texttt{grid.xspline()} between revisions.}
+  \label{fig:xsplineDiff}
+\end{figure}
+%- print screen from firefox? any better way? link to example on
+%http://graphicsqc.r-forge.r-project.org?
 
 \chapter{Summary and discussion}
-can't supply all model output...?
+The \graphicsqc{} package was developed to help ensure quality control
+for graphics in \R{}. It is capable of evaluating arbitrary code to
+produce plots based on expressions, files, or examples from
+functions. It can then compare sets of plots for differences, and
+produce images highlighting the differences if there were any. HTML
+reports can be dynamically generated from the results of plots or
+comparisons. All the information related to plots and comparisons are
+stored in an open format, allowing for the ability to read the
+information in the future, and freedom of choice for users who may
+choose to report on the information in a different way.
 
-- what's been done?
-  + new package
-  + plots stuff, compares stuff, pretty neat report
-- what can be improved?
-  + plot/compare/writeReport package
-  + print<lots>
-  + compare(erase)
-  + DTDs for logs
-  + completely unpaired fun/file
-  + mac (XML doesn't work)? windows (Sxslt not ported to windows!)
-                            few developers.
+An example was given showing how the package has already been useful
+for identifying changes in the graphics generated by the \textbf{grid}
+package. The example also showed that the package is only useful for
+detecting changes in graphics output, but cannot identify \emph{why}
+changes occur.
 
-% A powerful method of doing regression testing for graphics has been
-% implemented in \R{}. The current method consists of generating sets of
-% plots for the control and test groups, and then comparing them. It is
-% a major improvement on earlier work as it is now platform independent,
-% able to run any arbitrary code, and able to produce plots of
-% differences. It significantly improves the reliability and quality of
-% graphics testing in \R{}.
+There is still further work to be done in the \graphicsqc{} package
+for improving its ability to ensure quality control for graphics in
+\R{}. Mainly, the ability to plot and compare entire packages would
+greatly enhance the package's usability. Adding more graphics devices,
+and the ability to specify formats for each graphic device to use
+would add more cases for the package to check, so would be more useful
+in identifying changes. Both of these tasks have been made easier as
+the style of coding used throughout the package has been to allow for
+extensibility. Lastly, extending the package to work on platforms
+other than GNU/Linux to help ensure quality control for graphics in
+other platforms. This is considered a more long-term goal as it is
+hindered by the \textbf{XML} package which does not fully work on
+Mac OS, and by \textbf{Sxslt} which has not been ported to MS Windows.
+% can't supply all model output...?
 
-% The current implementation still has much room for improvement. Using
-% the current implementation as a base, the package could be extended to
-% include a function to plot and compare entire packages, which will
-% simply be an extension of the current functions which plot and compare
-% other functions. A function to write a report (such as an HTML report)
-% based on the comparisons would also be a useful addition to the
-% package. Lastly a wrapper class to combine plotting, comparing, and
-% reporting into one step would be a clear finalisation of the package.
+%- what's been done?
+%  + new package
+%  + plots stuff, compares stuff, pretty neat report
+%- how did it work out? grid example?
+%- what can be improved?
+%  + plot/compare/writeReport package
+%  + print<lots>
+%  + compare(erase)
+%  + DTDs for logs
+%  + completely unpaired fun/file
+%  + mac (XML doesn't work)? windows (Sxslt not ported to windows!)
+%                            few developers.
 
 %\appendix
 \clearpage
@@ -570,12 +1082,12 @@ can't supply all model output...?
 \chapter*{Documentation}
 The latest version of the package can be installed from within \R{} via the
 following command:
-<<eval=FALSE>>=
-install.packages("graphicsQC", repos="http://R-Forge.R-project.org")
-@
-Noting that the \textsf{XML} package is a dependency, so must also be
-installed, and \textsf{Sxslt} must also be installed if \textsf{HTML}
-reports are desired.
+\begin{verbatim}
+> install.packages("graphicsQC", repos="http://R-Forge.R-project.org")
+\end{verbatim}
+Noting that the \textbf{XML} package is a dependency, so must also be
+installed, and \textbf{Sxslt} must also be installed if HTML reports
+are desired.
 
 The latest version of the package can also be downloaded in unix directly from
 the Subversion repository, when issuing a command such as:
@@ -585,17 +1097,19 @@ svn checkout svn://svn.r-forge.r-project.org/svnroot/graphicsqc
 at the unix prompt.
 
 To download the current revision at the time of printing (revision
-??), the following command can be used:
+60), the following command can be used:
+\begin{small}
 \begin{verbatim}
-svn checkout --revision ?? svn://svn.r-forge.r-project.org/svnroot/graphicsqc
+svn checkout --revision 60 svn://svn.r-forge.r-project.org/svnroot/graphicsqc
 \end{verbatim}
-
+\end{small}
 The rest of the in-\R{} documentation follows on the next page.
 \nocite{R}
+\nocite{ihagen96}
 \clearpage
+\setcounter{page}{35}
 \addcontentsline{toc}{chapter}{Bibliography}
 \bibliographystyle{plainnat}
 \bibliography{references}
-% include references to XML and Sxslt from R News?
 
 \end{document}

@@ -6,10 +6,10 @@
 #
 # compare()
 #
-# compare will take two(?) image files of the same format and identify
-# any differences in the files.
-# compare has the option of deleting the test file and the model file
-# once the comparison has been made, and then to retain files if they
+# compare will take two qcPlot* objects of the same class and identify
+# any differences in the plots they produced.
+# compare has the option of deleting the test files and the model files
+# once the comparison has been made, or to retain files if they
 # are different.
 #
 # --------------------------------------------------------------------
