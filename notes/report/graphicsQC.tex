@@ -4,7 +4,7 @@
 \usepackage{makeidx}
 \makeindex{}
 \begin{document}
-\setcounter{page}{27}
+\setcounter{page}{28}
 \chapter*{}
 \begin{center}
 {\textbf{\huge Package `graphicsQC' documentation}}
@@ -150,12 +150,12 @@ encountered, the code will continue being evaluated.
 
 The name for the log file is based on the first prefix and the type of
 function producing the plots. For \code{plotExpr} XML logs, 1 log file
-will be produced with a name like \sQuote{prefix-log.xml}.
+will be produced with a name of the form \sQuote{prefix-log.xml}.
 \code{plotFile} and \code{plotFunction} work by making multiple calls
 to \code{plotExpr}, so will produce \code{plotExpr} logs (one for each
 file or function respectively), as well as their own log, which will
-be named (using the first prefix) like \sQuote{prefix-fileLog.xml} and
-\sQuote{prefix-funLog.xml} respectively.
+be named (using the first prefix) with the format \sQuote{prefix-fileLog.xml}
+and \sQuote{prefix-funLog.xml} respectively.
 
 Currently supported file formats are \sQuote{pdf}, \sQuote{png}, and
 \sQuote{ps}.
@@ -276,10 +276,10 @@ warning etc.).
 
 For each set of plot-logs being compared, a comparison log will be
 produced. So for each pair of qcPlotExprResult logs being compared, a
-comparison log will be produced with a name like
+comparison log will be produced with a name of the form
 \sQuote{testPrefix+controlPrefix-compareExprLog.xml}. When comparing
 qcPlotFileResults or qcPlotFunctionResults there will also be a
-compareFileLog or compareFunLog produced which will take a name like
+compareFileLog or compareFunLog produced which will take a name of the form
 \sQuote{testPrefix+controlPrefix-compareFunLog.xml}, where the
 testPrefix and controlPrefix are chosen from the first prefixes in the
 set of compareExprLogs being compared (which in turn come from the first

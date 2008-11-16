@@ -43,7 +43,14 @@ echo $contents; } ?>
 
 <!-- end of project description -->
 
-<p> No content added. </p>
+<p>
+A report made for the package can be found <a href="report.pdf">here</a>.
+The "grid" example referred to in the report can be found <a href="gridExample.tar.gz">here</a>.
+</p>
+
+<p>
+The latest version of the package can be downloaded <a href="http://r-forge.r-project.org/src/contrib/graphicsQC_0.9.tar.gz">here</a>.
+</p>
 
 <p> The <strong>project summary page</strong> you can find <a href="http://<?php echo $domain; ?>/projects/<?php echo $group_name; ?>/"><strong>here</strong></a>. </p>
 

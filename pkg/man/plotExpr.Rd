@@ -50,12 +50,12 @@
 
   The name for the log file is based on the first prefix and the type of
   function producing the plots. For \code{plotExpr} XML logs, 1 log file
-  will be produced with a name like \sQuote{prefix-log.xml}.
+  will be produced with a name of the form \sQuote{prefix-log.xml}.
   \code{plotFile} and \code{plotFunction} work by making multiple calls
   to \code{plotExpr}, so will produce \code{plotExpr} logs (one for each
   file or function respectively), as well as their own log, which will
-  be named (using the first prefix) like \sQuote{prefix-fileLog.xml} and
-  \sQuote{prefix-funLog.xml} respectively.
+  be named (using the first prefix) with the format \sQuote{prefix-fileLog.xml}
+  and \sQuote{prefix-funLog.xml} respectively.
 
   Currently supported file formats are \sQuote{pdf}, \sQuote{png}, and
   \sQuote{ps}.

@@ -74,11 +74,11 @@ compare(test, control, path = test$info$directory,
 
   For each set of plot-logs being compared, a comparison log will be
   produced. So for each pair of qcPlotExprResult logs being compared, a
-  comparison log will be produced with a name like
+  comparison log will be produced with a name of the form
   \sQuote{testPrefix+controlPrefix-compareExprLog.xml}. When comparing
   qcPlotFileResults or qcPlotFunctionResults there will also be a
-  compareFileLog or compareFunLog produced which will take a name like
-  \sQuote{testPrefix+controlPrefix-compareFunLog.xml}, where the
+  compareFileLog or compareFunLog produced which will take a name of the
+  form \sQuote{testPrefix+controlPrefix-compareFunLog.xml}, where the
   testPrefix and controlPrefix are chosen from the first prefixes in the
   set of compareExprLogs being compared (which in turn come from the first
   plotExpr logs). These logs are placed in \code{path}.
