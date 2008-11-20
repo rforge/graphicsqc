@@ -1,30 +1,351 @@
 \documentclass[]{beamer}
 \usetheme{Warsaw}
+\newcommand{\R}{\textsf{R}{}}
 
 \author{Stephen Gardiner}
-\date{November 2008}
-\title{Quality Control for Graphics in R}
-\institute{Department of Statistics, University of Auckland}
+\date{}
+\title{Quality Control for Graphics in \R{}}
+\subtitle{The \textbf{graphicsQC} package}
+\institute{BSc(Hons) Project\\
+Supervised by Dr.\ Paul Murrell\\[0.5cm]
+Department of Statistics\\
+The University of Auckland}
 
 \begin{document}
 
 \frame{\titlepage}
 
 \section[Outline]{}
-\frame{\tableofcontents}
+\frame{\tableofcontents} % same time i'll illustrate how the package works by using grid example
 
-\section{Introduction}
-\label{sec:introduction}
+\section{Motivation}
+
+\begin{frame}
+  \frametitle{Motivation}
+  \begin{itemize}
+  \item New version of \R{} or some plotting functions improved
+    % or even underlying device changes...
+    \begin{itemize}
+    \item Are the plots created still the same??
+      % If had a more efficient way for drawing curves, would they
+      % still be `correct'?
+    \end{itemize}
+  \end{itemize}
+  % How many plots to make? There are -many- of example() plots.
+\end{frame}
+
+\begin{frame}
+  \begin{center}
+    Is there a difference?
+  \end{center}
+  \begin{figure}
+ \centerline{
+   \fbox{\includegraphics[width=2.1in,keepaspectratio=TRUE]{Figures/grid-xspline-1-test}}
+   \fbox{\includegraphics[width=2.1in,keepaspectratio=TRUE]{Figures/grid-xspline-1-control}}
+ }
+  \end{figure}
+  \begin{center}
+  We'll come back to this.
+  \end{center}
+  % in these plots .. what about other plots?
+  % we'll come back to this later
+  % so there's obviously a problem.. need to check this..
+\end{frame}
+
+\section{Quality Control}
+
+\begin{frame}
+  \frametitle{What is ``Quality Control''?}
+  \begin{itemize}
+  \item Really just software testing
+    \begin{itemize}
+    \item No errors
+    \item Correct output
+    \end{itemize}
+    % There is QA which is involved with the -process-
+  \item For graphics, this is ensuring the output stays the same as
+    some initial, correct (control) output
+    \begin{itemize}
+    \item This is called \emph{regression testing}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Existing QC for \R{}}
+  Surely \R{} already has some method of checking the graphics?
+  \begin{itemize}
+  \item \texttt{R CMD check} only checks code and output from the code
+    --- no graphics checking
+  \item \texttt{make check} has some hard-coded examples for
+    PostScript only
+  \item A similarly named \textbf{graphicsQC} package Paul made\ldots
+  \end{itemize}
+  % also describe make check -- tests output from code as well
+\end{frame}
+
+\begin{frame}
+  \frametitle{Paul's \textbf{graphicsQC} package}
+  \begin{itemize}
+  \item Really just a proof-of-concept package
+  \item Ran \texttt{example()} code from functions into a directory then compared
+  \item Listed files which were different --- no other information
+    reported except for \texttt{png} format which had plots of
+    \emph{just} the differences
+  \item Very little error checking
+  \item Needed a complete re-write\ldots
+  \end{itemize}
+%plots code from functions into directories then compares
+%named which files had differences.. if png then produced a -diff- plot
+\end{frame}
+
+\begin{frame}
+  \frametitle{A motivating example} Between revisions 44416 and 44417
+  of \R{} (when version 2.7.0 was under development), an anisotropy
+  change was made to \R{}. A change was expected for the raster
+  formats (i.e. \texttt{png}), but not for the vector formats
+  (i.e. \texttt{PostScript and PDF}). It was of interest to see what
+  changes this may have on the \textbf{grid} package.
+\end{frame}
+
+\section{The graphicsQC package}
+
+\begin{frame}
+  \frametitle{The \textbf{graphicsQC} package}
+  Three main things need to be done:
+  \begin{itemize}
+  \item Create plots (in possibly many file formats) --- so evaluate
+    \emph{any} code and record which plots were created
+  \item Compare sets of plots
+  \item Report the results
+  \end{itemize}
+  Each of these will now be discussed in turn.
+\end{frame}
+
+\subsection{Plotting arbitrary expressions}
+\begin{frame}[containsverbatim]
+  \frametitle{Plotting arbitrary expressions}
+  Created function \texttt{plotExpr()}.
+  Evaluate code for each graphics device specified
+  \begin{itemize}
+  \item continue on warnings
+  \item stop evaluation for given device on errors, but continue
+    functioning $\rightarrow$ uses \texttt{tryCatch} mechanism
+  \end{itemize}
+  i.e. \verb|firstExample <-|
+       \verb| plotExpr(c("y=10", "x=5", "plot(1:10)"),|
+       \verb|             filetype = c("pdf", "ps", "png"),|
+       \verb|             prefix = "myPlots",|
+       \verb|             path = "/tmp/myDir")|
+
+  Records information, warnings, errors, and which plots were
+  created into an XML `log' file.
+
+  %need to evaluate code, even if it doesn't produce any plots
+  %different file formats
+  %information stored in XML logs (using XML package)
+\end{frame}
 
 \begin{frame}[containsverbatim]
-  \frametitle{Title}
-  \framesubtitle{Subtitle}
-@
-<<oneToTen>>=
+  \verb|> firstExample|
+  \begin{verbatim}
+plotExpr Result:
+Call:	 plotExpr(c("y=10", "x=5", "plot(1:10)"),
+filetype = c("pdf", "ps", "png"), prefix =
+"myPlots", path = "/tmp/myDir")
+R version:	 R version 2.6.2 (2008-02-08)
+Directory:	 /tmp/myDir
+Filename:	 myPlots-log.xml
+Formats:
+  pdf :  Plots: myPlots-1.pdf
+  ps :	  Plots: myPlots-1.ps
+  png :  Plots: myPlots-1.png
+  \end{verbatim}
+\end{frame}
 
-1:10
+\begin{frame}[containsverbatim]
+  \frametitle{Example XML log produced}
+\begin{small}
+\begin{verbatim}
+<?xml version="1.0"?>
+<qcPlotExprResult>
+ <info>
+  <OS>unix</OS>
+  <Rver>R version 2.6.2 (2008-02-08)</Rver>
+  <date>Wed Nov 19 15:40:48 2008</date>
+  <call>
+   <![CDATA[
+   plotExpr(c("y=10", "x=5", "plot(1:10)"),
+filetype = c("pdf",     "ps", "png"), prefix =
+"myPlots", path = "/tmp/myDir")   ]]>
+  </call>
+  <directory>/tmp/myDir</directory>
+  <logFilename>myPlots-log.xml</logFilename>
+ </info>
+\end{verbatim}
+\end{small}
+\end{frame}
 
-@
+\begin{frame}[containsverbatim]
+\begin{verbatim}
+<plots type="pdf">
+  <warnings/>
+  <error/>
+  <plot>myPlots-1.pdf</plot>
+ </plots>
+<plots type="ps">
+  <warnings/>
+  <error/>
+  <plot>myPlots-1.ps</plot>
+ </plots>
+ <plots type="png">
+  <warnings/>
+  <error/>
+  <plot>myPlots-1.png</plot>
+ </plots>
+</qcPlotExprResult>
+\end{verbatim}
+\end{frame}
+
+\begin{frame}
+  We want to plot more than just a couple of expressions. Plotting
+  files and functions are just extensions of expressions.
+  \begin{itemize}
+  \item \texttt{plotFile()} - one file is one set of ``expressions'',
+    2 files are 2 sets, etc.
+  \item \texttt{plotFunction()} - one call to \texttt{example()} for
+    each function. Each call is an expression.
+  \end{itemize}
+  So each just makes multiple calls to \texttt{plotExpr()}!
+  Both produce similar XML log files with links (paths) to each set of
+  expressions produced.
+  % that is, each calls plotExpr()
+\end{frame}
+
+\begin{frame}[containsverbatim]
+  \frametitle{grid example}
+  So, to plot the functions from \textbf{grid}:
+\begin{verbatim}
+> grid44417 <-
+   plotFunction(ls("package:grid"),
+                filetype = c("pdf", "ps", "png"),
+                path="~/tests/R44417")
+\end{verbatim}
+% prefix defaults to function name
+% has to be done in both revisions
+\end{frame}
+
+\subsection{Comparing sets of plots}
+\begin{frame}
+  \frametitle{Comparing sets of plots}
+  % process is broken down.. plotFun is just a bunch of plotExpr's being compared
+  \begin{itemize}
+  \item GNU \texttt{diff} is used to compare plots
+  % assumed on R's supported platforms according to R coding standards
+  \item Plots are pairwise compared by filetype with `unpaired' files
+    split into a separate section
+  \item Any warnings and errors compared
+  \item Plots highlighting the differences created if files are
+    different and ImageMagick is installed
+  \item Results stored in XML log files
+  \end{itemize}
+  % imagemagick is free, open source, installed as standard on many unix distros.
+\end{frame}
+
+\begin{frame}[containsverbatim]
+  Comparing the \textbf{grid} functions:
+\begin{verbatim}
+> gridCompare <- compare(test = grid44417,
+                         control = "~/tests/R44416/")
+\end{verbatim}
+% auto-detect log files
+\end{frame}
+
+\subsection{Reporting on whats been done}
+\begin{frame}
+   \frametitle{Reporting}
+   \begin{itemize}
+   \item We need a dynamically generated report to present the
+     information from plots and comparisons.
+   \item Data stored in XML with \emph{links} to other files
+   \item HTML the obvious choice?
+     \begin{itemize}
+     \item Aiding this, XSL language is designed specifically for
+       transforming XML into other formats (typically HTML)
+     \item \textbf{Sxslt} package to use XSL from \R{}
+     \end{itemize}
+   \end{itemize}
+   % Apply your own stylesheet, some defaults provided..
+\end{frame}
+
+\begin{frame}[containsverbatim]
+  \frametitle{Reporting on grid}
+\begin{small}
+\begin{verbatim}
+> writeReport(gridCompare)
+[1] "/home/stephen/tests/R44417/absolute.size-compareFunLog.html"
+\end{verbatim}
+\end{small}
+Here's one I prepared earlier\ldots
+\end{frame}
+
+\begin{frame}
+  \frametitle{The answers to the first example}
+   \begin{figure}
+     \centerline{
+       \fbox{\includegraphics[width=2.1in,keepaspectratio=TRUE]{Figures/grid-xspline-1-test}}
+       \fbox{\includegraphics[width=2.1in,keepaspectratio=TRUE]{Figures/grid-xspline-1-control}}
+     }
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \begin{center}
+      \fbox{\includegraphics[width=2.8in,keepaspectratio=TRUE]{Figures/grid-xspline-1-test}}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \begin{center}
+    \fbox{\includegraphics[width=2.8in,keepaspectratio=TRUE]{Figures/grid-xspline-1-control}}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \begin{center}
+    \fbox{\includegraphics[width=2.8in,keepaspectratio=TRUE]{Figures/grid-xspline-1-png+grid-xspline-1-png}}
+  \end{center}
+\end{frame}
+
+\section{Conclusions}
+\begin{frame}
+\frametitle{Conclusions}
+  \begin{itemize}
+  \item Quality Control for Graphics in \R{} can now be a more automated process.
+  \item Open standards used at all stages --- users can take the
+    process out of \R{} wherever they want, whenever they want.
+  \item Useful for detecting changes but cannot identify \emph{why} the changes occur.
+  \item Future improvements include \texttt{plotPackage()} and platform independence.
+  % use of coding has been extensible - just a combination of plotFile and plotFunction
+  % XML doesn't work properly on mac, Sxslt not ported to windows.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Acknowledgements}
+  \begin{itemize}
+  \item I would like to thank Paul for his ongoing guidance, support, and positive enthusiasm.
+  \item Duncan Temple Lang for the \textbf{XML} and \textbf{Sxslt}
+    packages on which \textbf{graphicsQC} depends and suggests
+    respectively
+  \item ImageMagick Studio
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \begin{center}
+    {\Huge Any Questions?}
+  \end{center}
 \end{frame}
 
 \end{document}
