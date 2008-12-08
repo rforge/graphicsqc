@@ -21,7 +21,7 @@
 # containing the doc)
 # --------------------------------------------------------------------
 `writeReport` <-
-function(qcResult, xslStyleSheets = NULL)
+function(qcResult, browse = TRUE, xslStyleSheets = NULL)
 {
     library(Sxslt)
     #SxsltInitializationFunction()
@@ -62,7 +62,11 @@ function(qcResult, xslStyleSheets = NULL)
     }
 
     # Now we have the highest level R object we want to report on.
-    report(qcResult, xslStyles)
+    filename <- report(qcResult, xslStyles)
+    if (browse) {
+        browseURL(filename)
+    } 
+    filename
 }
 
 # --------------------------------------------------------------------

@@ -58,7 +58,8 @@
   and \sQuote{prefix-funLog.xml} respectively.
 
   Currently supported file formats are \sQuote{pdf}, \sQuote{png}, and
-  \sQuote{ps}.
+  \sQuote{ps} (and \sQuote{bmp} on Windows).  If the \code{filetype}
+  argument is \code{NULL}, all valid file formats are produced.
 
 }
 \value{

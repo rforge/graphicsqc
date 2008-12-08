@@ -96,7 +96,8 @@ function(test, control, path, erase)
     results[["unpaired"]] <- filePairs[["unpaired"]]
     info <- list("OS" = .Platform$OS.type, "Rver" =
                  version[["version.string"]], "date" = date(),
-                 "call" = paste(deparse(sys.call(1)), collapse = ""),
+                 "call" = paste(deparse(sys.call(sys.parent())),
+                   collapse = ""),
                  "path" = normalizePath(path.expand(path)),
                  "testDirectory" = test[["info"]][["directory"]],
                  "controlDirectory" = control[["info"]][["directory"]],
@@ -127,7 +128,8 @@ function(test, control, path, erase, type)
                       SIMPLIFY = FALSE)
     info <- list("OS" = .Platform$OS.type, "Rver" =
                  version[["version.string"]], "date" = date(),
-                 "call" = paste(deparse(sys.call(1)), collapse = ""),
+                 "call" = paste(deparse(sys.call(sys.parent())),
+                   collapse = ""),
                  "path" = normalizePath(path.expand(path)),
                  "logFilename" =
                  paste(unlist(strsplit(results[[1]][["testInfo"]][[

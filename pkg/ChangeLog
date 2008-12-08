@@ -1,3 +1,17 @@
+2008-11     Paul Murrell <paul@stat.auckland.ac.nz>
+
+* makeplots.R: 
+	(): Changed how "call" is calculated 
+	(plotExpr): Changed meaning of default value of 'filetype';  
+		default is still NULL, but now that means produce 
+		ALL available formats
+	
+* compare.R: 
+	(): Changed how "call" is calculated 
+
+* report.R:
+	(writeReport): Added 'browse' arg so automatically opens browser.
+	
 2007-11-10  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
 
 * DESCRIPTION: Changed the name of the package to ``graphicsQC''.

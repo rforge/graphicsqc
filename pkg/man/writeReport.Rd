@@ -6,7 +6,7 @@
   \code{qcPlot*}, or \code{qcCompare*} results.
 }
 \usage{
-  writeReport(qcResult, xslStyleSheets = NULL)
+  writeReport(qcResult, browse = TRUE, xslStyleSheets = NULL)
 }
 \arguments{
   \item{qcResult}{one of:
@@ -17,6 +17,10 @@
         will be auto-detected and then reported on (note that first
         comparison logs are searched for, then plot logs).
     }
+  }
+  \item{browse}{ A logical value indicating whether \R
+    should automatically open a browser to view the final
+    report.
   }
   \item{xslStyleSheets}{a named list specifying which XSL style sheets
     to override by giving the name of the style sheet to override, and

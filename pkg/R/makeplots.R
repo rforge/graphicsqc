@@ -2,6 +2,14 @@
 # makeplots.R
 # --------------------------------------------------------------------
 
+validFiletypes <- function() {
+    filetypes <- c("pdf", "png", "ps", "bmp")
+    if (.Platform$OS.type != "windows") {
+        filetypes <- filetypes[-4]
+    }
+    filetypes
+}
+
 # --------------------------------------------------------------------
 #
 # plotExpr()
@@ -19,8 +27,8 @@ function(expr, # character vector
                           # (valid) file formats
          path = NULL, # char length 1
                       # directory to create files in
-         prefix = NULL, # char length 1
-                       # file prefix
+         prefix = "graphicsqc", # char length 1
+                                # file prefix
          clear = FALSE # boolean, clear any files we might make
         )
 {
@@ -29,7 +37,11 @@ function(expr, # character vector
         expr <- unlist(expr)
 
     # Testing filetype is valid
-    filetype <- getValidFiletypes(filetype)
+    if (is.null(filetype)) {
+        filetype <- validFiletypes()
+    } else {
+        filetype <- getValidFiletypes(filetype)
+    }
     fileExtension <- paste(".", filetype, sep = "")
 
     # Testing file prefix is valid
@@ -109,10 +121,20 @@ function(expr, # character vector
     lapply(filetype, function(type)
                          evalResult[[type]]["plot"] <<- list(plots[[type]]))
 
+    call <- deparse(sys.call(sys.parent()))
+    if (length(grep("^plotExpr", call)) == 0) {
+        call <- deparse(sys.call(sys.parent(2)))
+        if (length(grep("^plotFile", call)) > 0) {
+            call <- "Called from plotFile()"
+        }
+        if (length(grep("^plotFunction", call)) > 0) {
+            call <- "Called from plotFunction()"
+        }
+    }
     info <- list("OS" = .Platform$OS.type, "Rver" =
                  version[["version.string"]], "date" = date(),
-                 "call" = paste(deparse(sys.call(1)), collapse = ""),
-                ## at some point deparse(width.cutoff) might need to be raised
+                 "call" = paste(call, collapse = "\n"),
+                 ## at some point deparse(width.cutoff) might need to be raised
                  "directory" = getwd(), "logFilename" =
                  paste(prefix, "-log.xml", sep = ""))
                  # using getwd() here forces expansion
@@ -208,10 +230,7 @@ function(filetype, expr, filenameFormat)
 function(filetypes)
 {
     filetypes <- tolower(filetypes)
-    validFiletypes <- c("pdf", "png", "ps", "bmp")
-    if (.Platform$OS.type != "windows") {
-        validFiletypes<-validFiletypes[-4]
-    }
+    validFiletypes <- validFiletypes()
 
     # check for duplications
     if (any(duplicated(filetypes))) {
@@ -281,7 +300,8 @@ function(filename, # character vector
     path <- normalizePath(path.expand(path))
     info <- list("OS" = .Platform$OS.type, "Rver" =
                  version[["version.string"]], "date" = date(),
-                 "call" = paste(deparse(sys.call(1)), collapse = ""),
+                 "call" = paste(deparse(sys.call(sys.parent())),
+                   collapse = "\n"),
                  "directory" = path,
                  "logFilename" = paste(filePrefix, "-fileLog.xml", sep = ""))
     
@@ -344,7 +364,8 @@ function(fun, # character vector
     path <- normalizePath(path.expand(path))
     info <- list("OS" = .Platform$OS.type, "Rver" =
                  version[["version.string"]], "date" = date(),
-                 "call" = paste(deparse(sys.call(1)), collapse = ""),
+                 "call" = paste(deparse(sys.call(sys.parent())),
+                   collapse = "\n"),
                  "directory" = path,
                  "logFilename" = paste(filePrefix, "-funLog.xml", sep = ""))
     
@@ -432,10 +453,11 @@ function(filename, blankImageSizes)
 function (x, ...)
 {
     cat("plotExpr Result:\n")
-    cat("Call:\t", x[["info"]][["call"]], "\n")
-    cat("R version:\t", x[["info"]][["Rver"]], "\n")
-    cat("Directory:\t", x[["info"]][["directory"]], "\n")
-    cat("Filename:\t", x[["info"]][["logFilename"]], "\n")
+    cat("Call:      ",
+        gsub("\n", "\n           ", x[["info"]][["call"]]), "\n",
+        "R version: ", x[["info"]][["Rver"]], "\n",
+        "Directory: ", x[["info"]][["directory"]], "\n",
+        "Filename:  ", x[["info"]][["logFilename"]], "\n", sep="")
     cat("Formats:\n")
     for (format in names(x[["plots"]])) {
         if (is.null(x[["plots"]][[format]][["plot"]])) {
@@ -443,17 +465,18 @@ function (x, ...)
         } else {
             plots = x[["plots"]][[format]][["plot"]]
         }
-        cat(" ", format, ":\tPlots: ")
+        cat(" ", format, ": Plots: ")
         cat(plots, sep = ", ")
         cat("\n")
 
         if (!is.null(x[["plots"]][[format]][["warnings"]])) {
-            cat("\tWarnings: \t")
-            cat(x[["plots"]][[format]][["warnings"]], sep = "\n\t\t\t")
+            cat("    Warnings: ")
+            cat(x[["plots"]][[format]][["warnings"]],
+                sep = "\n              ")
             cat("\n")
         }
         if (!is.null(x[["plots"]][[format]][["error"]])) {
-            cat("\tError: ", x[["plots"]][[format]][["error"]], "\n")
+            cat("    Error: ", x[["plots"]][[format]][["error"]], "\n")
         }
     }
 }
