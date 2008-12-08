@@ -146,17 +146,17 @@ list.files("testFun3")
 
 # ------------------- Testing report.R -------------------------
 if (require("Sxslt")) {
-    report1 <- writeReport(test1)
-    report2 <- writeReport(test1BComp)
-    report3 <- writeReport(blankComp)
-    report4 <- writeReport(funComparison)
-    report5 <- writeReport(fileComparison)
+    report1 <- writeReport(test1, browse=FALSE)
+    report2 <- writeReport(test1BComp, browse=FALSE)
+    report3 <- writeReport(blankComp, browse=FALSE)
+    report4 <- writeReport(funComparison, browse=FALSE)
+    report5 <- writeReport(fileComparison, browse=FALSE)
     testFun4 <- plotFunction(c("barplot", "barplot"), c("pdf", "ps"),
                              prefix=c("bplot", "bplot2"),
                              path="testFun4", clear=FALSE)
     report6 <- writeReport(compare(testFun4, testFun1, "report6",
-                           erase="none"))
-    writeReport(testA)
+                           erase="none"), browse=FALSE)
+    writeReport(testA, browse=FALSE)
 }
 
 ## Something to note: Doing something like

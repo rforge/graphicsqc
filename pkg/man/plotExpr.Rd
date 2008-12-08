@@ -10,7 +10,7 @@
   information about the plots produced.
 }
 \usage{
-  plotExpr(expr, filetype = NULL, path = NULL, prefix = NULL,
+  plotExpr(expr, filetype = NULL, path = NULL, prefix = "graphicsqc",
            clear = FALSE)
 
   plotFile(filename, filetype = NULL, path = NULL, prefix = basename(filename),
