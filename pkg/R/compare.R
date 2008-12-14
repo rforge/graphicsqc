@@ -2,6 +2,8 @@
 # compare.R
 # --------------------------------------------------------------------
 
+.graphicsQCenv <- new.env()
+
 # --------------------------------------------------------------------
 #
 # compare()
@@ -21,9 +23,9 @@ function(test,
          )
 {
     # Start warning handler
-    assign("graphicsQCWarnings", character(0), envir = globalenv())
+    assign("graphicsQCWarnings", character(0), envir = .graphicsQCenv)
     # Clear warning handler on exit
-    on.exit(rm(graphicsQCWarnings, envir = globalenv()))
+    on.exit(rm("graphicsQCWarnings", envir = .graphicsQCenv))
 
     if (is.character(test) && is.character(control) && test == control) {
         # If auto-detecting in the same dir it's not clear which is test
@@ -287,11 +289,14 @@ function(filetype, control, controlPath, test, testPath, path, erase)
         return(NULL)
     } else {
         result <- mapply(paste("compare", toupper(filetype), sep = ""),
-           paste(testPath, test[[filetype]], sep = .Platform$file.sep),
-           paste(controlPath, control[[filetype]], sep = .Platform$file.sep),
-           hasIM() && filetype %in% getSupportedIMFormats() &&
-           any(erase == c("none", "identical")), path,
-           SIMPLIFY = FALSE)
+                         paste(testPath, test[[filetype]],
+                               sep = .Platform$file.sep),
+                         paste(controlPath, control[[filetype]],
+                               sep = .Platform$file.sep),
+                         hasIM() && filetype %in% getSupportedIMFormats() &&
+                         any(erase == c("none", "identical")),
+                         path,
+                         SIMPLIFY = FALSE)
         names(result) <- NULL
         return(result)
     }
@@ -327,7 +332,7 @@ function(file1, file2, useIM, diffPlotPath)
         diffResult <- "identical"
     }
     return(list(controlFile=file2, testFile=file1, result=diffResult,
-                                diffFile=diffFileName, diffPlot=diffPlotName))
+                diffFile=diffFileName, diffPlot=diffPlotName))
 }
 
 # --------------------------------------------------------------------
@@ -552,9 +557,10 @@ function(...)
 {
     stringWarning <- paste(..., sep = "")
     # Only show warnings we haven't seen before
-    if (!stringWarning %in% graphicsQCWarnings) {
-        assign("graphicsQCWarnings", c(graphicsQCWarnings, stringWarning),
-                                                          envir = globalenv())
+    qcWarnings <- get("graphicsQCWarnings", .graphicsQCenv)
+    if (!stringWarning %in% qcWarnings) {
+        assign("graphicsQCWarnings", c(qcWarnings, stringWarning),
+               envir = .graphicsQCenv)
         warning(stringWarning, call. = FALSE)
     }
 }
