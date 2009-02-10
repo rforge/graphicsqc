@@ -484,3 +484,15 @@ What's left:
 
 - REPORT
 - TALK
+
+===========
+Suggestions from review of JSS paper:
+===========
+
+- write plotExample() function, which better describes what
+  plotFunction() does and would more naturally allow running
+  example code from help files that correspond to a topic
+  rather than to a specific function.  plotFunction() can
+  be a simple wrapper to plotExample().
+
+- Provide R-emulation of GNU diff if GNU diff not found.

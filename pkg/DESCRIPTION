@@ -1,10 +1,9 @@
 Package: graphicsQC
 Type: Package
 Title: Quality Control for Graphics in R
-Version: 1.0-1
-Date: 2008-11-13
-Author: Stephen Gardiner
-Maintainer: Stephen Gardiner <sgar060@aucklanduni.ac.nz>
+Version: 1.0-2
+Author: Stephen Gardiner and Paul Murrell
+Maintainer: Paul Murrell <paul@stat.auckland.ac.nz>
 Depends: XML
 Suggests: Sxslt
 Description: The package provides functions to generate

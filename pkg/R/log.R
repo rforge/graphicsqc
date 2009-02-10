@@ -62,8 +62,8 @@
      writeXmlInfo(xmlResults, list(info = info))
      lapply(paste(info[["directory"]], .Platform$file.sep, exprPrefix,
             "-log.xml", sep = ""), xmlResults$addTag, tag = "qcPlotExprResult")
-    saveXML(xmlResults, paste(info[["directory"]], .Platform$file.sep,
-                              info[["logFilename"]], sep = ""))
+    saveXML(xmlResults, file.path(info[["directory"]], 
+                                  info[["logFilename"]]))
 }
 
 # --------------------------------------------------------------------
@@ -133,9 +133,8 @@
             xmlResults$closeTag() # testOrControl
         })
     xmlResults$closeTag() # unpaired
-    saveXML(xmlResults, paste(results[["info"]][["path"]],
-                              results[["info"]][["logFilename"]],
-                              sep = .Platform$file.sep))
+    saveXML(xmlResults, file.path(results[["info"]][["path"]],
+                                  results[["info"]][["logFilename"]]))
 }
 
 # --------------------------------------------------------------------
@@ -148,13 +147,11 @@
                                sep = ""))
      writeXmlInfo(xmlResults, results)
      logs <- sapply(seq_along(results[["results"]]), function(i)
-                 paste(results[["results"]][[i]][["info"]][["path"]],
-                       results[["results"]][[i]][["info"]][["logFilename"]],
-                       sep = .Platform$file.sep))
+                    file.path(results[["results"]][[i]][["info"]][["path"]],
+                              results[["results"]][[i]][["info"]][["logFilename"]]))
      lapply(logs, xmlResults$addTag, tag = "qcCompareExprResult")
-    saveXML(xmlResults, paste(results[["info"]][["path"]],
-                              results[["info"]][["logFilename"]],
-                              sep = .Platform$file.sep))
+    saveXML(xmlResults, file.path(results[["info"]][["path"]],
+                                  results[["info"]][["logFilename"]]))
 }
 
 # --------------------------------------------------------------------
@@ -178,7 +175,7 @@
     } else if (logType == "qcCompareFileResult") {
         return(readCompareFunLog(logFile, "qcCompareFileResult"))
     } ## else plotPackageResult
-    notYetImplemented()
+    stop("Unsupported log file format")
 }
 
 # --------------------------------------------------------------------
@@ -270,7 +267,8 @@
     if (is.character(result)) {
         fileInfo <- file.info(result)
         if (is.na(fileInfo$isdir)) {
-            stop("file ", dQuote(result), " not found", call. = FALSE)
+            stop(gettextf("file %s not found", dQuote(result)),
+                 call. = FALSE, domain=NA)
         } else if (!fileInfo$isdir) {
             # It's a file
             return(readLog(result))
@@ -286,8 +284,7 @@
                         return(readLog(files))
                     } else {
                         ## else it's many comparePackageLog files..
-                        warning("many comparePackage logs auto-detected")
-                        notYetImplemented()
+                        notYetImplemented("auto-detection of multiple comparePackage logs")
                     }
                 } else if (length(files <- list.files(result,
                            "(-compareFunLog.xml|-compareFileLog.xml)",
@@ -297,9 +294,7 @@
                     } else {
                         ## else it's many compareFunLog or
                         #compareFileLog files..
-                        warning("many compareFun or compareFile logs",
-                                "auto-detected")
-                        notYetImplemented()
+                        notYetImplemented("auto-detection of multiple compareFun or compareFile logs")
                     }
                 } else if (length(files <- list.files(result,
                            "-compareExprLog.xml", full.names = TRUE)) > 0) {
@@ -307,8 +302,7 @@
                         return(readLog(files))
                     } else {
                         ## else it's many compareExprLog files..
-                        warning("many compareExpr logs auto-detected")
-                        notYetImplemented()
+                        notYetImplemented("auto-detection of multiple compareExpr logs")
                     }
                 }
             }
@@ -321,8 +315,7 @@
                         return(readLog(files))
                     } else {
                         ## else it's many packageLog files..
-                        warning("many package logs auto-detected")
-                        notYetImplemented()
+                        notYetImplemented("auto-detection of multiple package logs")
                     }
                 } else if (length(files <- list.files(result,
                                   "(-funLog.xml|-fileLog.xml)",
@@ -331,8 +324,7 @@
                         return(readLog(files))
                     } else {
                         ## else it's many funLog or fileLog files..
-                        warning("many file or fun logs auto-detected")
-                        notYetImplemented()
+                        notYetImplemented("auto-detection of multiple file or fun logs")
                     }
                 } else if (length(files <- list.files(result,
                            "-log.xml", full.names = TRUE)) > 0) {
@@ -342,18 +334,19 @@
                         ##  Else it's many plotExprLog files so return the
                         #list of them
                         #return(files)
-                        warning("many plotExpr logs auto-detected")
-                        notYetImplemented()
+                        notYetImplemented("auto-detection of multiple plotExpr logs")
                     }
                 }
             }
-            stop("No valid log files found in ", sQuote(result), call. = FALSE)
+            stop(gettextf("No valid log files found in %s", sQuote(result)),
+                 call. = FALSE, domain=NA)
         }
     } else if (which == "plots" && inherits(result, plots) ||
                which == "all" && inherits(result, c(plots, comparisons))) {
         return(result)
     } else {
-        stop(sQuote(result), "is not a valid graphicsQC result", call. = FALSE)
+        stop(gettextf("%s is not a valid graphicsQC result", sQuote(result)),
+             call. = FALSE, domain=NA)
     }
 }
 

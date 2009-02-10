@@ -30,14 +30,17 @@ function(test,
     if (is.character(test) && is.character(control) && test == control) {
         # If auto-detecting in the same dir it's not clear which is test
         # or which is control (or what to do if 3 are found!)
-        stop(sQuote("test"), " and ", sQuote("control"), " paths cannot be ",
-             "the same")
+        stop(gettextf("%s and %s paths cannot be the same",
+                      sQuote("test"), sQuote("control")),
+             domain=NA)
     }
     
     if (!erase[1] %in% c("none", "identical", "files", "all")) {
-        warning(sQuote("erase"), " must be one of ", dQuote("none"), ", ",
-                dQuote("files"), ", ", dQuote("identical"), ", or ",
-                dQuote("all"), " - ", dQuote("none"), " used")
+        warning(gettextf("%s must be one of %s, %s, %s, or %s - %s used",
+                         sQuote("erase"), dQuote("none"), 
+                         dQuote("files"), dQuote("identical"), ", or ",
+                         dQuote("all"), dQuote("none")),
+                domain=NA)
         erase <- "none"
     }
     
@@ -48,12 +51,11 @@ function(test,
 
     if (inherits(test, "list") || inherits(control, "list")) {
         if (inherits(test, "list") && inherits(control, "list")) {
-            notYetImplemented()
+            notYetImplemented("Comparing lists of test and control results")
             RESULT <- mapply(compare, test, list, erase) ## return?
         } else {
             # Note: should also check that the list isn't of length 1
-            warning("Cannot have a list compared to one")
-            notYetImplemented()
+            stop("Cannot have a list compared to one")
         }
     }
     ## first package, then:
@@ -69,8 +71,7 @@ function(test,
         return(results)
     } else {
         # Test and Control are not the same classes!
-        warning("test and control are not of the same class")
-        notYetImplemented()
+        stop("test and control are not of the same class")
     }
     results
 }
@@ -137,12 +138,10 @@ function(test, control, path, erase, type)
                  paste(unlist(strsplit(results[[1]][["testInfo"]][[
                        "logFilename"]], "-log.xml")),
                        "-compare", type, "Log.xml", sep = ""),
-                 "testLog" = paste(test[["info"]][["directory"]],
-                                   test[["info"]][["logFilename"]],
-                                   sep = .Platform$file.sep),
-                 "controlLog" = paste(control[["info"]][["directory"]],
-                                      control[["info"]][["logFilename"]],
-                                      sep = .Platform$file.sep))
+                 "testLog" = file.path(test[["info"]][["directory"]],
+                   test[["info"]][["logFilename"]]),
+                 "controlLog" = file.path(control[["info"]][["directory"]],
+                   control[["info"]][["logFilename"]]))
     results <- list("info" = info, "results" = results)
     writeXmlCompareTypeLog(results, type)
     class(results) <- paste("qcCompare", type, "Result", sep = "")
@@ -289,10 +288,8 @@ function(filetype, control, controlPath, test, testPath, path, erase)
         return(NULL)
     } else {
         result <- mapply(paste("compare", toupper(filetype), sep = ""),
-                         paste(testPath, test[[filetype]],
-                               sep = .Platform$file.sep),
-                         paste(controlPath, control[[filetype]],
-                               sep = .Platform$file.sep),
+                         file.path(testPath, test[[filetype]]),
+                         file.path(controlPath, control[[filetype]]),
                          hasIM() && filetype %in% getSupportedIMFormats() &&
                          any(erase == c("none", "identical")),
                          path,
@@ -315,14 +312,13 @@ function(file1, file2, useIM, diffPlotPath)
     diffName <- getDiffName(file1, file2)
     diffFileName <- paste(diffName, ".diff", sep = "")
     diffPlotName <- paste(diffName, ".png", sep = "")
-    diffFilePath <- paste(diffPlotPath, diffFileName, sep = .Platform$file.sep)
+    diffFilePath <- file.path(diffPlotPath, diffFileName)
     diffResult <- GNUdiff(file1, file2, diffFilePath)
     if (diffResult == "different" && length(readLines(diffFilePath, n = 7))
                                                                         > 6) {
         # There is a true difference, not just the dates/times
         if (useIM) {
-            diffPlot <- paste(diffPlotPath, diffPlotName,
-                              sep = .Platform$file.sep)
+            diffPlot <- file.path(diffPlotPath, diffPlotName)
             makeIMDiffPlot(file1, file2, diffPlot)
         }
     } else {
@@ -346,12 +342,11 @@ function(file1, file2, useIM, diffPlotPath)
     diffName <- getDiffName(file1, file2)
     diffFileName <- paste(diffName, ".diff", sep = "")
     diffPlotName <- paste(diffName, ".png", sep = "")
-    diffFilePath <- paste(diffPlotPath, diffFileName, sep = .Platform$file.sep)
+    diffFilePath <- file.path(diffPlotPath, diffFileName)
     diffResult <- GNUdiff(file1, file2, diffFilePath)
     if (diffResult == "different") {
         if (useIM) {
-            diffPlot <- paste(diffPlotPath, diffPlotName,
-                              sep = .Platform$file.sep)
+            diffPlot <- file.path(diffPlotPath, diffPlotName)
             makeIMDiffPlot(file1, file2, diffPlot)
         }
     } else {
@@ -374,8 +369,7 @@ function(file1, file2, useIM, diffPlotPath)
     diffResult <- GNUdiff(file1, file2)
     if (useIM && diffResult == "different") {
         diffPlotName <- paste(diffName, ".png", sep = "")
-        diffPlot <- paste(diffPlotPath, diffPlotName,
-                          sep = .Platform$file.sep)
+        diffPlot <- file.path(diffPlotPath, diffPlotName)
         makeIMDiffPlot(file1, file2, diffPlot)
     }
     return(list(controlFile=file2, testFile=file1, result=diffResult,
@@ -394,7 +388,7 @@ function(file1, file2, useIM, diffPlotPath)
     diffPlotName <- paste(diffName, ".png", sep = "")
     diffResult <- GNUdiff(file1, file2)
     if (useIM && diffResult == "different") {
-        diffPlot <- paste(diffPlotPath, diffPlotName, sep = .Platform$file.sep)
+        diffPlot <- file.path(diffPlotPath, diffPlotName)
         makeIMDiffPlot(file1, file2, diffPlot)
     }
     return(list(controlFile=file2, testFile=file1, result=diffResult,
@@ -442,13 +436,17 @@ function(file1, file2, outDiffFile = NULL)
     } else {
         # If one of the files doesn't exist, the .diff file will be empty
         if (!file.exists(file1)) {
-            warning("file ", file1, " not found; marked as different")
+            warning(gettextf("file %s not found; marked as different",
+                             file1),
+                    domain=NA)
             if (!is.null(outDiffFile)) {
                 file.remove(outDiffFile)
             }
         }
         if (!file.exists(file2)) {
-            warning("file ", file2, " not found; marked as different")
+            warning(gettextf("file %s not found; marked as different",
+                             file2),
+                    domain=NA)
             if (!is.null(outDiffFile)) {
                 file.remove(outDiffFile)
             }

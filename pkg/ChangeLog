@@ -1,3 +1,22 @@
+2009-02     Paul Murrell <paul@stat.auckland.ac.nz>
+
+	Changed stop() and warning() messages so that they
+	use gettextf() rather than paste() so that they are
+	more amenable to translation.
+
+	Changed paste("file", "path", sep=".Platform$separator)
+	to file.path("file", "path")
+	
+* makeplots.R: 
+	plotFunction(): record date using Sys.time() rather
+	than date() so we get an ISO date format.
+
+	notYetImplemented(): added 'feature' argument so that
+	the message can be more informative.
+	
+* graphicsQC-package.Rd:
+	Removed package metadata.
+
 2008-11     Paul Murrell <paul@stat.auckland.ac.nz>
 
 * makeplots.R: 

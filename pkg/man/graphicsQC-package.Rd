@@ -11,13 +11,6 @@
   and reports the results.
 }
 \details{
-  \tabular{ll}{
-    Package: \tab graphicsQC\cr
-    Type: \tab Package\cr
-    Version: \tab 0.9\cr
-    Date: \tab 2008-10-30\cr
-    License: \tab GPL-2\cr
-  }
   To generate files, use \code{\link{plotExpr}},
   \code{\link{plotFile}}, or \code{\link{plotFunction}}.
   To compare sets of these, use \code{\link{compare}}.

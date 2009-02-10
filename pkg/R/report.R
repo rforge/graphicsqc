@@ -53,8 +53,9 @@ function(qcResult, browse = TRUE, xslStyleSheets = NULL)
         # Either a folder or a file.
         fileInfo <- file.info(qcResult)
         if (is.na(fileInfo$isdir)) {
-            stop("file ", dQuote(qcResult), " not found - no log file",
-                    " for this created", call. = FALSE)
+            stop(gettextf("file %s not found - no log file for this created",
+                          dQuote(qcResult)),
+                 call. = FALSE, domain=NA)
         } else {
             # getQCResult also does auto-detect
             qcResult <- getQCResult(qcResult, "all")
@@ -154,9 +155,8 @@ function(qcResult, xslStyles)
 {
     lapply(qcResult[["results"]], report, xslStyles)
 
-    compareFPath <- paste(qcResult[["info"]][["path"]],
-                          qcResult[["info"]][["logFilename"]],
-                          sep = .Platform$file.sep)
+    compareFPath <- file.path(qcResult[["info"]][["path"]],
+                              qcResult[["info"]][["logFilename"]])
     testPath <- qcResult[["info"]][["testLog"]]
     controlPath <- qcResult[["info"]][["controlLog"]]
     compareF <- xsltApplyStyleSheet(compareFPath,
@@ -181,7 +181,9 @@ function(qcResult, xslStyles)
 `report.default` <-
 function(qcResult, xslStyles)
 {
-    stop("comparing ", sQuote(class(qcResult)), " not yet implemented")
+    stop(gettextf("comparing %s not yet implemented",
+                  sQuote(class(qcResult))),
+         domain=NA)
 }
 
 # Some miscellaneous functions used in this file and by the .xsl files

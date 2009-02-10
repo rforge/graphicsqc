@@ -49,8 +49,9 @@ function(expr, # character vector
     if (length(prefix) == 1) {
         prefix <- as.character(prefix)
     } else {
-        warning(sQuote("prefix"), " should be a character vector of length 1",
-                ", only the first used (", prefix[1], ")")
+        warning(gettextf("%s should be a character vector of length 1, only the first used (%s)",
+                         sQuote("prefix"), prefix[1]),
+                domain=NA)
         prefix <- prefix[1]
     }
     wd <- getwd()
@@ -70,22 +71,24 @@ function(expr, # character vector
     currentFilenames <- list.files(path, filenamePattern)
     # 'Clear' files we might make if we are told to
     if (length(clear) > 1) {
-        warning(sQuote("clear"), " has more than one element: only the ",
-                "first used")
+        warning(gettextf("%s has more than one element: only the first used",
+                         sQuote("clear")),
+                domain=NA)
         clear <- clear[1]
     }
     if (is.logical(clear) && !is.na(clear)) {
         if (clear && length(currentFilenames) > 0) {
-            if (any(!file.remove(paste(path, currentFilenames,
-                              sep = .Platform$file.sep)))) {
+            if (any(!file.remove(file.path(path, currentFilenames)))) {
                 stop("tried to clear but failed to delete files")
             }
         } else if (!clear && length(currentFilenames) > 0) {
-            stop("files of intended filename already exist in ",
-                 sQuote("path"), call. = FALSE)
+            stop(gettextf("files of intended filename already exist in %s",
+                          sQuote("path")),
+                 call. = FALSE, domain=NA)
         }
     } else {
-        stop(sQuote("clear"), " must be either TRUE or FALSE")
+        stop(gettextf("%s must be either TRUE or FALSE", sQuote("clear")),
+             domain=NA)
     }
 
     filenameFormat <- paste(prefix, "-%d", sep = "")
@@ -99,8 +102,7 @@ function(expr, # character vector
         generateBlankImages()
         blankImageSizes <- getBlankImageSizes()
         if (any(is.na(blankImageSizes))) {
-            warning("blank image details could not be obtained, so blank ",
-                    "files will not be removed")
+            warning("blank image details could not be obtained, so blank files will not be removed")
         }
     }
 
@@ -132,7 +134,7 @@ function(expr, # character vector
         }
     }
     info <- list("OS" = .Platform$OS.type, "Rver" =
-                 version[["version.string"]], "date" = date(),
+                 version[["version.string"]], "date" = Sys.time(),
                  "call" = paste(call, collapse = "\n"),
                  ## at some point deparse(width.cutoff) might need to be raised
                  "directory" = getwd(), "logFilename" =
@@ -156,8 +158,7 @@ function(expr, # character vector
 function(path)
 {
     if (length(path) == 0) {
-        warning("no path given: the path has been set to your current working",
-                " directory", call. = FALSE)
+        warning("no path given: the path has been set to your current working directory", call. = FALSE)
         path <- getwd()
     } else if (length(path) == 1) {
         isDir <- file.info(path)$isdir
@@ -165,11 +166,13 @@ function(path)
         if (is.na(isDir)) {
             isCreated <- dir.create(path, showWarnings = FALSE)
         } else if (!isDir || !isCreated) {
-            stop("could not create directory ", dQuote(path), call. = FALSE)
+            stop(gettextf("could not create directory %s", dQuote(path)),
+                 call. = FALSE, domain=NA)
         }
     } else {
-        warning("the given path has more than one element: only",
-                " the first used in ", dQuote(path[1]), call. = FALSE)
+        warning(gettextf("the given path has more than one element: only the first used in %s",
+                         dQuote(path[1])),
+                call. = FALSE, domain=NA)
         path <- getValidPath(path[1])
     }
     path
@@ -234,10 +237,10 @@ function(filetypes)
 
     # check for duplications
     if (any(duplicated(filetypes))) {
-        warning("duplicated filetypes: ",
-                paste(dQuote(filetypes[duplicated(filetypes)]),
-                      collapse = ", ")
-                , " duplication ignored", call. = FALSE)
+        warning(gettextf("duplicated filetypes: %s duplication ignored",
+                         paste(dQuote(filetypes[duplicated(filetypes)]),
+                               collapse = ", ")),
+                call. = FALSE, domain=NA)
         filetypes <- filetypes[!duplicated(filetypes)]
     }
 
@@ -248,9 +251,10 @@ function(filetypes)
            warning("sorry, BMP format only supported in Windows",
                    call. = FALSE)
        }
-       warning("invalid filetype(s) given: ",
-               paste(dQuote(filetypes[invalidTypes]), collapse = ", "),
-               " ignored", call. = FALSE)
+       warning(gettextf("invalid filetype(s) given: %s ignored",
+                        paste(dQuote(filetypes[invalidTypes]),
+                              collapse = ", ")),
+               call. = FALSE, domain=NA)
     }
 
     if (length(filetypes[!invalidTypes]) > 0) {
@@ -279,10 +283,14 @@ function(filename, # character vector
 {
     ## Test if files exist first?
     if (length(filename) != length(prefix)) {
-        stop(sQuote(prefix), " must be the same length as ", sQuote(filename))
+        stop(gettextf("%s must be the same length as %s",
+                      sQuote(prefix), sQuote(filename)),
+             domain=NA)
     }
     if (length(grep(.Platform$file.sep, prefix)) > 0) {
-        stop(sQuote(prefix), " cannot contain the system file separator")
+        stop(gettextf("%s cannot contain the system file separator",
+                      sQuote(prefix)),
+             domain=NA)
     }
     path <- getValidPath(path)
     expr <- lapply(filename, readLines)
@@ -299,7 +307,7 @@ function(filename, # character vector
     
     path <- normalizePath(path.expand(path))
     info <- list("OS" = .Platform$OS.type, "Rver" =
-                 version[["version.string"]], "date" = date(),
+                 version[["version.string"]], "date" = Sys.time(),
                  "call" = paste(deparse(sys.call(sys.parent())),
                    collapse = "\n"),
                  "directory" = path,
@@ -342,11 +350,14 @@ function(fun, # character vector
     # Check that the prefixes are unique (otherwise we will die half-way
     # through because we will try to overwrite)
     if (any(duplicated(prefix))) {
-        stop("all values for ", sQuote("prefix"), "must be unique")
+        stop(gettextf("all values for %s must be unique", sQuote("prefix")),
+             domain=NA)
     }
 
     if (length(fun) != length(prefix)) {
-        stop(sQuote("prefix"), " must be the same length as ", sQuote("fun"))
+        stop(gettextf("%s must be the same length as %s",
+                      sQuote("prefix"), sQuote("fun")),
+             domain=NA)
     }
  
     funs <- paste("example(", fun, ", echo = FALSE, setRNG = TRUE)", sep = "")
@@ -363,7 +374,7 @@ function(fun, # character vector
     
     path <- normalizePath(path.expand(path))
     info <- list("OS" = .Platform$OS.type, "Rver" =
-                 version[["version.string"]], "date" = date(),
+                 version[["version.string"]], "date" = Sys.time(),
                  "call" = paste(deparse(sys.call(sys.parent())),
                    collapse = "\n"),
                  "directory" = path,
@@ -385,9 +396,10 @@ function(package)
 {
     ## take 'best effort' approach? try get tests/demo if can and use them..
     if (!do.call(require, list(package))) {
-        warning("failed to load package ", dQuote(package))
+        warning(gettextf("failed to load package %s", dQuote(package)),
+                domain=NA)
     } # now package is loaded
-    notYetImplemented()
+    notYetImplemented("producing plots from the name of a package")
 }
 
 # --------------------------------------------------------------------
@@ -401,10 +413,10 @@ function()
     tempDir <- tempdir()
     # Only pdf and ps blank images are made as the filesize for bmp and png
     # blanks are 0
-    pdf(paste(tempDir, "blankPDF.pdf", sep = .Platform$file.sep),
+    pdf(file.path(tempDir, "blankPDF.pdf"),
         onefile = FALSE)
     dev.off()
-    postscript(paste(tempDir, "blankPS.ps", sep = .Platform$file.sep),
+    postscript(file.path(tempDir, "blankPS.ps"),
                onefile = FALSE)
     dev.off()
     invisible()
@@ -418,8 +430,8 @@ function()
 `getBlankImageSizes` <-
 function()
 {
-    sizes <- file.info(paste(tempdir(), c("blankPDF.pdf", "blankPS.ps"),
-                             sep = .Platform$file.sep))[,1]
+    sizes <- file.info(file.path(tempdir(),
+                                 c("blankPDF.pdf", "blankPS.ps")))[,1]
     names(sizes) <- c("pdf", "ps")
     sizes
 }
@@ -488,7 +500,8 @@ function (x, ...)
 #
 # --------------------------------------------------------------------
 `notYetImplemented` <-
-function()
+function(feature)
 {
-    stop("sorry, that function is not yet implemented")
+    stop(gettextf("Sorry, %s is not yet implemented", feature),
+         domain=NA)
 }
