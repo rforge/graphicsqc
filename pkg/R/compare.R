@@ -425,8 +425,8 @@ function(file1, file2, outDiffFile = NULL)
     if (!is.null(outDiffFile)) {
         redirectOutput = paste(">", outDiffFile)
     }
-    diffResult <- system(paste("diff", file1, file2, redirectOutput),
-                         ignore.stderr = TRUE)
+    diffResult <- gqcShell(paste("diff", file1, file2, redirectOutput),
+                           ignore.stderr=TRUE)
     if (diffResult == 0) {
         # Delete empty diff file
         if (!is.null(outDiffFile)) {
@@ -464,7 +464,7 @@ function(file1, file2, outDiffFile = NULL)
 `makeIMDiffPlot` <-
 function(file1, file2, newFilename)
 {
-    system(paste("compare", file1, file2, newFilename))
+    gqcShell(paste("compare", file1, file2, newFilename))
 }
 
 # --------------------------------------------------------------------
@@ -475,8 +475,8 @@ function(file1, file2, newFilename)
 `hasDiff` <-
 function()
 {
-    length(grep("GNU diffutils", try(system("diff -v",
-                                            intern = TRUE)[1]))) > 0
+    length(grep("GNU diffutils", try(gqcShell("diff -v",
+                                              intern = TRUE)[1]))) > 0
 }
 
 # --------------------------------------------------------------------
@@ -487,8 +487,8 @@ function()
 `hasIM` <-
 function()
 {
-    length(grep("ImageMagick", try(system("compare -version",
-                                          intern = TRUE)[1]))) > 0
+    length(grep("ImageMagick", try(gqcShell("compare -version",
+                                            intern = TRUE)[1]))) > 0
 }
 
 # --------------------------------------------------------------------
@@ -500,8 +500,8 @@ function()
 function()
 {
     supportedFormats <- character(0)
-    formats <- system("identify -list Format", intern = TRUE,
-                      ignore.stderr = TRUE) ## This command may have trouble.
+    formats <- gqcShell("identify -list Format", intern = TRUE,
+                        ignore.stderr = TRUE) ## This command may have trouble.
     bmpLine <- grep("Microsoft Windows bitmap image$", formats, value = TRUE,
                     perl = TRUE, useBytes = TRUE)
     pdfLine <- grep("Portable Document Format$", formats, value = TRUE,
@@ -640,4 +640,12 @@ function(path)
     path
 }
 
+# --------------------------------------------------------------------
+gqcShell <- function(cmd, intern=FALSE, ignore.stderr=FALSE) {
+    if (.Platform$OS.type == "windows") {
+        diffResult <- shell(cmd, intern=intern, ignore.stderr = ignore.stderr)
+    } else {
+        diffResult <- system(cmd, intern=intern, ignore.stderr = ignore.stderr)
+    }    
+}
 
