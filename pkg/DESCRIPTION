@@ -1,7 +1,7 @@
 Package: graphicsQC
 Type: Package
 Title: Quality Control for Graphics in R
-Version: 1.0-3
+Version: 1.0-4
 Author: Stephen Gardiner and Paul Murrell
 Maintainer: Paul Murrell <paul@stat.auckland.ac.nz>
 Depends: XML

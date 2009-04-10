@@ -1,0 +1,1499 @@
+\documentclass[nojss]{jss}
+
+% \VignetteIndexEntry{graphicsQC}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% declarations for jss.cls %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% almost as usual
+\author{Paul Murrell\\The University of Auckland \And
+        Stephen Gardiner\\The University of Auckland}
+\title{Quality Control for Statistical Graphics:\\ the \pkg{graphicsQC} package for \R{}}
+
+%% for pretty printing and a nice hypersummary also set:
+\Plainauthor{Paul Murrell, Stephen Gardiner} %% comma-separated
+\Plaintitle{Quality Control for Statistical Graphics:\\ the graphicsQC package for R} %% without formatting
+\Shorttitle{Quality Control for Statistical Graphics} %% a short title (if necessary)
+
+%% an abstract and keywords
+\Abstract{
+An important component of quality control for statistical graphics software
+is the ability not only to test that code runs without errors, but also
+to test that code produces the right result.  
+The simple way to test for the correct result in graphical output 
+is to test whether a test file differs from a control file;  this 
+is effective in determining whether a difference exists.  However, 
+the test can be significantly enhanced by also producing a graphical
+image of any difference;  this makes it much easier to determine 
+how and why two files differ.  This article describes the 
+\pkg{graphicsQC} package for \R{}, which provides functions for
+producing and comparing files of graphical output and for 
+generating a report of the results, including images of any differences.
+}
+\Keywords{quality control, \R{}, statistical graphics, 
+  \proglang{XML}, \proglang{XSL}}
+\Plainkeywords{quality control, R, statistical graphics, XML, XSL} %% without formatting
+%% at least one keyword must be supplied
+
+%% publication information
+%% NOTE: Typically, this can be left commented and will be filled out by the technical editor
+%% \Volume{13}
+%% \Issue{9}
+%% \Month{September}
+%% \Year{2004}
+%% \Submitdate{2004-09-29}
+%% \Acceptdate{2004-09-29}
+
+%% The address of (at least) one author should be given
+%% in the following format:
+\Address{
+  Paul Murrell \\
+Department of Statistics\\
+The University of Auckland\\
+Private Bag 92019\\
+Auckland\\
+New Zealand\\
+64 9 3737599 x85392\\
+E-mail: \email{paul@stat.auckland.ac.nz}\\
+URL: \url{http://www.stat.auckland.ac.nz/~paul/}
+}
+%% It is also possible to add a telephone and fax number
+%% before the e-mail in the following format:
+%% Telephone: +43/1/31336-5053
+%% Fax: +43/1/31336-734
+
+%% for those who use Sweave please include the following line (with % symbols):
+%% need no \usepackage{Sweave.sty}
+
+\usepackage{boxedminipage}
+\newcommand{\R}{\proglang{R}}
+\newcommand{\C}{\proglang{C}}
+\newcommand{\svn}{\proglang{SVN}}
+\newcommand{\xml}{\proglang{XML}}
+\newcommand{\xslt}{\proglang{XSLT}}
+\newcommand{\html}{\proglang{HTML}}
+\newcommand{\ps}{\proglang{PostScript}}
+\newcommand{\pdf}{\proglang{PDF}}
+\newcommand{\png}{\proglang{PNG}}
+\newcommand{\bmp}{\proglang{BMP}}
+\newcommand{\diff}{\proglang{diff}}
+\newcommand{\compare}{\proglang{compare}}
+\newcommand{\dfn}[1]{\emph{#1}}
+\SweaveOpts{keep.source=true}
+
+<<echo=FALSE, results=hide>>=
+options(continue="  ")
+options(width=60)
+options(useFancyQuotes=FALSE)
+strOptions(strict.width=TRUE)
+
+@ 
+
+%% end of declarations %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{document}
+
+%% include your article here, just as usual
+%% Note that you should use the \pkg{}, \proglang{} and \code{} commands.
+
+\section{Introduction}
+
+Quality control involves the maintenance of 
+quality in a product, particularly by comparing the 
+performance of a product with a set of specifications.
+When the product is software, an important part of
+quality control is \dfn{software testing}, where 
+the software is run to determine whether it produces
+the desired output \citep{qafaq,Horch200302}.
+
+Software testing can take many different forms.  For example,
+the most basic test is that the software runs at all, without
+``crashing''; a more strict test is that the software 
+produces the correct output for a known set of inputs.
+The latter example involves comparing the output from one
+run of the software, the \dfn{test} output, with a set of \dfn{control}
+output to check for any differences.  This is called \dfn{regression testing}.
+
+The purpose of software testing is not only to detect when problems
+occur, but also to help in diagnosing the nature of the problem.
+
+In the world of statistical computing, the output of software is, in many
+cases, a numeric result, such as tables of counts, group means and variances,
+$p$-values 
+from hypothesis tests, and coefficients from fitting a model.
+Regression testing can be performed for this sort of output quite easily
+by recording a set of numeric control values in a text file
+and then comparing the test results using readily-available tools
+for comparing text files, such as the GNU \diff{} utility
+\citep[][\url{http://www.gnu.org/software/diffutils/diffutils.html}]{diff}.
+With numeric output in a text format, it is not only straightforward 
+to detect that a problem exists, 
+it is also straightforward to identify the \emph{location} of a problem;
+it is easy to see which numbers are different from each other.
+
+In the area of statistical graphics, the situation is a little less
+straightforward.  Some graphical output, such as a \proglang{PNG} file,
+ is binary rather than text-based.  The \diff{} utility
+can be used to determine that two binary files are different, but it 
+does not provide useful information about the location of the 
+difference, or \emph{how} the two files differ. 
+Even with text-based graphical output, such as \ps{} files,
+knowing the location of a difference within a file
+may not be enough to know how the \emph{appearance} of the graphical
+image has changed, which can make it difficult
+to locate the source of the problem.
+
+This article describes an approach to performing regression
+tests for graphical output that overcomes these issues.
+The core idea is that the use of the \diff{} utility on graphics
+files can be usefully augmented by the addition of a 
+\emph{visual} comparison of the graphics files.
+The ImageMagick \compare{} utility 
+\citep[][\url{http://www.imagemagick.org/}]{imagemagick},
+is used to produce an \emph{image} of the difference between
+two graphics files.
+
+Much of this article will be concerned with describing the
+ \pkg{graphicsQC} package, which implements this approach for 
+\R{} \citep{R}.  In addition to performing the comparison between
+two graphics files, this package also provides facilities for generating
+large quantities of graphics files and for generating reports
+on the results of comparisons.
+
+\section[Quality control in R]{Quality control in \R{}}
+
+
+This article describes a contribution to the
+quality control tools \emph{for graphics} in the \R{} system.
+This section provides the context for that contribution by 
+describing the quality control tools that already exist in \R{}.
+
+\R{}
+has a number of different facilities for quality control \citep{hor02}.
+For example, the core system has a number of \proglang{make} targets that run
+a large suite of software tests.  
+
+There are tests that run code just
+to make sure that it does not 
+crash.  One example of this approach involves running 
+ many different code examples
+in an attempt to ``exercise'' as much of the code base as possible.
+To this end, one test runs 
+a large number of example code chunks from the system documentation.
+Another test calls 
+functions within the core \R{} system with a deliberately wide 
+range of arguments
+to ensure that the functions can cope gracefully with a wide variety of user 
+inputs.
+
+The core quality control facilities in \R{} also include a number of 
+regression tests, where the results of a successful code run 
+are compared with a set of control output and any differences
+are reported.
+
+Both of the above testing facilities in \R{} 
+provide some coverage of graphics code:
+some of the code chunk examples from the system documentation 
+exercise some of the graphics code in \R{}; and there
+is a regression test aimed directly at the core graphics
+facilities.
+
+The graphics regression test produces about 30 plots
+and checks for any differences compared to a set of control plots.
+The plots are produced in \ps{} format and the \diff{} utility
+is used to perform the comparison, so differences are reported
+in terms of changes in \ps{} code.
+
+One way to enhance the software tests for graphics is to 
+produce \emph{images} of differences, which will
+make it easier to diagnose the source of problems.
+
+\subsection[The structure of R graphics code]{The structure of \R{} graphics code}
+
+In order to further appreciate the limitations of the existing software tests
+with respect to the graphics code in \R{}, this section will briefly
+outline how the \R{} graphics code is structured.
+
+As with most of the \R{} system, the graphics code consists of a combination of
+\R{} code and \C{} code.  This section is only 
+concerned with the structure of the \C{} code for graphics;
+the testing of \R{} code will be discussed
+below in Section \ref{section:packageqc}.
+
+The \C{} code for \R{} graphics can be divided into three broad categories:
+there is a central \dfn{graphics engine}, two \dfn{graphics systems},
+and a number of \dfn{graphics devices}.  All graphics functions that the user
+sees will pass through either the ``traditional'' graphics system or
+the \pkg{grid} graphics system \citep{R:Murrell:2005}, 
+both of these send calls to the graphics engine,
+and the graphics engine calls the graphics devices to produce output in
+different formats (see Figure \ref{figure:org}).
+
+<<org, echo=FALSE, fig=TRUE, include=FALSE, height=5>>=
+library("grid")
+
+graphics <- c("graphics.c\npar.c\nplot.c\nplot3d.c")
+grid <- c("grid.c\ngpar.c\nlayout.c\nunit.c\nviewport.c")
+engine <- c("engine.c\ncolors.c\nplotmath.c\ndevices.c")
+ps <- "devPS.c"
+x11 <- c("devX11.c\ncairoX11.c")
+tex <- "devPicTeX.c"
+win <- "devWindows.c"
+
+textBox <- function(x, y, labels, name) {
+    grid.text(labels, x, y)
+    grid.roundrect(x, y, 
+                   width=stringWidth(labels) + unit(4, "mm"),
+                   height=stringHeight(labels) + unit(1, "lines"),
+                   name=name)
+}
+
+# grid.newpage()
+textBox(.3, .8, graphics, "graphics")
+textBox(.7, .8, grid, "grid")
+textBox(.5, .5, engine, "engine")
+textBox(.2, .2, ps, "ps")
+textBox(.4, .2, x11, "x11")
+textBox(.6, .2, tex, "tex")
+textBox(.8, .2, win, "win")
+
+arr <- function(from, to, a1, a2) {
+    grid.segments(grobX(from, a1),
+                  grobY(from, a1),
+                  grobX(to, a2),
+                  grobY(to, a2),
+                  arrow=arrow(angle=15, length=unit(4, "mm"), type="closed"))
+}
+
+arr("graphics", "engine", 300, 120)
+arr("grid", "engine", 240, 60)              
+arr("engine", "ps", 240, 90)
+arr("engine", "x11", 260, 90)
+arr("engine", "tex", 280, 90)
+arr("engine", "win", 300, 90)
+
+@ 
+\begin{figure}
+\begin{center}
+\includegraphics[width=.7\textwidth]{graphicsqc-org}
+\end{center}
+\caption{\label{figure:org}The organisation of graphics \C{} code
+in the \R{} system.  The ``traditional'' graphics system (top-left)
+and the \pkg{grid} graphics system (top-right) call the graphics 
+engine (centre), which calls graphics devices (bottom).}
+\end{figure}
+
+Every graphics call passes through the graphics engine, so this \C{} code
+will be exercised no matter what \R{} graphics 
+code gets run.  Exercising the two
+graphics systems is also easy to arrange because it is 
+simply a matter of ensuring that code is
+run from both traditional graphics packages and from packages built 
+on top of the \pkg{grid} system.  However, in order to exercise the
+code in different graphics devices, all graphics code must be 
+produced in as many different output formats as possible.
+
+Another way that the software tests in \R{} can be expanded is to
+produce and compare graphics output in a wide range of formats
+rather than just as \ps{} output.
+
+\subsection[Quality control for R packages]{Quality control for \R{} packages}
+\label{section:packageqc}
+
+In addition to the software tests for the core system, 
+\R{} provides facilities for testing extension packages.
+
+The \code{R CMD check} facility performs a wide variety
+of tests \citep{rextensions}, including running all documentation 
+from the package's example code
+and providing a simple mechanism for the package to specify 
+regression tests for numerical (text output) results, \emph{plus}
+tests for the existence of documentation, tests 
+of consistency between code and documentation, and much more.
+
+These tests are comprehensive and are an important contributor
+to the quality and reliability of the 
+Comprehensive \R{} Archive Network (CRAN) package repositories \citep{CRAN}.
+However, this mechanism does not provide support for regression
+tests of graphical output, so this is an area where 
+quality control tools for \emph{graphics} can contribute.
+
+\subsection[Quality assurance in R]{Quality assurance in \R{}}
+
+In addition to providing \emph{quality control} tools for
+both the core \R{} system and for extension packages, as
+described above, the \R{} 
+project for statistical computing also provides \dfn{quality assurance}
+through a number of processes that \emph{maintain} the ongoing quality of 
+the \R{} environment as a whole. 
+
+Checks of the core \R{} system are performed almost every day, on a variety
+of platforms.  The entire set of CRAN extension packages
+(1682 packages as of 2009-02-27)
+are also tested at least once a week
+on a variety of Linux systems.  A CRAN package is
+checked on Windows and MacOS X systems whenever there is a
+new version of the package.
+\citep{crancheck, crancheckwin}.
+When a problem arises with an extension package, an email
+is sent to the package maintainers to notify them of the
+problem and to request a fix.
+
+Ideally, new quality control tools for graphics should be able to
+be incorporated into these existing quality assurance processes.
+
+\subsection[Packages for quality control]{Packages for quality control}
+\label{section:qcpackages}
+
+Two extension packages provide some additional software testing
+facilities for \R{}.  The \pkg{Runit} package
+\citep{runit} provides a \dfn{unit testing} framework for \R{},
+which is one of the pillars of the 
+Extreme Programming paradigm \citep{xp}.  
+This package extends the set of available tools for
+checking that code runs without crashing and for regression
+testing numeric results, but it does not provide 
+any graphics-specific software testing tools.
+
+Of particular relevance to this article is the experimental
+\pkg{graphicsQC} package 
+\citep[][\url{http://www.stat.auckland.ac.nz/~paul/}]{murhor03}.
+This package produces plots in multiple formats,
+but is otherwise limited in its scope because  it only runs code
+from examples in package documentation.  It does produce an
+image of differences for raster formats, but this is simply
+a logical \textsf{xor} of the source images, so the result is a set
+of pixels that only occur in \emph{one} of the source images
+and this can be extremely hard to interpret.  Finally, it does not
+produce a convenient report of the results of comparisons.
+The \pkg{graphicsQC} package described in this article represents
+a major evolution of this earlier effort.
+
+\section[The graphicsQC package]{The \pkg{graphicsQC} package}
+
+This section describes the \pkg{graphicsQC} package
+for testing \R{} code that produces graphical output.
+
+This package can be divided into three parts:  there are
+functions for producing files of graphical output based on
+user-specified \R{} code;   there is a function for comparing
+sets of graphics files;   and there is a function for generating a
+report from the results of a set of comparisons.
+
+Each of these parts is described in a separate section below.
+
+\subsection{Producing plots}
+\label{section:makeplot}
+
+The core function for producing plots is called 
+\code{plotExpr()}.  
+
+The first argument to this function
+is a character vector of \R{} expressions and the second
+argument is a character vector of graphics format names.
+For each expression and for each format, the \code{plotExpr()} 
+function opens an appropriate graphics device and evaluates the
+expression.
+
+By default, these expressions are evaluated to produce output
+on all supported graphics devices 
+(currently, \pdf{}, \ps{}, \png{}, and, on Windows, \bmp{}).
+For example, the following code 
+loads the \pkg{graphicsQC} package
+and (on Linux) produces a single plot (a scatterplot of 
+the \code{pressure} data set) in \pdf{}, \ps{},
+and \png{} format.
+
+<<>>=
+library(graphicsQC)
+
+@ 
+% Don't want rogue files all over the place
+<<eval=FALSE>>=
+plotExpr("plot(pressure)")
+
+@ 
+Additional arguments control
+how the resulting files are named (\code{prefix})
+and where they are created (\code{path}).
+For example, the following code is similar to the previous example,
+but it keeps things more organized by creating the files in
+a separate directory, called \code{Demo1}, and it uses 
+a specific prefix, \code{plot}, to name the files.
+
+<<echo=FALSE>>=
+# tidy up for run
+unlink("Demo1", recursive=TRUE)
+
+<<>>=
+demo1Result <- plotExpr("plot(pressure)", path="Demo1", prefix="plot")
+
+@ 
+The \R{} expression in this example produces a single plot so three
+files are produced, one for each graphics file format.
+
+<<>>=
+list.files("Demo1")
+
+@ 
+As the above result shows, as well as producing the graphics files, 
+the \code{plotExpr()} function has created an
+\xml{} \dfn{log file}, which contains a record of the graphics files that were
+produced.  This log file will be discussed in detail shortly, but first
+there is more to say about the expressions that are passed to \code{plotExpr()}
+as the first argument.
+
+The expressions that are given to \code{plotExpr()} can be 
+arbitrary \R{} code and this presents some complications that
+the function must be able to cope with:
+
+\begin{description}
+\item[How many plots?]  It is impossible to determine \emph{a priori}
+how many 
+pages of plots a piece of code will produce.
+The \code{plotExpr()} function simply generates a separate file for each
+page and numbers the files appropriately.
+
+\item[Zero plots:]  A special case of the previous problem is that
+it is possible for an \R{} expression to produce
+no plots at all.  This will still produce 
+a graphics file, but the file will be ``blank''.  The definition of
+blank depends on the file format and this can change between versions 
+of \R{},
+so the \pkg{graphicsQC} package deliberately generates an empty
+file for each graphics format and \code{plotExpr()} deletes any graphics files
+that it produces that are identical to a blank file.
+
+\item[Overwriting files:]  Another problem that arises from not knowing
+how many files \code{plotExpr()} will produce is that it is 
+difficult to predict whether \code{plotExpr()} will overwrite any
+existing files.  The solution to this problem is that
+\code{plotExpr()} will refuse to produce files that start with the
+specified \code{prefix}.  A further argument, \code{clear}, is 
+provided which, if \code{TRUE}, means that all files with
+the relevant \code{prefix} are deleted so that \code{plotExpr()}
+can create new files without conflict.
+
+\item[Errors and warnings:]  The code given to 
+\code{plotExpr()} may not work at all.  For this reason,
+\code{plotExpr()} uses the \code{try()} mechanism to run
+the expressions.  In the event of an error, the error message 
+is recorded, but \code{plotExpr()} itself does not stop
+execution.  Any warning messages are also recorded.
+
+\item[Dangerous code:]  Some \R{} expressions have the potential
+to interfere with the workings of the \code{plotExpr()} function.
+For example, sending a \code{dev.off()} expression to 
+\code{plotExpr()} will prematurely close a graphics device
+and prevent subsequent expressions from being recorded.
+The \pkg{graphicsQC} package does not attempt to protect itself
+from such abuse;  the user is simply advised not to use expressions
+that include calls to functions that control graphics devices
+(e.g., \code{dev.set()}, \code{dev.prev()}, \code{dev.next()}),
+and any functions that start a new device, such as \code{postscript()},
+\code{pdf()}, and \code{dev.new()}).
+
+\end{description}
+
+The following code demonstrates some of these additional details
+by extending the previous example to produce several files for 
+each format.  
+
+The first argument to \code{plotExpr()} this time is a character vector
+containing two \R{} expressions.  The first expression
+produces a single plot (this time a scatterplot
+of pressure to the power of one eighth),  but the second
+expression produces \emph{four} plots (diagnostic plots from a 
+linear model fit).  
+
+<<echo=FALSE>>=
+# tidy up for run
+unlink("Demo2", recursive=TRUE)
+
+<<>>=
+demo2Result <- 
+    plotExpr(c("plot(pressure^.125 ~ temperature, data=pressure)", 
+               "plot(lm(pressure^.125 ~ temperature, data=pressure))"),
+             path="Demo2", prefix="plot")
+
+@ 
+The result is five files for each format, with the suffixes
+\code{-1}, \code{-2}, etc, for a total of 15 graphics files.
+
+<<>>=
+list.files("Demo2")
+
+@ 
+Again, in addition to the graphics files,
+there is also an \xml{} log file.
+
+\subsubsection[XML log files]{\xml{} log files}
+
+The \code{plotExpr()} function generates an \xml{} log file
+to record information about the plots that were generated.
+The log file that was generated in the previous example
+is shown in Figure \ref{figure:demo2log}.
+
+\begin{figure}
+\begin{boxedminipage}{\textwidth}
+{\small
+\begin{Verbatim}[numbers=left, numbersep=6pt]
+<<echo=FALSE, results=tex>>=
+plotLines <- readLines(file.path("Demo2", "plot-log.xml"))
+infoStart <- grep("<info>", plotLines)
+infoEnd <- grep("</info>", plotLines)
+plotsStart <- grep("<plots ", plotLines)[1]
+plotsEnd <- grep("</plots>", plotLines)[1]
+cat(plotLines, "\n", sep="\n")
+@ 
+
+\end{Verbatim}
+} % \small
+\end{boxedminipage}
+\caption{\label{figure:demo2log}An example of an \xml{} log file that
+is generated by the \code{plotExpr()} function.}
+\end{figure}
+
+There are several important features in this log file.  
+First of all, the file has an \code{<info>} element that
+records information about the version of \R{} that was used
+to produce the files, plus time and date information
+(lines \Sexpr{infoStart} to \Sexpr{infoEnd}).  
+Next, for each
+graphics format, there is a 
+\code{<plots>} element containing a
+list of the
+files that were produced (e.g., 
+lines \Sexpr{plotsStart} to \Sexpr{plotsEnd}).  
+There is a separate \code{<plots>} element for each graphics format.
+
+The information is recorded in a file like this so that the
+generation of graphics files can be treated as a separate step
+from comparing files or reporting on comparisons.  For example,
+a typical approach may involve generating a set of control files
+using one version of \R{} then a completely different 
+\R{} installation could be used to generate test code.  The log 
+files allow information to be shared between different \R{} sessions
+and between different versions of \R{}.
+
+The choice of the eXtensible Markup Language \citep{xml} 
+as the format for the log files means that it is
+easy for the log files to be processed using \R{} functions outside
+the \pkg{graphicsQC} package or by using other software altogether.
+
+The \pkg{XML} package \citep{pkgXML} is used to generate the \xml{}
+log files.
+
+\subsubsection{Log objects}
+
+In addition to generating log files, \code{plotExpr()} also 
+returns a \code{qcPlotExprResult} object that contains the same information
+as the log file
+about the plots that were produced.  There is a print method
+for this sort of object, as shown below.
+
+<<>>=
+demo2Result
+
+@ 
+However, the information that is displayed quickly becomes unreadable
+as the testing becomes more complex.  
+The main purpose for a \code{qcPlotExprResult} is to allow
+software testing to occur within a single \R{} session if desired;
+there will be an example of this later.
+
+\subsubsection{Running code from files}
+
+Two other convenience functions are built on top of \code{plotExpr()}.
+The first of these is called \code{plotFile()}, which takes the
+names of one or more files and runs the \R{} code within the files.
+
+All other arguments are the same as for \code{plotExpr()}, although
+the \code{prefix} argument defaults to the name of the file that is being
+run.
+
+An example of the use of \code{plotFile()} is shown below.  The file 
+\code{demo3.R} contains the same expressions that were used in
+the last example (see Figure \ref{figure:demo3file}).
+
+\begin{figure}
+\begin{boxedminipage}{\textwidth}
+{\small
+<<echo=FALSE>>=
+cat(readLines("demo3.R"), sep="\n")
+@ 
+} % \small
+\end{boxedminipage}
+\caption{\label{figure:demo3file}The file \code{demo3.R}, which contains
+several \R{} expressions.}
+\end{figure}
+
+<<echo=FALSE>>=
+# tidy up for run
+unlink("Demo3", recursive=TRUE)
+
+<<>>= 
+demo3Result <- plotFile("demo3.R", path="Demo3")
+
+@ 
+The result is almost identical to the previous example;  the \R{} code
+generates two plots, in three different formats, and there is a log file,
+\code{demo3.R-log.xml} 
+that records the files that were generated.  
+
+<<>>=
+list.files("Demo3")
+
+@ 
+However, there is also one
+additional file, called \code{demo3.R-fileLog.xml}.  The contents
+of this file are shown in Figure \ref{figure:demo3log}.  
+
+\begin{figure}
+\begin{boxedminipage}{\textwidth}
+{\small
+\begin{Verbatim}[numbers=left, numbersep=6pt]
+<<echo=FALSE, results=tex>>=
+demo3lines <- 
+    unlist(strsplit(gsub("<qcPlotExprResult>", "<qcPlotExprResult>\n  ",
+                         gsub("</qcPlotExprResult>", "\n </qcPlotExprResult>",
+                              readLines(file.path("Demo3", 
+                                                  "demo3.R-fileLog.xml")))),
+                    "\n"))
+qcperStart <- grep("<qcPlotExprResult>", demo3lines)
+qcperEnd <- grep("</qcPlotExprResult>", demo3lines)
+cat(demo3lines, "\n", sep="\n")
+@ 
+
+\end{Verbatim}
+} % \small
+\end{boxedminipage}
+\caption{\label{figure:demo3log}The file \code{demo3.R-fileLog.xml}, 
+which records the results of a call to the \code{plotFile()} function.
+This file refers to the \code{plotExpr()} log file,
+ \code{demo3.R-log.xml}, which contains detailed information
+about which graphics files were produced.}
+\end{figure}
+
+This log file
+has an \code{<info>} element that
+contains information about the version of \R{} that was used to
+generate the plots, but rather than storing information about the graphics 
+files
+that were generated, it just has a \code{<qcPlotExprResult>} element 
+(lines \Sexpr{qcperStart} to \Sexpr{qcperEnd})
+that
+contains the location of the other log file, \code{demo3.R-log.xml},
+which already has the detailed information about which graphics files
+were generated (just like the log file \code{plot-log.xml} from
+the previous example;  see Figure \ref{figure:demo2log}).
+
+If several filenames are provided, \code{plotFile()} makes a separate call to
+\code{plotExpr()} for each filename, each of those calls generates
+a separate \code{-log.xml} file, and the overall \code{-fileLog.xml}
+files contains a pointer to each of the \code{-log.xml} files.
+
+\subsubsection{Running function examples}
+
+The other function that builds upon \code{plotExpr()} is called
+\code{plotFunction()}.  This function takes the names of one or more functions
+as its first argument and runs the example code from the 
+help page for the appropriate functions (by constructing a call to 
+\code{plotExpr()}).  Again, the other arguments are the same as
+for \code{plotExpr()}, but the \code{prefix} argument defaults to
+the function name(s).
+
+The following code demonstrates the use of this function to produce 
+plots from the example code on the help pages of the 
+\code{boxplot()} and \code{hist()} functions.
+
+<<echo=FALSE>>=
+# tidy up for run
+unlink("Demo4", recursive=TRUE)
+
+<<results=hide>>=
+demo4Result <- plotFunction(c("boxplot", "hist"), path="Demo4")
+
+@
+
+<<echo=FALSE>>=
+demo4lines <- 
+    unlist(strsplit(gsub("<qcPlotExprResult>", "<qcPlotExprResult>\n  ",
+                         gsub("</qcPlotExprResult>", "\n </qcPlotExprResult>",
+                              readLines(file.path("Demo4", 
+                                                  "boxplot-funLog.xml")))),
+                    "\n"))
+qcperStart <- grep("<qcPlotExprResult>", demo4lines)
+qcperEnd <- length(demo4lines) - 1
+
+@ 
+The example code for \code{barplot()} produces six plots (in three formats)
+and there is a log file, \code{barplot-log.xml}, that records the names
+of these files and how they were produced.
+The example code for \code{hist()} produces three plots (in three formats)
+and a log file, \code{hist-log.xml}, records the names
+of these files and how they were produced.
+The overall log file, \code{barplot-funLog.xml},
+just contains pointers to the individual log files 
+(see lines 
+\Sexpr{qcperStart} to \Sexpr{qcperEnd} in
+Figure \ref{figure:demo4log}).  The prefix for the overall log
+file from a call to \code{plotFunction()} 
+is named after just the first function name (\code{boxplot} in this case)
+to avoid having a ridiculously long name for the overall log file.
+
+\begin{figure}
+\begin{boxedminipage}{\textwidth}
+{\small
+\begin{Verbatim}[numbers=left, numbersep=6pt]
+<<echo=FALSE, results=tex>>=
+cat(demo4lines, "\n", sep="\n")
+@ 
+
+\end{Verbatim}
+} % \small
+\end{boxedminipage}
+\caption{\label{figure:demo4log}The file \code{boxplot-funLog.xml}, 
+which records the results of a call to the \code{plotFunction()} function.
+This log file refers to two further log files, 
+\code{boxplot-log.xml} and \code{hist-log.xml}, which are
+produced by calls to the \code{plotExpr()} function and contain
+detailed information about the graphics files that were produced.}
+\end{figure}
+
+<<>>=
+list.files("Demo4")
+
+@ 
+In summary, the functions \code{plotExpr()}, \code{plotFile()},
+and \code{plotFunction()} allow an arbitrary number of \R{}
+expressions, \R{} script files, or example code from \R{} function help
+pages to be run.  Each separate page of graphics output produces a 
+separate graphics file and the resulting file names, plus details
+of the \R{} session that produced them, are recorded in log
+files for later processing.
+
+These functions can be
+ used to generate both control and test output.  
+
+\subsection{Comparing plots}
+
+Having generated a set of control plots and a set of test plots,
+the next step is to compare the sets of plots in order to detect
+any differences.
+
+This step is performed by the  \code{compare()} function.
+
+The first two arguments to this function specify the set of test plots and the 
+set of control plots that are to be compared.  Each set of plots 
+can be specified in one of three ways:
+as an \R{} object, which is the result of a call to 
+\code{plotExpr()}, \code{plotFile()}, or \code{plotFunction()};
+as the full path to a log file;  or as a directory that contains
+one or more log files.
+
+As a simple example, the following code compares the results of 
+the two simple \code{plotExpr()} examples from Section \ref{section:makeplot}.
+The code specifies the set of test plots as an \R{} object,
+\code{demo1Result}, and the set of control plots as a log file, 
+\code{"Demo2/plot-log.xml"}.
+
+<<>>=
+compareResult <- compare(demo1Result, "Demo2/plot-log.xml")
+
+@
+The \code{compare()} function will only work if it is comparing
+similar types of results, for example, a \code{plotExpr()} result against a
+\code{plotExpr()} result, but not a \code{plotExpr()} result
+against a \code{plotFunction()} result.
+
+The call to the \code{compare()} function shown above 
+generates several more files and these are placed
+by default in the directory of test files.  
+This directory originally just contained three graphics files,
+\code{plot-1.pdf}, \code{plot-1.ps}, and \code{plot-1.png},
+and one log file, \code{plot-log.xml}.  The new contents of this
+directory, following the call to \code{compare()},  are shown below.
+
+<<echo=FALSE>>=
+options(width=80)
+
+<<>>=
+list.files("Demo1/")
+
+<<echo=FALSE>>=
+options(width=60)
+
+@ 
+The original graphics files
+and the original 
+log file have not been touched, but there are now several additional files.
+One of these is a
+\emph{comparison} log file, \code{plot+plot-compareExprLog.xml}, 
+which contains the results of the
+comparison.  The contents of this file are shown in 
+Figure~\ref{figure:comparelog}.
+
+\begin{figure}
+\begin{boxedminipage}{\textwidth}
+{\tiny
+\begin{Verbatim}[numbers=left, numbersep=6pt]
+<<echo=FALSE, results=tex>>=
+compareLines <- 
+    unlist(strsplit(gsub("controlFile=", "\n   controlFile=",
+                         gsub("testFile=", "\n   testFile=",
+                              readLines(file.path("Demo1", 
+                                                  "plot+plot-compareExprLog.xml")))),
+                    "\n"))
+infoStart <- grep("<info>", compareLines)
+infoEnd <- grep("</info>",compareLines)
+testinfoStart <- grep("<testInfo>", compareLines)
+testinfoEnd <- grep("</testInfo>",compareLines)
+coninfoStart <- grep("<controlInfo>", compareLines)
+coninfoEnd <- grep("</controlInfo>",compareLines)
+compareStart <- grep("<compare ", compareLines)[1]
+compareEnd <- grep("</compare>",compareLines)[1]
+cat(compareLines, "\n", sep="\n")
+@ 
+
+\end{Verbatim}
+} % \small
+\end{boxedminipage}
+\caption{\label{figure:comparelog}The file 
+\code{plot+plot-compareExprLog.xml}, 
+which records the results of a call to the \code{compare()} function.}
+\end{figure}
+
+As demonstrated by the size of this log file, which is from the most
+simple sort of comparison, a significant amount of information is
+recorded from the call to \code{compare()}.  Following the order
+in the file, there is initially an 
+\code{<info>} element 
+(lines \Sexpr{infoStart} to \Sexpr{infoEnd})
+that contains information about the \R{} version used
+to generate this comparison,  
+a \code{<testInfo>} element 
+(lines \Sexpr{testinfoStart} to \Sexpr{testinfoEnd})
+that points 
+to the log file for the test set of plots
+(i.e., information about which plots were generated in the test set), and
+a \code{<controlInfo>} element 
+(lines \Sexpr{coninfoStart} to \Sexpr{coninfoEnd})
+with 
+a pointer to the log file for the control set of plots.
+
+The ``meat'' of the comparison result comes next, with several 
+\code{<compare>} elements, one for each file format (e.g.,
+lines \Sexpr{compareStart} to \Sexpr{compareEnd}).  
+Within each of
+ these are \code{<comparison>} elements containing
+the results of individual comparisons between graphics files.
+The first of these is reproduced below.
+
+<<echo=FALSE>>=
+compareLines <- 
+    unlist(strsplit(gsub("controlFile=", "\n   controlFile=",
+                         gsub("testFile=", "\n   testFile=",
+                              readLines(file.path("Demo1", 
+                                                  "plot+plot-compareExprLog.xml")))),
+                    "\n"))
+comparisonStart <- grep("<comparison", compareLines)[1]
+comparisonEnd <- grep("</comparison", compareLines)[1]
+pngdiff <- grep("<diffFile></diffFile>", compareLines)
+cat(gsub("controlFile=", "\n   controlFile=",
+         gsub("testFile=", "\n   testFile=",
+              compareLines[comparisonStart:comparisonEnd])), sep="\n")
+
+@ 
+This \code{<comparison>} element records which graphics files were
+compared via the attributes
+\code{controlFile} and \code{testFile},
+and the result of the comparison is a \code{<result>} element. 
+In this case, there is
+a difference between the files, which means that the \code{compare()}
+function has generated a file to show the difference in the underlying
+text (\pdf{}) code, \code{plot-1-pdf+plot-1-pdf.diff}, \emph{and}
+it has generated an \emph{image} of the difference,
+\code{plot-1-pdf+plot-1-pdf.png}.  The names of these files are
+recorded in \code{<diffFile>} and \code{<diffPlot>} elements
+in the log file and they can also be seen in the
+file listing of the \code{Demo1} directory that was shown above.
+
+The first few lines of the file \code{plot-1-pdf+plot-1-pdf.diff}
+are shown in
+Figure \ref{figure:comparediff}
+and the image \code{plot-1-pdf+plot-1-pdf.png} is 
+shown in Figure \ref{figure:compareimage}.
+
+\begin{figure}
+\begin{boxedminipage}{\textwidth}
+{\small
+<<echo=FALSE>>=
+cat(readLines(file.path("Demo1", "plot-1-pdf+plot-1-pdf.diff"),
+              n=20), sep="\n")
+@ 
+} % \small
+\end{boxedminipage}
+\caption{\label{figure:comparediff}The first few lines of the file 
+\code{plot-1-pdf+plot-1-pdf.diff}, 
+which records the difference in the raw \pdf{} code between
+two graphics files.}
+\end{figure}
+
+\begin{figure}
+\begin{center}
+\fbox{\includegraphics[width=3.5in]{Demo1/plot-1-pdf+plot-1-pdf.png}}
+\end{center}
+\caption{\label{figure:compareimage}An image of the difference between
+two graphics files.  Areas where the original files are the same are
+drawn in light grey and areas of difference are in red.
+This complements the difference in the raw
+\pdf{} code that is shown in Figure \ref{figure:comparediff}.}
+\end{figure}
+
+The \code{.diff} file shows the low-level detail of the difference
+in terms of PDF code
+and the \code{.png} file shows a high-level view of the difference.
+The latter makes it very easy to identify and understand what has actually 
+changed in the image, and the former can be useful for tracking down 
+exactly which piece of \C{} code is reponsible for the difference.
+Together, they provide very powerful debugging information.
+In this example, the difference has been deliberately
+introduced---the plots differ in terms of the
+y-values (one is a plot of the raw pressure values and one is a plot of the 
+transformed pressure values).
+
+Going back to the log file \code{plot+plot-compareExprLog.xml}
+(Figure \ref{figure:comparelog}),
+the results of further comparisons are recorded as well, with more
+\code{.diff} files and \code{.png} files.  One detail to note
+is that the comparison of \png{} files does \emph{not} 
+produce a \code{.diff} file (line \Sexpr{pngdiff})
+because PNG files  are binary rather than text-based files.
+
+There is also one final section in the log file for the comparison,
+which records any files that were ``unpaired''.
+In this comparison, the test set of plots consisted of three plots,
+but the control set consisted of fifteen plots.  Consequently, twelve of
+the control plots have nothing to be compared to, so these graphics files
+are recorded in the log file within an \code{<unpaired>} element.
+
+In addition to the log file, 
+the results of a call to the \code{compare()} function
+ are also returned as an \R{} object.
+In the above example, this has been assigned to the symbol
+\code{compareResult}.  We will make use of this \R{} object later.
+
+\subsubsection{Auto-detecting log files}
+
+In the above example of the \code{compare()} function, 
+the test set of plots were specified using an \R{} object---the 
+result of a call to \code{plotExpr()}---and 
+the control set of plots were specified as the name
+of a log file.
+
+It is also possible to specify just a directory that contains
+a set of plots.  In this case, the \code{compare()} function
+attempts to find the highest-level log file within that directory.
+If there is only a log file from a call to \code{plotExpr()} that will
+be used, but if there is a log file from a call to \code{plotFile()}
+or \code{plotFunction()}, that will be used instead (such a log file will
+point to one or more log files from one or more calls to 
+\code{plotExpr()}).
+
+In summary, the \code{compare()} function is used to perform
+a comparison between two sets of plots.  Any differences are recorded
+as \code{.diff} files (for text-based file formats) and visually as
+\code{.png} files, and the full set of results for the comparisons is
+recorded in a log file.
+
+\subsection{Reporting on comparisons}
+
+The previous section described how to perform
+a comparison between two sets of plots and the set of difference files 
+and log files that are generated by the comparison.
+It should be clear that a large amount of information is recorded
+for even a simple comparison and sifting through the \xml{} within a log
+file to determine the result of a comparison is not very convenient.
+
+This section describes the function \code{writeReport()}, which
+is provided to present the results of a call
+to the \code{compare()} function in a much more convenient format, as
+an \html{} report.
+
+The \code{writeReport()}
+ function has a single important argument, which specifies the 
+information from a comparison, either as an
+\R{} object that was produced by a call to \code{compare()},
+or the name of a log file, or the name of a directory that contains
+a log file.  The following code produces a report on the
+comparison example from the previous section
+by specifying the \R{} object that resulted from the call
+to \code{compare()}.
+
+<<write, eval=FALSE>>=
+writeReport(compareResult)
+
+@ 
+{\small
+<<echo=FALSE>>=
+writeReport(compareResult, browse=FALSE)
+@ 
+} % \small
+
+The top of the resulting \html{} report is shown in Figure \ref{figure:reportA}
+and the bottom of the report is shown in Figure \ref{figure:reportB}.
+
+The basic structure of this report mirrors the structure of the
+original log file;  there is 
+a section titled ``Info'' with 
+information about how the sets of plots
+were generated and about how the comparison was performed, then
+there is 
+a section titled ``Plot Comparisons'' with
+information about each individual file comparison,
+and finally several sections containing 
+extra details about any graphics files that were unpaired,
+and a comparison of warning and error messages.
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=\textwidth]{demo1reportA.png}
+\end{center}
+\caption{\label{figure:reportA}The top part of an \html{}
+report produced by \code{writeReport()}.}
+\end{figure}
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=\textwidth]{demo1reportB.png}
+\end{center}
+\caption{\label{figure:reportB}The bottom part of an \html{}
+report produced by \code{writeReport()}.}
+\end{figure}
+
+This report is just a more digestible form of the log file, but it is 
+\emph{much} more convenient.  It also has the benefit of providing 
+links to the information that it records.  For example, in the 
+section on plot differences (Figure \ref{figure:reportB}), it is
+possible to click on links to view the original graphics files 
+(e.g., the link labelled \code{plot-1.pdf}),
+the \code{.diff} files 
+(e.g., the link labelled \code{plot-1-pdf+plot-1-pdf.diff}),
+and the \code{.png} images of the differences
+(e.g., the link labelled \code{plot-1-pdf+plot-1-pdf.png}).
+
+Furthermore, in addition to generating an \html{} version of the
+log file generated by \code{compare()}, the \code{writeReport()}
+function generates an \html{} version of the log files that recorded
+the original sets of plots---the log files that were generated
+by \code{plotExpr()}.  In the ``Info'' section of the report
+(Figure \ref{figure:reportA}), it
+is possible to click on a link labelled 
+\code{plot-log.xml} to view a report of the 
+files that were generated by \code{plotExpr()}.  This report
+for the control set of plots is shown in Figure \ref{figure:reportC}.
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=\textwidth]{demo1reportC.png}
+\end{center}
+\caption{\label{figure:reportC}An \html{} report, produced
+by \code{writeReport()}, on a set of plots
+that were generated by a call to \code{plotExpr()}.}
+\end{figure}
+
+\subsubsection[XSLT]{\xslt{}}
+
+The generation of \html{} report files from the \xml{} log files 
+is performed using eXtensible Stylesheet Language Transformations 
+\citep{xsl}.  
+
+The \pkg{graphicsQC} package provides a default set of \xslt{} templates for 
+transforming the information in the \xml{} log files into 
+\html{} elements, but these can be modified or replaced to
+produce a different style of report.  The
+\code{writeReport()} function has an
+\code{xslStyleSheets} argument that allows new \xslt{} templates to be 
+specified.
+
+The \pkg{Sxslt} package \citep{pkgsxslt}
+ is used to apply the \xslt{}
+templates that transform
+the \xml{} log files into \html{} report files.  
+
+In summary, the \code{writeReport()} function generates \html{} 
+files based on the results of a call to \code{compare()}.
+This set of \html{} files allows for
+an efficient and detailed exploration of the 
+results of a comparison.
+
+\section{Applications and examples}
+\label{section:examples}
+
+The examples up to this point have been very simple, with deliberate 
+differences between plots, in order to clearly 
+demonstrate how the functions within the \pkg{graphicsQC} package work.
+
+This section demonstrates a realistic application of the package.
+
+The quality control scenario is that a change was made to the
+\C{} code in the core \R{} graphics system to account for
+anisotropy (pixels that are not square).  This change was expected
+to have an effect on the output of some specific \R{} functions on
+some raster formats, for example \png{}, 
+but no effect on vector formats such as \pdf{} and \ps{}.
+
+The software testing serves two purposes:  first of all, it makes 
+it possible to observe whether the code change has any of the anticipated 
+effects on raster output;  secondly, it makes it possible to 
+check that the code change has not had any unintended 
+consequences.
+
+The first step is to generate a set of plots using the
+version of \R{} immediately prior to the code change
+(this was \svn{} revision 44416).  This specific version of \R{}
+was checked out of the \svn{} repository and built, the 
+\pkg{XML}, \pkg{Sxslt}, and \pkg{graphicsQC} packages were installed,
+then the following code was run.
+
+% See /home/RQC/ for the real code and results
+
+<<eval=FALSE>>=
+plotFunction(ls("package:grid"),
+             path="R44416/QC")
+
+@ 
+The purpose of this call is to run all example code for all
+functions in the \pkg{grid} graphics package.  The resulting
+graphics files and log files are stored in the directory
+\code{R44416/QC}.
+
+The next step is to generate a set of plots using the version of 
+\R{} immediately after the code change (revision 44417).
+Having checked out and built that version, and having installed 
+the required packages, the following code
+was run.
+
+<<eval=FALSE>>=
+plotFunction(ls("package:grid"),
+             path="R44417/QC")
+
+@ 
+Again, the result is a set of plots from running example code
+for functions in the \pkg{grid} package, this time storing the
+files in the directory \code{R44417/QC}.
+
+The comparison of the two sets of plots is performed with
+the following code (run in either version of \R{}).
+
+<<eval=FALSE>>=
+compare("R44417/QC", "R44416/QC")
+
+@ 
+The \code{compare()} function automatically detects the appropriate
+log files and compares all plots, producing files of differences
+where appropriate and generating log files to record the results.
+
+The final step is to generate
+ an \html{} report so that the results of the
+comparison can be viewed. This is achieved using the following code.
+
+<<eval=FALSE>>=
+writeReport("R44417/QC")
+
+@ 
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=\textwidth]{gridreportA.png}
+\end{center}
+\caption{\label{figure:gridA}An \html{} report, produced
+by \code{writeReport()}, to check for differences in the output
+of \pkg{grid} functions following a change in the \C{} code
+of the \R{} graphics engine.}
+\end{figure}
+
+The top of the resulting report is shown in Figure \ref{figure:gridA}.
+
+The first important thing to note about this report is that the
+table of contents at the top includes a summary of the number
+of files that were different (9 files were different and 
+these files were generated from the example code of
+6 different \pkg{grid} functions),
+the number of files that were identical (372 files, representing the
+output of example code from 67 different functions), and the
+number of functions that produced no graphical output at all 
+(86 functions).  
+
+Figure \ref{figure:gridB} shows the ``Different plots'' section
+from the report.  This reveals which functions produced different plots,
+along with links to the original plots and links to pictures of the
+differences.  The difference for the \code{arcCurvature} output is shown in
+Figure \ref{figure:griddiff}.  This shows that some lines are drawn
+in slightly different locations, which is exactly the effect that was
+expected from the anisotropy code change.
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=\textwidth]{gridreportB.png}
+\end{center}
+\caption{\label{figure:gridB}An \html{} report, produced
+by \code{writeReport()}, to check for differences in the output
+of \pkg{grid} functions following a change in the \C{} code
+of the \R{} graphics engine.  This shows the ``Different plots''
+section of the report.}
+\end{figure}
+
+\begin{figure}
+\begin{center}
+\fbox{\includegraphics[width=3.5in]{arcCurvature-1-png+arcCurvature-1-png.png}}
+\end{center}
+\caption{\label{figure:griddiff}An image of the difference in output
+from the \pkg{grid} function \code{arcCurvature()}
+ following a change in the \C{} code
+of the \R{} graphics engine.  Differences are colored red.}
+\end{figure}
+
+It is worth noting that, due to the sheer number of plots that need to
+be produced and compared, this is a good demonstration of the usefulness
+of automating this sort of check.  It is also
+a good demonstration of the usefulness of producing an \emph{image} of the
+difference---this tiny change would be impossible to 
+detect by eye and, even having determined
+ that the images were different, it would be
+hard to pinpoint the exact nature of the change.
+
+It is also worth noting that this report only shows that there is a
+difference.  It does not make any statements about whether the control
+output or the test output represents the ``correct''
+output (it is possible that neither does).  The results of 
+\pkg{graphicsQC} comparisons provide support for diagnosing
+problems, but an expert viewer is required to determine the meaning
+of any differences.
+
+Another important point about the table of ``Different plots'' 
+(Figure \ref{figure:gridB}) is that it provides links to 
+more detailed information about the comparison for each 
+\pkg{grid} function.  For example, there is a link,
+labeled \code{arcCurvature+arcCurvature}, to a
+separate \html{} report on the comparison just for the
+\code{arcCurvature()} example plots.  This report is shown in
+Figure \ref{figure:gridC}.  
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=\textwidth]{gridreportC.png}
+\end{center}
+\caption{\label{figure:gridC}An \html{} report, produced
+by \code{writeReport()}, to check for differences in the output
+of the \pkg{grid} function \code{arcCurvature()},
+ following a change in the \C{} code
+of the \R{} graphics engine.  This shows the ``Different plots''
+section of the report. This report is obtained by ``drilling down''
+from the main report shown in Figure \ref{figure:gridB}.}
+\end{figure}
+
+The usefulness of this lower level report is that it clearly shows that 
+there were differences in the graphics output only for the
+\png{} format.  The output of the 
+\code{arcCurvature()} function was identical for \ps{} and \pdf{} formats.
+
+It is also possible to drill down even further to reports that 
+detail how the test and control sets of plots were generated.
+
+Going back to Figure \ref{figure:gridB}, not all of the differences 
+that are reported here are ones that were expected.  The differences
+were expected to be seen in the output of functions that draw special
+curves called X-splines \citep{xspline}.
+This accounts for the differences reported for the \code{arcCurvature()}
+function, the \code{curveGrob()} and \code{grid.curve()} functions, and
+the \code{grid.xspline()} and (not visible) \code{xsplineGrob()}
+functions.  However, a difference in the output for the 
+\code{grid.gedit()} function is a surprise.  Figure \ref{figure:gridbaddiff}
+shows the image of the difference in this output.
+
+\begin{figure}
+\begin{center}
+\fbox{\includegraphics[width=3.5in]{grid-gedit-1-png+grid-gedit-1-png.png}}
+\end{center}
+\caption{\label{figure:gridbaddiff}An image of the difference in output
+from the \pkg{grid} function \code{grid.gedit()}
+ following a change in the \C{} code
+of the \R{} graphics engine.  Differences are colored red.}
+\end{figure}
+
+This output does not involve any X-splines;  it is just straight
+lines and text.  Furthermore the difference is in the positioning
+of the text.
+
+It turns out that this is the result of a small and hard-to-find bug
+in the core \R{} graphics code that occurs essentially at random.  However,
+the details of this bug are not important to this article.  
+
+What is
+important is that this is a vivid demonstration of the value of 
+this sort of quality control tool.  This bug had gone unnoticed 
+for 9 months precisely because the sort of tests that the \pkg{graphicsQC}
+package provides were not conducted.  One of the important
+purposes of running these sorts of software tests is to find
+changes like this that were not anticipated.
+
+\section{Limitations}
+
+This section discusses some of the known limitations of the 
+\pkg{graphicsQC} package.
+
+One major issue is the fact that \pkg{graphicsQC} depends on the \pkg{XML} and
+\pkg{Sxslt} packages.  This is an issue because some people have reported
+problems with the \pkg{XML} package on the Mac OS platform and 
+the \pkg{Sxslt} package is only known to work on Linux systems.
+These problems are perhaps less serious than they would be for other
+\R{} packages because it is anticipated that \pkg{graphicsQC} will be used 
+mostly by package developers and it is generally assumed that 
+the majority of package development occurs
+on Linux systems.  Furthermore, the \pkg{Sxslt} package is only 
+required for generating reports via the \code{writeReport()} function, so
+the other graphics quality control tools can still be used on 
+other platforms.
+
+The \pkg{graphicsQC} package also depends on the ImageMagick 
+software library for generating images of differences between
+graphics files.  This imposes a burden on the user on 
+non-Linux systems, who will have to install the
+additional software, but ImageMagick is available for
+all major platforms.
+
+The graphics testing tools provided by the \pkg{graphicsQC} package
+are not part of the standard \code{R CMD check} suite of tests.
+However, they can be easily incorporated via a file in the 
+package \code{tests} directory for a package.  All that is needed
+is a file of \R{} code that generates test plots---Figure 
+\ref{figure:qctests} shows an example---plus
+a set of control files to compare the test plots to.  The control files
+can be generated once and included as part of the package
+directory structure.  This approach has been succesfully used to automate
+graphics quality control checks for the package
+\pkg{gridDiagram} 
+(\url{http://www.stat.auckland.ac.nz/~paul/R/Diagram/gridDiagram_0.2.tar.gz}).
+
+\begin{figure}
+\begin{boxedminipage}{\textwidth}
+{\small
+\begin{Verbatim}
+<<echo=FALSE, results=tex>>=
+cat(readLines("gridDiagramQC.R"), 
+    "\n", sep="\n")
+@ 
+
+\end{Verbatim}
+} % \small
+\end{boxedminipage}
+\caption{\label{figure:qctests}An example of a file that could be placed
+in the \code{tests} sub-directory of a package in order to run
+\pkg{graphicsQC} tests as part of \code{R CMD check}.
+This code checks the graphics output from \R{} code
+in two files from the \code{demo} sub-directory of a
+package called \pkg{gridDiagram}.} 
+\end{figure}
+
+The limitation is that this approach is only appropriate for private
+testing of a package.  This would not necessarily work for a package
+submitted to CRAN because of the dependencies on the 
+\pkg{XML} and \pkg{Sxslt} package, \emph{plus} the fact that 
+this sort of check may generate large numbers of files and take 
+a long time to run, which may take too much of a toll on the 
+resources used for daily testing of CRAN packages.
+In practice, the authors have so far mostly used the package for 
+one-off testing, with control files generated using 
+one version of \R{} or a one version of a particular package
+(prior to a bug fix) and test files generated using a 
+different version of \R{} or a different version of 
+the package (which includes the bug fix).
+
+One final limitation of the software testing
+tools provided by the \pkg{graphicsQC} package is that
+they do not allow \emph{interactive} graphics devices to be tested.
+For example, not all code that supports \proglang{X11} or Windows
+on-screen windows will be exercised by \pkg{graphicsQC} tests.
+Also, functions that require user input, such as \code{locator()}
+and \code{identify()} cannot be tested with the 
+\pkg{graphicsQC} package.
+
+\section{Availability}
+
+The \pkg{graphicsQC} package is available from CRAN.
+This article describes version 1.0 of the package.
+
+A development version of the package is available 
+from R-Forge \citep[][\url{http://R-Forge.R-project.org/}]{rforge} 
+and the R-Forge site
+also has a link to the complete set of files from the report that was
+described in Section \ref{section:examples}.  
+The random nature
+of the graphics bug that was discovered in that example
+means that some of the differences between graphics files that are
+recorded in the report on R-Forge 
+differ from what is shown in Section \ref{section:examples} of this
+article.
+
+
+\section{Conclusion}
+
+The \pkg{graphicsQC} package provides quality control tools for 
+graphics software testing.  
+
+The functions \code{plotExpr()}, 
+\code{plotFunction()}, and \code{plotFile()} can be used to generate
+sets of graphics files from explicit \R{} code; from the example
+code of help pages for specified function names; or from
+the names of files that contain \R{} code.
+
+The \code{compare()} function compares a set of test graphics files
+with a set of control graphics files and, where there are differences,
+it generates new files containing both text-based and visual 
+representations of 
+the differences.
+
+The \code{writeReport()} function produces an \html{} report that 
+conveniently displays the results of a graphics software test.
+
+The \pkg{graphicsQC}
+package is being used as a quality control tool in the development
+of the core \R{} graphics system and can be easily incorporated into
+the testing of extension packages for \R{}.
+
+A possible future development of the package could include a function
+that generates graphics files based simply on the name of a package.
+This would be a simple wrapper around \code{plotFunction()} and
+\code{plotFile()} that would 
+run all examples from all help files in the package
+\emph{plus} any files of \R{} code in the \code{demo} and \code{tests} 
+directories of the package.
+
+It would also be possible to write a single overall function that 
+performed a complete software test, including producing both
+test and control sets of plots by running separate \R{} versions via
+\code{system()} calls, followed by calls to \code{compare()}
+and \code{writeReport()}.  
+
+Finally, the range of supported graphics formats could also be extended.
+
+Further experience with using the package will dictate whether these
+enhancements are necessary or worthwhile.
+
+\section*{Acknowledgements}
+
+Yun Hong provided proof-of-concept code for
+some of the ideas in this package during a Faculty of Science
+Summer Scholarship 2005--2006 at the University of Auckland.
+
+The valuable suggestions and criticisms from the
+assistant editor and the anonymous reviewers are greatly
+appreciated.
+
+\bibliography{graphicsqc}
+
+\end{document}

@@ -1,3 +1,12 @@
+2009-04    Paul Murrell <paul@stat.auckland.ac.nz>
+
+* graphicsqc.Rnw:
+	Added (slightly modified) JSS article as vignette
+
+* CITATION:
+	Added citation file
+	
+
 2009-03    Paul Murrell <paul@stat.auckland.ac.nz>
 
 * compare.R:

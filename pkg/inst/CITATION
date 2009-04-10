@@ -1,0 +1,20 @@
+citHeader("To cite graphicsQC in publications use:")
+
+citEntry(entry = "Article",
+  title        = "Quality Control for Statistical Graphics: The {graphicsQC} Package for {R}",
+  author       = personList(as.person("Paul Murrell"),
+                   as.person("Stephen Gardiner")),
+  journal      = "Journal of Statistical Software",
+  year         = "2009",
+  volume       = "30",
+  number       = "1",
+  pages        = "1--28",
+  url          = "http://www.jstatsoft.org/v30/i01/",
+
+  textVersion  =
+  paste("Paul Murrell, Stephen Gardiner (2009).",
+        "Quality Control for Statistical Graphics: The graphicsQC Package for R.",
+        "Journal of Statistical Software, 30(1), 1-28.",
+        "URL http://www.jstatsoft.org/v30/i01/.")
+)
+
