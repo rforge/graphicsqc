@@ -231,50 +231,6 @@ both of these send calls to the graphics engine,
 and the graphics engine calls the graphics devices to produce output in
 different formats (see Figure \ref{figure:org}).
 
-<<org, echo=FALSE, fig=TRUE, include=FALSE, height=5>>=
-library("grid")
-
-graphics <- c("graphics.c\npar.c\nplot.c\nplot3d.c")
-grid <- c("grid.c\ngpar.c\nlayout.c\nunit.c\nviewport.c")
-engine <- c("engine.c\ncolors.c\nplotmath.c\ndevices.c")
-ps <- "devPS.c"
-x11 <- c("devX11.c\ncairoX11.c")
-tex <- "devPicTeX.c"
-win <- "devWindows.c"
-
-textBox <- function(x, y, labels, name) {
-    grid.text(labels, x, y)
-    grid.roundrect(x, y, 
-                   width=stringWidth(labels) + unit(4, "mm"),
-                   height=stringHeight(labels) + unit(1, "lines"),
-                   name=name)
-}
-
-# grid.newpage()
-textBox(.3, .8, graphics, "graphics")
-textBox(.7, .8, grid, "grid")
-textBox(.5, .5, engine, "engine")
-textBox(.2, .2, ps, "ps")
-textBox(.4, .2, x11, "x11")
-textBox(.6, .2, tex, "tex")
-textBox(.8, .2, win, "win")
-
-arr <- function(from, to, a1, a2) {
-    grid.segments(grobX(from, a1),
-                  grobY(from, a1),
-                  grobX(to, a2),
-                  grobY(to, a2),
-                  arrow=arrow(angle=15, length=unit(4, "mm"), type="closed"))
-}
-
-arr("graphics", "engine", 300, 120)
-arr("grid", "engine", 240, 60)              
-arr("engine", "ps", 240, 90)
-arr("engine", "x11", 260, 90)
-arr("engine", "tex", 280, 90)
-arr("engine", "win", 300, 90)
-
-@ 
 \begin{figure}
 \begin{center}
 \includegraphics[width=.7\textwidth]{graphicsqc-org}
