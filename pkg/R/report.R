@@ -23,12 +23,11 @@
 `writeReport` <-
 function(qcResult, browse = TRUE, xslStyleSheets = NULL)
 {
-    library(Sxslt)
     #SxsltInitializationFunction()
     ## Note: There is a call to browser() in addXSLTFunctions...
     # -- can't just give logToHTML even if it is defined outside - have
     # to give the function definition here?
-    addXSLTFunctions(logToHTML = function(...) logNameToHTML(file.path(...)),
+    Sxslt::addXSLTFunctions(logToHTML = function(...) logNameToHTML(file.path(...)),
                      getCompareExprName =
                        function(logWithPath) {
                            strsplit(basename(logWithPath),
@@ -91,7 +90,7 @@ function(qcResult, xslStyles)
 {
     plotExprPath <- file.path(qcResult[["info"]][["directory"]],
                               qcResult[["info"]][["logFilename"]])
-    plotExpr <- xsltApplyStyleSheet(plotExprPath,
+    plotExpr <- Sxslt::xsltApplyStyleSheet(plotExprPath,
                                     xslStyles[["plotExprStyleSheet"]])
     logName <- logNameToHTML(plotExprPath)
     saveXML(plotExpr$doc, file = logName)
@@ -108,7 +107,7 @@ function(qcResult, xslStyles)
 {
     plotFPath <- file.path(qcResult[["info"]][["directory"]],
                             qcResult[["info"]][["logFilename"]])
-    plotF <- xsltApplyStyleSheet(plotFPath,
+    plotF <- Sxslt::xsltApplyStyleSheet(plotFPath,
                                   xslStyles[["plotFunAndFileStyleSheet"]])
     logName <- logNameToHTML(plotFPath)
     saveXML(plotF$doc, file = logName)
@@ -130,13 +129,13 @@ function(qcResult, xslStyles)
     controlPath <- file.path(qcResult[["controlInfo"]][["directory"]],
                              qcResult[["controlInfo"]][["logFilename"]])
 
-    compareExpr <- xsltApplyStyleSheet(compareExprPath,
+    compareExpr <- Sxslt::xsltApplyStyleSheet(compareExprPath,
                                        xslStyles[["compareExprStyleSheet"]])
     # No point recursing since we have the info we need and there's
     # only 2 files.
-    testExpr <- xsltApplyStyleSheet(testPath,
+    testExpr <- Sxslt::xsltApplyStyleSheet(testPath,
                                     xslStyles[["plotExprStyleSheet"]])
-    controlExpr <- xsltApplyStyleSheet(controlPath,
+    controlExpr <- Sxslt::xsltApplyStyleSheet(controlPath,
                                        xslStyles[["plotExprStyleSheet"]])
     logName <- logNameToHTML(compareExprPath)
     saveXML(compareExpr$doc, file = logName)
@@ -159,12 +158,12 @@ function(qcResult, xslStyles)
                               qcResult[["info"]][["logFilename"]])
     testPath <- qcResult[["info"]][["testLog"]]
     controlPath <- qcResult[["info"]][["controlLog"]]
-    compareF <- xsltApplyStyleSheet(compareFPath,
+    compareF <- Sxslt::xsltApplyStyleSheet(compareFPath,
                                 xslStyles[["compareFunAndFileStyleSheet"]])
     # No point recursing, we have what we need.
-    testF <- xsltApplyStyleSheet(testPath,
+    testF <- Sxslt::xsltApplyStyleSheet(testPath,
                                 xslStyles[["plotFunAndFileStyleSheet"]])
-    controlF <- xsltApplyStyleSheet(controlPath,
+    controlF <- Sxslt::xsltApplyStyleSheet(controlPath,
                                 xslStyles[["plotFunAndFileStyleSheet"]])
     logName <- logNameToHTML(compareFPath)
     saveXML(compareF$doc, file = logName)
