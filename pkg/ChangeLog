@@ -1,3 +1,8 @@
+2014-07    Paul Murrell <paul@stat.auckland.ac.nz>
+
+* DESCRIPTION:
+	Added Additional_repositories for Sxslt
+
 2009-04    Paul Murrell <paul@stat.auckland.ac.nz>
 
 * graphicsqc.Rnw:
@@ -5,14 +10,14 @@
 
 * CITATION:
 	Added citation file
-	
+
 
 2009-03    Paul Murrell <paul@stat.auckland.ac.nz>
 
 * compare.R:
 	gqcShell():  new function to provide cross-platform system() calls.
-	
-	
+
+
 2009-02     Paul Murrell <paul@stat.auckland.ac.nz>
 
 	Changed stop() and warning() messages so that they
@@ -21,31 +26,31 @@
 
 	Changed paste("file", "path", sep=".Platform$separator)
 	to file.path("file", "path")
-	
-* makeplots.R: 
+
+* makeplots.R:
 	plotFunction(): record date using Sys.time() rather
 	than date() so we get an ISO date format.
 
 	notYetImplemented(): added 'feature' argument so that
 	the message can be more informative.
-	
+
 * graphicsQC-package.Rd:
 	Removed package metadata.
 
 2008-11     Paul Murrell <paul@stat.auckland.ac.nz>
 
-* makeplots.R: 
-	(): Changed how "call" is calculated 
-	(plotExpr): Changed meaning of default value of 'filetype';  
-		default is still NULL, but now that means produce 
+* makeplots.R:
+	(): Changed how "call" is calculated
+	(plotExpr): Changed meaning of default value of 'filetype';
+		default is still NULL, but now that means produce
 		ALL available formats
-	
-* compare.R: 
-	(): Changed how "call" is calculated 
+
+* compare.R:
+	(): Changed how "call" is calculated
 
 * report.R:
 	(writeReport): Added 'browse' arg so automatically opens browser.
-	
+
 2007-11-10  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
 
 * DESCRIPTION: Changed the name of the package to ``graphicsQC''.
@@ -115,7 +120,7 @@
 	(report.qcPlotExprResult, report.qcPlotFileResult, report.qcPlotFunResult,
 	 report.qcCompareExprResult, report.qcCompareFileResult,
 	 report.qcCompareFunResult, report.default): New functions (refactored code).
-	 
+
 * log.R
 	(getQCResult): Added argument for 'which' so can be used to auto-detect
 		all log files, or just plot ones.
@@ -131,7 +136,7 @@
 
 * compare.R
 	(print.qcCompareExprResult) Changed to match arguments of the print generic.
-	
+
 * gridExample2.tar.gz: New File.
 
 2007-10-16  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
@@ -156,7 +161,7 @@
 
 * writeReport.R
 	(): Also passes xslStyleSheets when recursing for sub-types.
-	
+
 * compareFunAndFile.xsl
 	(): Fixed bug where "Warnings" and "Errors" column in Warnings/Errors
 		comparisons	table would not be correctly sized if the warnings/errors
@@ -170,7 +175,7 @@
 
 * tests.R
 	(): Added test to check if Sxslt can be loaded before writeReport is called.
-	
+
 * gridExample.tar.gz: New File.
 
 2007-10-09  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
@@ -188,7 +193,7 @@
 * makeplots.R
 	(plotFunction, plotFile): Also include their own info.
 	(plotFunction): Included test to make sure prefixes are unique.
-		
+
 * log.R
 	(writeXmlCompareTypeLog): Reads path from the result object rather than as
 		an argument. Now writes info.
@@ -235,7 +240,7 @@
 		^ Doesn't work when in package ..?
 		Added support for qcCompareFunResult files.
 	(getCompareExprName): New function.
-	
+
 * plotExpr.xsl
 	(): Better use of CSS for tables (now with some cellpadding).
 
@@ -244,7 +249,7 @@
 		Use 'path' instead of 'logDiffDirectory'.
 
 * compareFun.xsl: New file (unfinished).
-	
+
 * log.R
 	(writeXmlCompareTypeLog): Writes the new path attribute. Also takes new
 		argument of filename. Also changed to read 'path' properly.
@@ -260,7 +265,7 @@
 * inst/xsl/plotExpr.xsl: New file.
 
 * inst/xsl/compareExpr.xsl: New file.
-	
+
 * report.R
 	(readCompareExprLog): Moved to log.R
 	(readCompareFunLog): Likewise.
@@ -284,7 +289,7 @@
 
 2007-09-18  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
 
-Removed all checks for XML. Moved all XML read/writing into log.R	
+Removed all checks for XML. Moved all XML read/writing into log.R
 
 * makeplots.R
 	(print.qcPlotExprResult): New function.
@@ -336,7 +341,7 @@ Removed all checks for XML. Moved all XML read/writing into log.R
 * report.R
 	(readCompareExprLog): New Function.
 	(readCompareFunLog): Likewise.
-	
+
 * plotFile.Rd
 	(): Fixed \warning{} about opening graphics device to \section{}
 
@@ -358,7 +363,7 @@ Removed all checks for XML. Moved all XML read/writing into log.R
 		Writes overall result.
 	(compareType): Checks to see if there's anything to compare first.
 		Removes automatic names for 'round trip'.
-	(compareExpr): Includes test and control info in result. 
+	(compareExpr): Includes test and control info in result.
 		Includes 'overall' result (include there are unpaired?).
 	(comparePNG): Fixed to only return the diffPlot name if it made one.
 	(GNUdiff): Fixed output redirection so all blanks get deleted.
@@ -375,10 +380,10 @@ Removed all checks for XML. Moved all XML read/writing into log.R
 
 2007-08-13  Stephen Gardiner  <sgar060@aucklanduni.ac.nz>
 
-* makeplots.R 
-	(getAbsolutePath): Removed and replaced with 
+* makeplots.R
+	(getAbsolutePath): Removed and replaced with
 		normalizePath(path.expand()) in plotFunction.
-	(plotFunction): 
+	(plotFunction):
 		Set to use only the first prefix when naming the XML log file.
 	(plotFile): Likewise.
 	(readPlotExprLog): Now reads logFilename.
@@ -386,22 +391,22 @@ Removed all checks for XML. Moved all XML read/writing into log.R
 	(writeXmlPlotFunLog): New function.
 	(writeXmlPlotTypeLog): refactored (and renamed) so plotFile can use it too.
 
-* compare.R 
+* compare.R
 	(getDiffName): Changed to use basename.
 	(comparePDF, comparePNG, compareBMP, comparePS, GNUdiff):
 		return list results
 	(compareExpr): Sets names for the resulting list.
-	(compareType): Set to use SIMPLIFY = FALSE to return a list. 
-		Reordered calls to other compare functions so it's: test, control, 
+	(compareType): Set to use SIMPLIFY = FALSE to return a list.
+		Reordered calls to other compare functions so it's: test, control,
 		for consistency.
 	(writeXMLCompareExprLog): New function.
 	(getCompareExprLogFilename): Likewise.
 
-* plotFile.Rd 
+* plotFile.Rd
 	(): Brief/skeleton documentation created.
 
-* plotFunction.Rd 
+* plotFunction.Rd
 	(): Likewise.
 
-* tests.R 
+* tests.R
 	(): Updated some tests.
