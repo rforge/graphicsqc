@@ -1,3 +1,5 @@
+importFrom("grDevices", "dev.off", "pdf", "postscript")
+importFrom("utils", "browseURL")
 importFrom(XML,
            saveXML, xmlOutputDOM, xmlRoot, xmlTreeParse, xmlName,
            xmlApply, xmlValue, xmlAttrs, xmlChildren)
